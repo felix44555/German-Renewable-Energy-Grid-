@@ -1,67 +1,95 @@
 # -*- coding: utf-8 -*-
 """
 Streamlit App: Einfache Leitungs-Visualisierung
-Eine horizontale Leitung mit mehreren Einspeisern und einer Last.
-Lastfluss wird als Pfeile auf den Leitungssegmenten dargestellt.
+Eine horizontale Leitung mit Einspeisern (Wind, Solar, weitere EE) und Last.
+Slider in Prozent (0-100%) der installierten Kapazitaet.
+Reale installierte Leistung in Deutschland (Stand Anfang 2026):
+  - Wind:          ca. 75 GW (64 GW onshore + ~10 GW offshore)
+  - Solar (PV):    ca. 100 GW
+  - Weitere EE:    ca. 14 GW (Wasserkraft ~5 GW + Biomasse ~9 GW + Geothermie/sonst.)
+  - Spitzenlast:   ca. 80 GW (typischer Wintermittag)
+Quelle: BNetzA Marktstammdatenregister / Fraunhofer ISE (Naeherungswerte).
 """
 
 import streamlit as st
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.lines import Line2D
 
 # ============================================================
+# Reale Referenzkapazitaeten Deutschland (GW)
+# ============================================================
+KAP_WIND_GW    = 75.0   # Wind onshore + offshore
+KAP_SOLAR_GW   = 100.0  # Photovoltaik
+KAP_WEITERE_GW = 14.0   # Wasserkraft + Biomasse + sonstige EE
+LAST_MAX_GW    = 80.0   # typische Spitzenlast Deutschland
+
+# ============================================================
 # Konfiguration
 # ============================================================
 st.set_page_config(page_title="Leitung Test", layout="wide")
-st.title("Leitung mit Einspeisern und Last")
-st.write("Einfache horizontale Leitung. Slider links steuern die Einspeiser "
-         "und die Last. Lastfluss-Pfeile zeigen Richtung und Staerke.")
+st.title("Leitung mit Einspeisern und Last - Deutschland")
+st.write("Slider in Prozent der installierten Kapazitaet. "
+         "Daneben wird die aktuelle Leistung in GW angezeigt.")
 
 # ============================================================
-# Sidebar: Einspeiser und Last
+# Sidebar: Einspeiser (in Prozent) und Last
 # ============================================================
-st.sidebar.header("Einspeiser")
-gen1 = st.sidebar.slider("Einspeiser 1 (Wind)", 0.0, 2.0, 0.8, 0.1)
-gen2 = st.sidebar.slider("Einspeiser 2 (Solar)", 0.0, 2.0, 1.2, 0.1)
-gen3 = st.sidebar.slider("Einspeiser 3 (Bio)", 0.0, 2.0, 0.4, 0.1)
+st.sidebar.header("Einspeiser (% der installierten Leistung)")
+wind_pct = st.sidebar.slider(
+    f"Wind  (max {KAP_WIND_GW:.0f} GW)",
+    0, 100, 25, 1
+)
+solar_pct = st.sidebar.slider(
+    f"Solar  (max {KAP_SOLAR_GW:.0f} GW)",
+    0, 100, 60, 1
+)
+weitere_pct = st.sidebar.slider(
+    f"Weitere EE  (max {KAP_WEITERE_GW:.0f} GW)",
+    0, 100, 70, 1,
+    help="Wasserkraft + Biomasse + sonstige Erneuerbare"
+)
 
 st.sidebar.header("Verbraucher")
-last = st.sidebar.slider("Last", 0.0, 5.0, 2.0, 0.1)
+last_pct = st.sidebar.slider(
+    f"Last  (max {LAST_MAX_GW:.0f} GW)",
+    0, 100, 70, 1
+)
 
 st.sidebar.markdown("---")
 zeige_pfeile = st.sidebar.checkbox("Lastfluss-Pfeile zeigen", value=True)
-zeige_werte = st.sidebar.checkbox("Werte anzeigen", value=True)
+zeige_werte = st.sidebar.checkbox("Werte (GW) anzeigen", value=True)
+
+# ============================================================
+# Aktuelle Leistung in GW berechnen
+# ============================================================
+gen_wind_gw    = KAP_WIND_GW    * wind_pct    / 100.0
+gen_solar_gw   = KAP_SOLAR_GW   * solar_pct   / 100.0
+gen_weitere_gw = KAP_WEITERE_GW * weitere_pct / 100.0
+last_gw        = LAST_MAX_GW    * last_pct    / 100.0
 
 # ============================================================
 # Layout der Leitung
-# Knoten auf der Leitung von links nach rechts:
-#   N1 (Gen1) --- N2 (Gen2) --- N3 (Gen3) --- N4 (Last)
+# Knoten: N1 (Wind) -- N2 (Solar) -- N3 (Weitere EE) -- N4 (Last)
 # ============================================================
-# x-Position der Knoten
-knoten_x = {
-    "N1": 1.0,
-    "N2": 4.0,
-    "N3": 7.0,
-    "N4": 10.0,
-}
-y_leitung = 2.0  # Hoehe der Leitung
+knoten_x = {"N1": 1.0, "N2": 4.0, "N3": 7.0, "N4": 10.0}
+y_leitung = 2.0
 
-# Einspeiser/Verbraucher mit ihrem Wert und Anschlussknoten
 einheiten = [
-    {"typ": "gen",  "name": "G1 (Wind)",  "knoten": "N1", "wert": gen1, "farbe": "#9c27b0"},
-    {"typ": "gen",  "name": "G2 (Solar)", "knoten": "N2", "wert": gen2, "farbe": "#43a047"},
-    {"typ": "gen",  "name": "G3 (Bio)",   "knoten": "N3", "wert": gen3, "farbe": "#1565c0"},
-    {"typ": "load", "name": "Last",       "knoten": "N4", "wert": last, "farbe": "#fdd835"},
+    {"typ": "gen",  "name": "Wind",       "knoten": "N1",
+     "wert": gen_wind_gw,    "kap": KAP_WIND_GW,    "farbe": "#9c27b0"},
+    {"typ": "gen",  "name": "Solar",      "knoten": "N2",
+     "wert": gen_solar_gw,   "kap": KAP_SOLAR_GW,   "farbe": "#43a047"},
+    {"typ": "gen",  "name": "Weitere EE", "knoten": "N3",
+     "wert": gen_weitere_gw, "kap": KAP_WEITERE_GW, "farbe": "#1565c0"},
+    {"typ": "load", "name": "Last",       "knoten": "N4",
+     "wert": last_gw,        "kap": LAST_MAX_GW,    "farbe": "#fdd835"},
 ]
 
 # ============================================================
-# Lastfluss-Berechnung (sehr vereinfacht, eindimensional)
-# Alle Generatoren speisen am jeweiligen Knoten ein, die Last sitzt rechts.
-# Der Fluss durch ein Leitungssegment = Summe der Einspeisungen links davon
-#   minus Summe der Lasten links davon.
-# Positiv = Fluss nach rechts, negativ = nach links.
+# Lastfluss (eindimensional, vereinfacht)
+# Fluss durch Segment i->i+1 = Summe Einspeisung links - Summe Last links
+# Positiv = nach rechts, negativ = nach links
 # ============================================================
 reihenfolge = ["N1", "N2", "N3", "N4"]
 einspeisung_an = {k: 0.0 for k in reihenfolge}
@@ -72,7 +100,6 @@ for e in einheiten:
     else:
         last_an[e["knoten"]] += e["wert"]
 
-# Fluss durch Segment i->i+1
 fluesse = []
 kumuliert = 0.0
 for i in range(len(reihenfolge) - 1):
@@ -84,11 +111,11 @@ for i in range(len(reihenfolge) - 1):
 # Zeichnen
 # ============================================================
 fig, ax = plt.subplots(figsize=(12, 5))
-fig.patch.set_alpha(0.0)   # transparenter Hintergrund Figure
-ax.set_facecolor("none")   # transparenter Hintergrund Achse
+fig.patch.set_alpha(0.0)
+ax.set_facecolor("none")
 
 # ---- Leitungssegmente ----
-max_fluss = max([abs(f) for f in fluesse] + [0.5])
+max_fluss = max([abs(f) for f in fluesse] + [1.0])
 for i, f in enumerate(fluesse):
     x1 = knoten_x[reihenfolge[i]]
     x2 = knoten_x[reihenfolge[i + 1]]
@@ -96,21 +123,20 @@ for i, f in enumerate(fluesse):
     ax.plot([x1, x2], [y_leitung, y_leitung],
             color="#1a1a1a", lw=breite, solid_capstyle="round", zorder=2)
 
-    # Pfeil in Flussrichtung
-    if zeige_pfeile and abs(f) > 0.05:
+    if zeige_pfeile and abs(f) > 0.5:  # > 0.5 GW
         mx = (x1 + x2) / 2
         if f > 0:
-            xa, xb = mx - 0.5, mx + 0.5  # nach rechts
+            xa, xb = mx - 0.5, mx + 0.5
         else:
-            xa, xb = mx + 0.5, mx - 0.5  # nach links
+            xa, xb = mx + 0.5, mx - 0.5
         ax.annotate("", xy=(xb, y_leitung), xytext=(xa, y_leitung),
                     arrowprops=dict(arrowstyle="->", color="#d32f2f", lw=2.5),
                     zorder=4)
-        ax.text(mx, y_leitung + 0.35, f"{f:+.2f}",
+        ax.text(mx, y_leitung + 0.35, f"{f:+.1f} GW",
                 ha="center", va="bottom", fontsize=10, color="#d32f2f",
                 fontweight="bold", zorder=5)
 
-# ---- Knoten zeichnen ----
+# ---- Knoten ----
 for k in reihenfolge:
     x = knoten_x[k]
     circ = patches.Circle((x, y_leitung), 0.18,
@@ -120,59 +146,55 @@ for k in reihenfolge:
     ax.text(x, y_leitung, k, ha="center", va="center", color="white",
             fontsize=9, fontweight="bold", zorder=7)
 
-# ---- Einspeiser und Last zeichnen ----
+# ---- Einspeiser und Last ----
 for e in einheiten:
     x = knoten_x[e["knoten"]]
+    anteil = e["wert"] / e["kap"] if e["kap"] > 0 else 0
     if e["typ"] == "gen":
-        # Einspeiser oberhalb der Leitung als Dreieck
         y_sym = y_leitung + 1.2
-        anteil = min(e["wert"] / 2.0, 1.0)
         size = 400 + 1500 * anteil
         ax.scatter(x, y_sym, s=size, c=e["farbe"], marker="^",
                    edgecolors="black", lw=1.2, zorder=5)
-        # Stichleitung
-        ax.plot([x, x], [y_leitung, y_sym - 0.15], color="#1a1a1a",
-                lw=1.5, zorder=1)
-        # Beschriftung
-        ax.text(x, y_sym + 0.5, e["name"], ha="center", va="bottom",
+        ax.plot([x, x], [y_leitung, y_sym - 0.15],
+                color="#1a1a1a", lw=1.5, zorder=1)
+        ax.text(x, y_sym + 0.55, e["name"], ha="center", va="bottom",
                 fontsize=10, fontweight="bold")
         if zeige_werte:
-            ax.text(x, y_sym - 0.05, f"{e['wert']:.2f}",
+            ax.text(x, y_sym - 0.05, f"{e['wert']:.1f} GW",
                     ha="center", va="center", fontsize=9, color="white",
                     fontweight="bold", zorder=6)
     else:
-        # Last unterhalb der Leitung als gelbes Quadrat
         y_sym = y_leitung - 1.2
-        anteil = min(e["wert"] / 5.0, 1.0)
         groesse = 0.35 + 0.45 * anteil
         rect = patches.Rectangle((x - groesse / 2, y_sym - groesse / 2),
                                  groesse, groesse,
                                  facecolor=e["farbe"], edgecolor="#f57f17",
                                  lw=1.5, zorder=5)
         ax.add_patch(rect)
-        ax.plot([x, x], [y_leitung, y_sym + groesse / 2], color="#1a1a1a",
-                lw=1.5, zorder=1)
-        ax.text(x, y_sym - 0.55, e["name"], ha="center", va="top",
+        ax.plot([x, x], [y_leitung, y_sym + groesse / 2],
+                color="#1a1a1a", lw=1.5, zorder=1)
+        ax.text(x, y_sym - 0.6, e["name"], ha="center", va="top",
                 fontsize=10, fontweight="bold")
         if zeige_werte:
-            ax.text(x, y_sym, f"{e['wert']:.2f}",
+            ax.text(x, y_sym, f"{e['wert']:.1f} GW",
                     ha="center", va="center", fontsize=9, color="black",
                     fontweight="bold", zorder=6)
 
-# ---- Achsen ----
 ax.set_xlim(0, 11)
-ax.set_ylim(-0.5, 4.5)
+ax.set_ylim(-0.8, 4.5)
 ax.set_aspect("equal")
 ax.axis("off")
 
 # ---- Legende ----
 legend_elements = [
     Line2D([0], [0], marker="^", color="w", markerfacecolor="#9c27b0",
-           markeredgecolor="black", markersize=14, label="Einspeiser"),
+           markeredgecolor="black", markersize=14, label="Wind"),
+    Line2D([0], [0], marker="^", color="w", markerfacecolor="#43a047",
+           markeredgecolor="black", markersize=14, label="Solar"),
+    Line2D([0], [0], marker="^", color="w", markerfacecolor="#1565c0",
+           markeredgecolor="black", markersize=14, label="Weitere EE"),
     Line2D([0], [0], marker="s", color="w", markerfacecolor="#fdd835",
-           markeredgecolor="#f57f17", markersize=14, label="Verbraucher"),
-    Line2D([0], [0], marker="o", color="w", markerfacecolor="#1f5f8b",
-           markeredgecolor="#0d3a5c", markersize=12, label="Knoten"),
+           markeredgecolor="#f57f17", markersize=14, label="Last"),
     Line2D([0], [0], color="#1a1a1a", lw=3, label="Leitung"),
 ]
 if zeige_pfeile:
@@ -194,12 +216,20 @@ with col_plot:
     plt.close(fig)
 
 with col_info:
-    st.subheader("Bilanz")
-    erz_gesamt = gen1 + gen2 + gen3
-    bilanz = erz_gesamt - last
-    st.metric("Einspeisung gesamt", f"{erz_gesamt:.2f}")
-    st.metric("Last", f"{last:.2f}")
-    st.metric("Bilanz", f"{bilanz:+.2f}",
+    st.subheader("Aktuelle Leistung")
+    erz_gesamt = gen_wind_gw + gen_solar_gw + gen_weitere_gw
+    bilanz = erz_gesamt - last_gw
+
+    st.metric("Wind",       f"{gen_wind_gw:.1f} GW",
+              f"{wind_pct} % von {KAP_WIND_GW:.0f} GW")
+    st.metric("Solar",      f"{gen_solar_gw:.1f} GW",
+              f"{solar_pct} % von {KAP_SOLAR_GW:.0f} GW")
+    st.metric("Weitere EE", f"{gen_weitere_gw:.1f} GW",
+              f"{weitere_pct} % von {KAP_WEITERE_GW:.0f} GW")
+    st.metric("Erzeugung gesamt", f"{erz_gesamt:.1f} GW")
+    st.metric("Last", f"{last_gw:.1f} GW",
+              f"{last_pct} % von {LAST_MAX_GW:.0f} GW")
+    st.metric("Bilanz", f"{bilanz:+.1f} GW",
               delta="Ueberschuss" if bilanz > 0 else "Defizit",
               delta_color="normal" if bilanz > 0 else "inverse")
 
@@ -209,7 +239,10 @@ with col_info:
         a = reihenfolge[i]
         b = reihenfolge[i + 1]
         richtung = "->" if f > 0 else ("<-" if f < 0 else "--")
-        st.write(f"{a} {richtung} {b}: **{f:+.2f}**")
+        st.write(f"{a} {richtung} {b}: **{f:+.1f} GW**")
 
-st.caption("Positiver Fluss = Strom fliesst nach rechts, negativ nach links. "
-           "Die Liniendicke skaliert mit der Stromstaerke im Segment.")
+st.caption(f"Installierte Leistung Deutschland (gerundet, Stand Anfang 2026): "
+           f"Wind {KAP_WIND_GW:.0f} GW, Solar {KAP_SOLAR_GW:.0f} GW, "
+           f"weitere EE {KAP_WEITERE_GW:.0f} GW (Wasser + Biomasse + sonst.). "
+           f"Spitzenlast typ. {LAST_MAX_GW:.0f} GW. "
+           f"Quelle: BNetzA Marktstammdatenregister / Fraunhofer ISE.")
