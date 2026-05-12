@@ -22,7 +22,7 @@ st.write("Wind (Norden), Solar (Sueden) und Verbraucher (Raender). "
 # ============================================================
 # Sidebar: Slider
 # ============================================================
-st.sidebar.header("Steuerung")
+st.sidebar.header("Steuerung") 
 wind_level = st.sidebar.slider("Wind", 0.0, 1.0, 0.2, 0.05,
                                help="Windstaerke / -einspeisung")
 solar_level = st.sidebar.slider("Solar", 0.0, 1.0, 0.7, 0.05,
