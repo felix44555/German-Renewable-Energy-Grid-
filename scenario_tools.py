@@ -1,6 +1,4 @@
-from pathlib import Path
-
-scenario_tools = r'''from __future__ import annotations
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -122,9 +120,9 @@ def apply_scenario_to_profiles(
     """
     Verändert die 24-h-Profile durch eine didaktische Störung.
 
-    ee_curtail_pct ist eine vom Nutzer gewählte Maßnahme:
-    0 % = keine vorsorgliche Abregelung,
-    100 % = Wind und PV vollständig abgeregelt.
+    ee_curtail_pct:
+    - 0 %   = keine vorsorgliche EE-Abregelung
+    - 100 % = Wind und PV vollständig abgeregelt
     """
     sc = SCENARIOS.get(scenario_key, SCENARIOS["training"])
     out = df.copy()
@@ -149,16 +147,24 @@ def apply_scenario_to_profiles(
 
 def _nearest_consumer_bus(lat: float, lon: float, consumers: pd.DataFrame) -> str:
     """
-    Ordnet Generatoren ohne explizite Bus-Spalte dem nächsten Verbraucher-/Bus-Knoten zu.
-    Das ist nur ein didaktischer Proxy, kein Lastfluss.
+    Ordnet einen Standort dem nächsten Verbraucher-/Bus-Knoten zu.
+    Nur Proxy-Logik, kein elektrischer Lastfluss.
     """
     if consumers.empty:
         return ""
 
     lat_arr = pd.to_numeric(consumers["lat"], errors="coerce").to_numpy(dtype=float)
     lon_arr = pd.to_numeric(consumers["lon"], errors="coerce").to_numpy(dtype=float)
+
+    valid = np.isfinite(lat_arr) & np.isfinite(lon_arr)
+    if not valid.any():
+        if "Bus" in consumers.columns:
+            return str(consumers.iloc[0]["Bus"])
+        return str(consumers.iloc[0]["Cluster"])
+
     d2 = (lat_arr - float(lat)) ** 2 + ((lon_arr - float(lon)) * 0.65) ** 2
-    idx = int(np.nanargmin(d2))
+    d2[~valid] = np.inf
+    idx = int(np.argmin(d2))
 
     if "Bus" in consumers.columns:
         return str(consumers.iloc[idx]["Bus"])
@@ -171,11 +177,16 @@ def compute_bus_balance_proxy(
     hour_row: pd.Series,
 ) -> pd.Series:
     """
-    Näherung der Knoteneinspeisung in GW:
-    positiv = Einspeisung, negativ = Last.
+    Näherung der Knoteneinspeisung in GW.
 
-    Verwendet die bestehenden App-DataFrames. Falls Generatoren keine Bus-Spalte haben,
-    werden sie geografisch dem nächsten Verbraucher-/Bus-Knoten zugeordnet.
+    Positiv:
+        Einspeisung überwiegt.
+
+    Negativ:
+        Last überwiegt.
+
+    Hinweis:
+        Dies ist ein didaktischer Proxy. Es wird kein AC/DC-Lastfluss gerechnet.
     """
     if consumers.empty:
         return pd.Series(dtype=float)
@@ -197,6 +208,9 @@ def compute_bus_balance_proxy(
         # BESS_GW > 0: Entladung; BESS_GW < 0: Ladung als zusätzliche Last
         "BESS": float(hour_row.get("BESS_GW", 0.0)),
     }
+
+    if generators.empty:
+        return balance
 
     for _, row in generators.iterrows():
         typ = str(row["Typ"])
@@ -226,10 +240,31 @@ def compute_line_status_proxy(
     line_stress_factor: float = 1.0,
 ) -> pd.DataFrame:
     """
-    Erzeugt eine didaktische Leitungs-Auslastung.
+    Erzeugt eine didaktische Leitungsauslastung.
 
-    Wichtig: Das ist KEIN AC/DC-Lastfluss. Es ist ein Proxy aus
-    Knoteneinspeisung, lokaler Leistungsdifferenz und Leitungskapazität.
+    Eingang:
+        generators:
+            App-DataFrame der Generatoren.
+
+        consumers:
+            App-DataFrame der Verbraucher-/Bus-Knoten.
+
+        lines:
+            App-DataFrame der Leitungen/Links.
+
+        hour_row:
+            Eine Zeile aus dem Dispatch-DataFrame für die aktuelle Stunde.
+
+        line_capacity_pct:
+            Nutzermaßnahme Netzausbau. 100 = Basis, 200 = doppelte Kapazität.
+
+        line_stress_factor:
+            Szenariofaktor für stärkere/schwächere Leitungsbelastung.
+
+    Wichtig:
+        Das ist KEIN echter Lastfluss.
+        Es ist ein Proxy aus Knoteneinspeisung, lokaler Leistungsdifferenz
+        und Leitungskapazität.
     """
     if lines.empty:
         return lines.copy()
@@ -248,9 +283,9 @@ def compute_line_status_proxy(
     max_lat_span = max(float((out["lat0"] - out["lat1"]).abs().max()), 0.5)
     system_imbalance = abs(float(hour_row.get("Netzbilanz_GW", 0.0)))
 
-    flows = []
-    utils = []
-    overloads = []
+    flows: list[float] = []
+    utils: list[float] = []
+    overloads: list[bool] = []
 
     for _, ln in out.iterrows():
         bus0 = str(ln["von"])
@@ -273,7 +308,8 @@ def compute_line_status_proxy(
         local_pressure = abs(p0 - p1)
         ns_factor = 1.0 + 0.65 * abs(float(ln["lat0"]) - float(ln["lat1"])) / max_lat_span
 
-        # Skalierung bewusst konservativ, damit Überlast erst bei Stressszenarien sichtbar wird.
+        # Skalierung absichtlich didaktisch:
+        # lokale Erzeugungs-/Lastdifferenz dominiert, Systembilanz wirkt schwächer.
         flow = stress * ns_factor * (0.32 * local_pressure + 0.05 * system_imbalance)
         util_pct = 100.0 * flow / max(cap, 1e-6)
 
@@ -284,6 +320,7 @@ def compute_line_status_proxy(
     out["Flow_Proxy_GW"] = flows
     out["Auslastung_pct"] = utils
     out["Ueberlast"] = overloads
+
     return out
 
 
@@ -292,7 +329,15 @@ def evaluate_scenario(
     line_status: pd.DataFrame,
     scenario_key: str,
 ) -> dict[str, object]:
-    """Bewertet, ob der Nutzer das gewählte Szenario beherrscht."""
+    """
+    Bewertet, ob der Nutzer das gewählte Szenario bewältigt hat.
+
+    Bestehen bedeutet:
+    - keine relevante Unterdeckung
+    - keine relevante Überdeckung
+    - Abregelung unter Grenzwert
+    - keine Leitung über Grenzwert
+    """
     sc = SCENARIOS.get(scenario_key, SCENARIOS["training"])
 
     max_abs_balance = float(sc.get("max_abs_balance_gw", 1.0))
@@ -317,13 +362,16 @@ def evaluate_scenario(
     line_over = peak_line_util > max_line_util
 
     messages: list[str] = []
+
     if under:
         messages.append(f"Unterdeckung: Netzbilanz {balance:+.2f} GW.")
+
     if over:
         if balance > max_abs_balance:
             messages.append(f"Überdeckung: Netzbilanz {balance:+.2f} GW.")
         if curtail > max_curtail:
             messages.append(f"Abregelung zu hoch: {curtail:.2f} GW.")
+
     if line_over:
         messages.append(
             f"Leitungsüberlastung: {worst_line} bei {peak_line_util:.0f} %."
@@ -346,8 +394,3 @@ def evaluate_scenario(
         "worst_line": worst_line,
         "messages": messages,
     }
-'''
-
-path = Path("/mnt/data/scenario_tools.py")
-path.write_text(scenario_tools, encoding="utf-8")
-path
