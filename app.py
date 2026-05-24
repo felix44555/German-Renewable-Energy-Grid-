@@ -9,8 +9,15 @@ import streamlit as st
 
 try:
     import pypsa
-except ImportError:  # bessere Fehlermeldung in Streamlit
+except ImportError:
     pypsa = None
+
+from scenario_tools import (
+    SCENARIOS,
+    apply_scenario_to_profiles,
+    compute_line_status_proxy,
+    evaluate_scenario,
+)
 
 
 # =============================================================================
@@ -95,7 +102,7 @@ def _require_bus_coordinates(n) -> None:
 
 def _load_by_bus_mw(n) -> pd.Series:
     """Bestimmt eine repräsentative Last je Bus in MW."""
-    buses = n.buses.index
+    buses = n.buses.index.astype(str)
     result = pd.Series(0.0, index=buses, dtype=float)
 
     if n.loads.empty:
@@ -112,7 +119,6 @@ def _load_by_bus_mw(n) -> pd.Series:
         ts = n.loads_t.p_set
         if isinstance(ts, pd.DataFrame) and not ts.empty:
             ts_mean = ts.mean(axis=0).reindex(n.loads.index).fillna(0.0)
-            # Zeitreihe bevorzugen, wenn sie überhaupt Last enthält
             if float(ts_mean.sum()) > 0:
                 static = ts_mean
     except Exception:
@@ -124,7 +130,7 @@ def _load_by_bus_mw(n) -> pd.Series:
     })
 
     grouped = tmp.groupby("bus")["p_mw"].sum()
-    return grouped.reindex(buses.astype(str)).fillna(0.0)
+    return grouped.reindex(result.index).fillna(0.0)
 
 
 def pypsa_to_consumers(n) -> pd.DataFrame:
@@ -138,6 +144,7 @@ def pypsa_to_consumers(n) -> pd.DataFrame:
     load_by_bus = _load_by_bus_mw(n)
 
     df = pd.DataFrame({
+        "Bus": buses.index.astype(str),
         "Cluster": buses.index.astype(str),
         "lat": pd.to_numeric(buses["y"], errors="coerce").astype(float),
         "lon": pd.to_numeric(buses["x"], errors="coerce").astype(float),
@@ -150,7 +157,7 @@ def pypsa_to_consumers(n) -> pd.DataFrame:
     else:
         df["Anteil"] = 1.0 / max(len(df), 1)
 
-    return df[["Cluster", "lat", "lon", "Anteil"]]
+    return df[["Bus", "Cluster", "lat", "lon", "Anteil"]]
 
 
 def pypsa_to_lines(n) -> pd.DataFrame:
@@ -158,22 +165,23 @@ def pypsa_to_lines(n) -> pd.DataFrame:
     _require_bus_coordinates(n)
 
     buses = n.buses.copy()
+    bus_index = buses.index.astype(str)
     rows: list[dict[str, object]] = []
 
     if hasattr(n, "lines") and not n.lines.empty:
         for name, ln in n.lines.iterrows():
             bus0 = str(ln["bus0"])
             bus1 = str(ln["bus1"])
-            if bus0 not in buses.index.astype(str) or bus1 not in buses.index.astype(str):
+            if bus0 not in bus_index or bus1 not in bus_index:
                 continue
 
-            # Zugriff über .loc braucht originalen Index; meist ist er bereits String.
             b0 = buses.loc[bus0]
             b1 = buses.loc[bus1]
             cap_mw = _component_capacity_mw(ln, ("s_nom", "s_nom_opt", "p_nom", "p_nom_opt"))
 
             rows.append({
                 "Name": str(name),
+                "Typ": "Line",
                 "von": bus0,
                 "nach": bus1,
                 "lat0": float(b0["y"]),
@@ -188,7 +196,7 @@ def pypsa_to_lines(n) -> pd.DataFrame:
         for name, lk in n.links.iterrows():
             bus0 = str(lk["bus0"])
             bus1 = str(lk["bus1"])
-            if bus0 not in buses.index.astype(str) or bus1 not in buses.index.astype(str):
+            if bus0 not in bus_index or bus1 not in bus_index:
                 continue
 
             b0 = buses.loc[bus0]
@@ -197,6 +205,7 @@ def pypsa_to_lines(n) -> pd.DataFrame:
 
             rows.append({
                 "Name": f"Link {name}",
+                "Typ": "Link",
                 "von": bus0,
                 "nach": bus1,
                 "lat0": float(b0["y"]),
@@ -207,7 +216,7 @@ def pypsa_to_lines(n) -> pd.DataFrame:
             })
 
     return pd.DataFrame(rows, columns=[
-        "Name", "von", "nach", "lat0", "lon0", "lat1", "lon1", "Kapazitaet_GW"
+        "Name", "Typ", "von", "nach", "lat0", "lon0", "lat1", "lon1", "Kapazitaet_GW"
     ])
 
 
@@ -216,12 +225,13 @@ def pypsa_to_generators(n) -> pd.DataFrame:
     _require_bus_coordinates(n)
 
     buses = n.buses.copy()
+    bus_index = buses.index.astype(str)
     rows: list[dict[str, object]] = []
 
     if hasattr(n, "generators") and not n.generators.empty:
         for name, gen in n.generators.iterrows():
             bus = str(gen["bus"])
-            if bus not in buses.index.astype(str):
+            if bus not in bus_index:
                 continue
 
             b = buses.loc[bus]
@@ -230,6 +240,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
 
             rows.append({
                 "Name": str(name),
+                "Bus": bus,
                 "Typ": typ,
                 "lat": float(b["y"]),
                 "lon": float(b["x"]),
@@ -239,7 +250,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
     if hasattr(n, "storage_units") and not n.storage_units.empty:
         for name, su in n.storage_units.iterrows():
             bus = str(su["bus"])
-            if bus not in buses.index.astype(str):
+            if bus not in bus_index:
                 continue
 
             b = buses.loc[bus]
@@ -247,6 +258,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
 
             rows.append({
                 "Name": str(name),
+                "Bus": bus,
                 "Typ": "BESS",
                 "lat": float(b["y"]),
                 "lon": float(b["x"]),
@@ -255,7 +267,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     if df.empty:
-        return pd.DataFrame(columns=["Name", "Typ", "lat", "lon", "Anteil"])
+        return pd.DataFrame(columns=["Name", "Bus", "Typ", "lat", "lon", "Anteil"])
 
     df["Anteil"] = 0.0
     for typ in df["Typ"].unique():
@@ -266,7 +278,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
         else:
             df.loc[mask, "Anteil"] = 1.0 / int(mask.sum())
 
-    return df[["Name", "Typ", "lat", "lon", "Anteil"]]
+    return df[["Name", "Bus", "Typ", "lat", "lon", "Anteil"]]
 
 
 def get_reference_values(n) -> dict[str, float]:
@@ -275,7 +287,11 @@ def get_reference_values(n) -> dict[str, float]:
 
     if hasattr(n, "generators") and not n.generators.empty:
         gens = n.generators.copy()
-        gens["Typ"] = gens.get("carrier", "").apply(carrier_to_typ)
+        if "carrier" in gens.columns:
+            gens["Typ"] = gens["carrier"].apply(carrier_to_typ)
+        else:
+            gens["Typ"] = "Konventionell"
+
         gens["cap_mw"] = gens.apply(
             lambda r: _component_capacity_mw(r, ("p_nom", "p_nom_opt")), axis=1
         )
@@ -313,7 +329,6 @@ def get_reference_values(n) -> dict[str, float]:
     if load_total_gw > 0:
         refs["load_mean_gw"] = load_total_gw
 
-    # Absicherung gegen 0-Werte
     for key, fallback in FALLBACK_REFS.items():
         if refs.get(key, 0.0) <= 0:
             refs[key] = fallback
@@ -540,23 +555,41 @@ def build_map(
         + hour_row["BESS_Entladen_GW"]
     )
     load = float(hour_row["Last_GW"])
-    factor = min(1.5, max(0.2, float(total_gen) / max(load, 1e-3)))
+    fallback_factor = min(1.5, max(0.2, float(total_gen) / max(load, 1e-3)))
 
     if not lines.empty:
         for _, ln in lines.iterrows():
-            util = min(1.0, factor * 0.6)
-            color = "green" if util < 0.6 else ("orange" if util < 0.9 else "red")
+            if "Auslastung_pct" in lines.columns:
+                util_pct = float(ln["Auslastung_pct"])
+                util = util_pct / 100.0
+                flow_proxy = float(ln.get("Flow_Proxy_GW", 0.0))
+                overloaded = bool(ln.get("Ueberlast", False))
+            else:
+                util = min(1.0, fallback_factor * 0.6)
+                util_pct = util * 100.0
+                flow_proxy = 0.0
+                overloaded = util_pct > 100.0
+
+            if overloaded:
+                color = "red"
+            elif util_pct >= 90:
+                color = "orange"
+            else:
+                color = "green"
+
             fig.add_trace(go.Scattergeo(
                 lon=[ln["lon0"], ln["lon1"]],
                 lat=[ln["lat0"], ln["lat1"]],
                 mode="lines",
-                line=dict(width=2 + 4 * util, color=color),
-                opacity=0.7,
+                line=dict(width=2 + 4 * min(util, 1.5), color=color),
+                opacity=0.78,
                 hoverinfo="text",
                 text=(
                     f"{ln['Name']} ({ln['von']} -> {ln['nach']})<br>"
-                    f"Kapazitaet: {ln['Kapazitaet_GW']:.2f} GW<br>"
-                    f"Proxy-Auslastung: {util * 100:.0f} %"
+                    f"Kapazität: {ln['Kapazitaet_GW']:.2f} GW<br>"
+                    f"Flow-Proxy: {flow_proxy:.2f} GW<br>"
+                    f"Auslastung: {util_pct:.0f} %<br>"
+                    f"Status: {'ÜBERLAST' if overloaded else 'ok'}"
                 ),
                 showlegend=False,
             ))
@@ -584,13 +617,17 @@ def build_map(
         sub["Aktuell_GW"] = sub["Anteil"] * akt_total
         sub["Installiert_GW"] = sub["Anteil"] * inst_total
 
+        bus_values = sub["Bus"] if "Bus" in sub.columns else pd.Series(["-"] * len(sub))
+
         fig.add_trace(go.Scattergeo(
             lon=sub["lon"],
             lat=sub["lat"],
             text=[
-                f"<b>{n}</b><br>Typ: {typ}<br>"
+                f"<b>{n}</b><br>Bus: {bus}<br>Typ: {typ}<br>"
                 f"Aktuell: {a:.2f} GW<br>Installiert/Referenz: {i:.2f} GW"
-                for n, a, i in zip(sub["Name"], sub["Aktuell_GW"], sub["Installiert_GW"])
+                for n, bus, a, i in zip(
+                    sub["Name"], bus_values, sub["Aktuell_GW"], sub["Installiert_GW"]
+                )
             ],
             hoverinfo="text",
             mode="markers",
@@ -701,18 +738,86 @@ def build_stack(df: pd.DataFrame, highlight_hour: int) -> go.Figure:
     return fig
 
 
+def build_line_utilization_chart(line_status: pd.DataFrame) -> go.Figure:
+    """Balkendiagramm der Leitungs-Auslastung."""
+    fig = go.Figure()
+
+    if line_status.empty or "Auslastung_pct" not in line_status.columns:
+        fig.update_layout(
+            title="Keine Leitungsdaten verfügbar",
+            height=320,
+        )
+        return fig
+
+    sorted_lines = line_status.sort_values("Auslastung_pct", ascending=False)
+
+    fig.add_trace(go.Bar(
+        x=sorted_lines["Name"],
+        y=sorted_lines["Auslastung_pct"],
+        name="Auslastung",
+        marker_color=[
+            "red" if bool(x) else ("orange" if y >= 90 else "green")
+            for x, y in zip(sorted_lines["Ueberlast"], sorted_lines["Auslastung_pct"])
+        ],
+        hovertext=[
+            f"{row['Name']}<br>"
+            f"{row['von']} → {row['nach']}<br>"
+            f"Kapazität: {row['Kapazitaet_GW']:.2f} GW<br>"
+            f"Flow-Proxy: {row['Flow_Proxy_GW']:.2f} GW<br>"
+            f"Auslastung: {row['Auslastung_pct']:.0f} %"
+            for _, row in sorted_lines.iterrows()
+        ],
+        hoverinfo="text",
+    ))
+
+    fig.add_hline(y=100, line_dash="dash", line_color="red")
+    fig.update_layout(
+        title="Leitungsauslastung - Proxy",
+        xaxis_title="Leitung",
+        yaxis_title="Auslastung [%]",
+        height=380,
+        margin=dict(l=40, r=20, t=50, b=120),
+    )
+    fig.update_xaxes(tickangle=-35)
+    return fig
+
+
 # =============================================================================
 # Streamlit-App
 # =============================================================================
-def main() -> None:
-    st.set_page_config(page_title="Deutschland-Netzkarte mit PyPSA-Netz", layout="wide")
+def init_session_state() -> None:
+    """Setzt robuste Default-Werte für alle interaktiven Stellgrößen."""
+    if "scenario_key" not in st.session_state:
+        st.session_state["scenario_key"] = "training"
 
-    st.title("Deutschland-Netzkarte mit simplified_germany_8node.nc")
+    defaults = SCENARIOS["training"]["defaults"]
+    for key, value in defaults.items():
+        st.session_state.setdefault(key, value)
+
+
+def load_scenario_defaults(scenario_key: str) -> None:
+    """Lädt die Startwerte eines Szenarios in den Session State."""
+    scenario = SCENARIOS.get(scenario_key, SCENARIOS["training"])
+    for key, value in scenario["defaults"].items():
+        st.session_state[key] = value
+
+
+def main() -> None:
+    st.set_page_config(page_title="Deutschland-Netzkarte: Szenario-Modus", layout="wide")
+
+    init_session_state()
+
+    st.title("Deutschland-Netzkarte mit Szenario-Modus")
     st.markdown(
         """
         Diese App lädt ein PyPSA-Netz aus `simplified_germany_8node.nc` und nutzt daraus
-        Busse, Leitungen/Links, Generatoren, Speicher und Lastverteilung. Die 24-h-Profile
-        bleiben bewusst didaktisch vereinfacht. Es wird keine echte Lastflussrechnung gerechnet.
+        Busse, Leitungen/Links, Generatoren, Speicher und Lastverteilung.
+
+        Aufgabe des Nutzers: ein Szenario so einstellen, dass weder Unterdeckung noch
+        Überdeckung noch Leitungsüberlastung auftritt.
+
+        Hinweis: Die Leitungsüberlastung ist ein didaktischer Proxy. Es wird kein echter
+        AC/DC-Lastfluss gerechnet.
         """
     )
 
@@ -727,12 +832,45 @@ def main() -> None:
         st.stop()
 
     with st.sidebar:
-        st.header("Skalierung [%]")
-        wind_pct = st.slider("Wind", 0, 300, 100, 5)
-        pv_pct = st.slider("PV", 0, 300, 100, 5)
-        bess_pct = st.slider("BESS", 0, 300, 100, 5)
-        load_pct = st.slider("Last", 50, 200, 100, 5)
-        soc_pct = st.slider("Start-SOC [%]", 0, 100, 50, 5)
+        st.header("Szenario")
+
+        scenario_key = st.selectbox(
+            "Aufgabe",
+            options=list(SCENARIOS.keys()),
+            format_func=lambda k: SCENARIOS[k]["name"],
+            key="scenario_key",
+        )
+        scenario = SCENARIOS[scenario_key]
+
+        st.info(str(scenario["task"]))
+
+        if st.button("Szenario-Startwerte laden"):
+            load_scenario_defaults(scenario_key)
+            st.rerun()
+
+        st.header("Maßnahmen / Stellgrößen")
+
+        wind_pct = st.slider("Wind [%]", 0, 300, key="wind_pct", step=5)
+        pv_pct = st.slider("PV [%]", 0, 300, key="pv_pct", step=5)
+        bess_pct = st.slider("BESS [%]", 0, 300, key="bess_pct", step=5)
+        load_pct = st.slider("Last [%]", 50, 200, key="load_pct", step=5)
+        soc_pct = st.slider("Start-SOC [%]", 0, 100, key="soc_pct", step=5)
+
+        st.header("Netzmaßnahmen")
+        line_capacity_pct = st.slider(
+            "Leitungskapazität / Netzausbau [%]",
+            50,
+            200,
+            key="line_capacity_pct",
+            step=5,
+        )
+        ee_curtail_pct = st.slider(
+            "EE-Abregelung [%]",
+            0,
+            80,
+            key="ee_curtail_pct",
+            step=5,
+        )
 
         st.caption(
             f"Referenz aus Netz/Fallback:\n"
@@ -765,6 +903,13 @@ def main() -> None:
         load_scale=load_scale,
         refs=refs,
     )
+
+    profiles = apply_scenario_to_profiles(
+        profiles,
+        scenario_key=scenario_key,
+        ee_curtail_pct=ee_curtail_pct,
+    )
+
     df = simulate_dispatch(
         profiles,
         bess_scale=bess_scale,
@@ -776,9 +921,27 @@ def main() -> None:
     )
 
     st.subheader("Zeitslider")
-    hour = st.slider("Stunde des Tages", 0, 23, 12, 1)
+    hour = st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
     hour_row = df.iloc[hour]
 
+    line_status = compute_line_status_proxy(
+        generators=generators,
+        consumers=consumers,
+        lines=lines,
+        hour_row=hour_row,
+        line_capacity_pct=line_capacity_pct,
+        line_stress_factor=float(SCENARIOS[scenario_key]["line_stress_factor"]),
+    )
+
+    scenario_eval = evaluate_scenario(
+        hour_row=hour_row,
+        line_status=line_status,
+        scenario_key=scenario_key,
+    )
+
+    # -------------------------------------------------------------------------
+    # Live-Kennzahlen
+    # -------------------------------------------------------------------------
     k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("Last [GW]", f"{hour_row['Last_GW']:.2f}")
     k2.metric("Wind [GW]", f"{hour_row['Wind_GW']:.2f}")
@@ -789,13 +952,43 @@ def main() -> None:
     k6, k7, k8 = st.columns(3)
     k6.metric("Netzbilanz [GW]", f"{hour_row['Netzbilanz_GW']:+.2f}")
     k7.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
-    k8.metric("Status", str(hour_row["Status"]))
+    k8.metric("Dispatch-Status", str(hour_row["Status"]))
 
+    # -------------------------------------------------------------------------
+    # Szenario-Bewertung
+    # -------------------------------------------------------------------------
+    st.subheader("Szenario-Bewertung")
+
+    if scenario_eval["solved"]:
+        st.success("Szenario bewältigt.")
+    else:
+        st.warning("Szenario noch nicht bewältigt.")
+
+    for msg in scenario_eval["messages"]:
+        st.write(f"- {msg}")
+
+    b1, b2, b3, b4 = st.columns(4)
+    b1.metric("Bilanz [GW]", f"{scenario_eval['balance_gw']:+.2f}")
+    b2.metric("Abregelung [GW]", f"{scenario_eval['curtailment_gw']:.2f}")
+    b3.metric("max. Leitung [%]", f"{scenario_eval['peak_line_util_pct']:.0f}")
+    b4.metric("überlastete Leitungen", str(scenario_eval["overloaded_count"]))
+
+    with st.expander("Zielbedingungen"):
+        st.write(
+            "- Netzbilanz zwischen -1 GW und +1 GW\n"
+            "- Abregelung unter Szenario-Grenzwert\n"
+            "- keine Leitung über 100 % Auslastung\n"
+            "- Leitungswerte sind Proxy-Werte, kein echter Lastfluss"
+        )
+
+    # -------------------------------------------------------------------------
+    # Visualisierungen
+    # -------------------------------------------------------------------------
     st.subheader("Netzkarte")
     fig_map = build_map(
         generators=generators,
         consumers=consumers,
-        lines=lines,
+        lines=line_status,
         hour_row=hour_row,
         wind_scale=wind_scale,
         pv_scale=pv_scale,
@@ -804,10 +997,17 @@ def main() -> None:
     )
     st.plotly_chart(fig_map, use_container_width=True)
 
+    st.subheader("Leitungsauslastung")
+    fig_line = build_line_utilization_chart(line_status)
+    st.plotly_chart(fig_line, use_container_width=True)
+
     st.subheader("Erzeugungsmix vs. Last über 24 h")
     fig_stack = build_stack(df, highlight_hour=hour)
     st.plotly_chart(fig_stack, use_container_width=True)
 
+    # -------------------------------------------------------------------------
+    # Tabellen
+    # -------------------------------------------------------------------------
     with st.expander("Stündliche Tabelle"):
         st.dataframe(
             df[[
@@ -825,16 +1025,16 @@ def main() -> None:
     with st.expander("PyPSA-Erzeuger"):
         st.dataframe(generators.round(4), use_container_width=True)
 
-    with st.expander("PyPSA-Leitungen und Links"):
-        st.dataframe(lines.round(4), use_container_width=True)
+    with st.expander("PyPSA-Leitungen und Links mit Auslastung"):
+        st.dataframe(line_status.round(4), use_container_width=True)
 
     with st.expander("Netz-Referenzwerte"):
         st.json(refs)
 
     st.caption(
-        "Hinweis: Die Topologie kommt aus der NetCDF-Datei. Die Leistungsprofile, "
-        "BESS-Logik und Leitungsauslastung sind vereinfachte didaktische Proxys. "
-        "Es wird kein AC/DC-Lastfluss berechnet."
+        "Die Topologie kommt aus der NetCDF-Datei. Profile, Dispatch, BESS-Logik "
+        "und Leitungsauslastung sind didaktische Proxys. Es wird kein AC/DC-Lastfluss "
+        "und keine PyPSA-Optimierung berechnet."
     )
 
 
