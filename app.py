@@ -535,6 +535,88 @@ TYP_SYMBOLS = {
 }
 
 
+# Visuelle Marker-Versetzung:
+# Die PyPSA-Komponenten liegen fachlich weiterhin auf ihrem Bus.
+# Nur für die Kartenanzeige werden Wind/PV/BESS/Konventionell leicht um den Bus herum verteilt.
+MARKER_OFFSET_DIRECTIONS = {
+    "Wind": (-1.0, 1.0),
+    "PV": (1.0, 1.0),
+    "BESS": (1.0, -1.0),
+    "Konventionell": (-1.0, -1.0),
+}
+
+
+def apply_marker_offsets(
+    df: pd.DataFrame,
+    lon_col: str = "lon",
+    lat_col: str = "lat",
+    typ_col: str = "Typ",
+    bus_col: str = "Bus",
+    offset_deg: float = 0.18,
+    intra_type_spread_deg: float = 0.035,
+) -> pd.DataFrame:
+    """
+    Versetzt Marker nur für die Visualisierung.
+
+    Grund:
+    In aggregierten PyPSA-Netzen hängen Wind, PV, BESS und konventionelle
+    Erzeugung oft am selben Bus. Ohne Versatz liegen die Symbole exakt
+    übereinander und sind nicht unterscheidbar.
+
+    Die Originalkoordinaten bleiben in lon/lat erhalten.
+    Die Anzeige nutzt plot_lon/plot_lat.
+    """
+    out = df.copy()
+
+    if out.empty:
+        out["plot_lon"] = []
+        out["plot_lat"] = []
+        return out
+
+    out["plot_lon"] = pd.to_numeric(out[lon_col], errors="coerce").astype(float)
+    out["plot_lat"] = pd.to_numeric(out[lat_col], errors="coerce").astype(float)
+
+    # Hauptversatz nach Technologie.
+    for typ, (dx, dy) in MARKER_OFFSET_DIRECTIONS.items():
+        mask = out[typ_col] == typ
+        if not bool(mask.any()):
+            continue
+
+        lat_rad = np.deg2rad(out.loc[mask, lat_col].astype(float))
+        # Längengrade werden in Deutschland nach Norden enger; daher cos(lat)-Korrektur.
+        lon_scale = np.maximum(np.cos(lat_rad), 0.35)
+
+        out.loc[mask, "plot_lon"] = (
+            out.loc[mask, lon_col].astype(float) + dx * offset_deg / lon_scale
+        )
+        out.loc[mask, "plot_lat"] = (
+            out.loc[mask, lat_col].astype(float) + dy * offset_deg
+        )
+
+    # Falls mehrere Marker desselben Typs am selben Bus hängen, leicht zusätzlich auffächern.
+    if bus_col in out.columns:
+        grouped = out.groupby([bus_col, typ_col], sort=False)
+        for _, idx in grouped.groups.items():
+            idx = list(idx)
+            if len(idx) <= 1:
+                continue
+
+            angles = np.linspace(0.0, 2.0 * np.pi, len(idx), endpoint=False)
+            lat_rad = np.deg2rad(out.loc[idx, lat_col].astype(float))
+            lon_scale = np.maximum(np.cos(lat_rad), 0.35)
+
+            out.loc[idx, "plot_lon"] = (
+                out.loc[idx, "plot_lon"].to_numpy()
+                + intra_type_spread_deg * np.cos(angles) / lon_scale
+            )
+            out.loc[idx, "plot_lat"] = (
+                out.loc[idx, "plot_lat"].to_numpy()
+                + intra_type_spread_deg * np.sin(angles)
+            )
+
+    return out
+
+
 def build_map(
     generators: pd.DataFrame,
     consumers: pd.DataFrame,
@@ -619,14 +701,22 @@ def build_map(
 
         bus_values = sub["Bus"] if "Bus" in sub.columns else pd.Series(["-"] * len(sub))
 
+        sub = apply_marker_offsets(sub)
+
         fig.add_trace(go.Scattergeo(
-            lon=sub["lon"],
-            lat=sub["lat"],
+            lon=sub["plot_lon"],
+            lat=sub["plot_lat"],
             text=[
                 f"<b>{n}</b><br>Bus: {bus}<br>Typ: {typ}<br>"
-                f"Aktuell: {a:.2f} GW<br>Installiert/Referenz: {i:.2f} GW"
-                for n, bus, a, i in zip(
-                    sub["Name"], bus_values, sub["Aktuell_GW"], sub["Installiert_GW"]
+                f"Aktuell: {a:.2f} GW<br>Installiert/Referenz: {i:.2f} GW<br>"
+                f"Originalposition: {lat:.3f}, {lon:.3f}"
+                for n, bus, a, i, lat, lon in zip(
+                    sub["Name"],
+                    bus_values,
+                    sub["Aktuell_GW"],
+                    sub["Installiert_GW"],
+                    sub["lat"],
+                    sub["lon"],
                 )
             ],
             hoverinfo="text",
