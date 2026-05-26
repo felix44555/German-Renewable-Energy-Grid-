@@ -29,14 +29,14 @@ NETWORK_FILE = BASE_DIR / "simplified_germany_8node.nc"
 HOURS = np.arange(24)
 
 # Fallback-Werte, falls die .nc-Datei keine brauchbaren Kapazitäten enthält.
-FALLBACK_REFS = {
-    "wind_gw": 70.0,
-    "pv_gw": 90.0,
-    "konv_gw": 80.0,
-    "bess_gw": 12.0,
-    "bess_gwh": 17.0,
-    "load_mean_gw": 60.0,
-}
+# FALLBACK_REFS = {
+#     "wind_gw": 70.0,
+#     "pv_gw": 90.0,
+#     "konv_gw": 80.0,
+#     "bess_gw": 12.0,
+#     "bess_gwh": 17.0,
+#     "load_mean_gw": 60.0,
+# }
 
 
 # =============================================================================
@@ -267,7 +267,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     if df.empty:
-        return pd.DataFrame(columns=["Name", "Bus", "Typ", "lat", "lon", "p_nom_MW", "Anteil"])
+        return pd.DataFrame(columns=["Name", "Bus", "Typ", "lat", "lon", "Anteil"])
 
     df["Anteil"] = 0.0
     for typ in df["Typ"].unique():
@@ -278,7 +278,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
         else:
             df.loc[mask, "Anteil"] = 1.0 / int(mask.sum())
 
-    return df[["Name", "Bus", "Typ", "lat", "lon", "p_nom_MW", "Anteil"]]
+    return df[["Name", "Bus", "Typ", "lat", "lon", "Anteil"]]
 
 
 def get_reference_values(n) -> dict[str, float]:
@@ -534,296 +534,6 @@ TYP_SYMBOLS = {
     "Verbraucher": "star",
 }
 
-# -----------------------------------------------------------------------------
-# Erzeuger-Visualisierung und räumliche Verteilung
-# -----------------------------------------------------------------------------
-def generation_region(row: pd.Series) -> str:
-    """
-    Grobe didaktische Region für Erzeuger.
-
-    Ziel:
-    - sichtbar machen, ob eine Technologie räumlich konzentriert oder verteilt ist
-    - Wind-Offshore/Nordsee und PV-Süd-Schwerpunkt intuitiv markieren
-    """
-    name = str(row.get("Name", "")).lower()
-    typ = str(row.get("Typ", ""))
-    lat = float(row.get("lat", np.nan))
-    lon = float(row.get("lon", np.nan))
-
-    if typ == "Wind" and any(x in name for x in ("offshore", "nordsee", "north sea", "sea")):
-        return "Nordsee/Offshore"
-
-    if np.isfinite(lat):
-        if lat >= 53.4:
-            return "Nord"
-        if lat >= 51.2:
-            return "Mitte/Ost"
-        if lat >= 49.5:
-            return "Mitte/West"
-        return "Süd"
-
-    if np.isfinite(lon) and lon >= 11.5:
-        return "Ost"
-
-    return "unbekannt"
-
-
-def generator_capacity_gw_by_row(row: pd.Series, refs: dict[str, float]) -> float:
-    """
-    Gibt die Standortleistung in GW zurück.
-
-    Bevorzugt p_nom_MW aus PyPSA. Falls diese fehlt oder 0 ist, wird die
-    Technologie-Referenz über den Anteil verteilt.
-    """
-    try:
-        p_nom_mw = float(row.get("p_nom_MW", 0.0))
-    except (TypeError, ValueError):
-        p_nom_mw = 0.0
-
-    if np.isfinite(p_nom_mw) and p_nom_mw > 0:
-        return p_nom_mw / 1000.0
-
-    typ = str(row.get("Typ", ""))
-    ref_key = {
-        "Wind": "wind_gw",
-        "PV": "pv_gw",
-        "BESS": "bess_gw",
-        "Konventionell": "konv_gw",
-    }.get(typ)
-
-    if ref_key is None:
-        return 0.0
-
-    return float(row.get("Anteil", 0.0)) * float(refs.get(ref_key, 0.0))
-
-
-def make_generator_display_df(
-    generators: pd.DataFrame,
-    consumers: pd.DataFrame,
-    hour_row: pd.Series,
-    wind_scale: float,
-    pv_scale: float,
-    bess_scale: float,
-    refs: dict[str, float],
-) -> pd.DataFrame:
-    """
-    Erzeugt eine Visualisierungs-Kopie der Generatoren.
-
-    Die echten Bus-Koordinaten bleiben erhalten. Zusätzlich werden display_lat /
-    display_lon erzeugt. Diese Marker sind bewusst leicht vom Bus weg verschoben,
-    damit Erzeuger nicht direkt unter Verbraucher-Knoten verschwinden.
-
-    Die Verschiebung ist rein grafisch und verändert keine Berechnung.
-    """
-    if generators.empty:
-        return generators.copy()
-
-    out = generators.copy()
-
-    typ_to_value = {
-        "Wind": float(hour_row.get("Wind_GW", 0.0)),
-        "PV": float(hour_row.get("PV_GW", 0.0)),
-        "BESS": float(hour_row.get("BESS_GW", 0.0)),
-        "Konventionell": float(hour_row.get("Konv_GW", 0.0)),
-    }
-    typ_to_inst = {
-        "Wind": refs["wind_gw"] * wind_scale,
-        "PV": refs["pv_gw"] * pv_scale,
-        "BESS": refs["bess_gw"] * bess_scale,
-        "Konventionell": refs["konv_gw"],
-    }
-
-    out["Aktuell_GW"] = [
-        float(row["Anteil"]) * typ_to_value.get(str(row["Typ"]), 0.0)
-        for _, row in out.iterrows()
-    ]
-    out["Installiert_GW"] = [
-        float(row["Anteil"]) * typ_to_inst.get(str(row["Typ"]), 0.0)
-        for _, row in out.iterrows()
-    ]
-    out["Kapazitaet_Basis_GW"] = [
-        generator_capacity_gw_by_row(row, refs) for _, row in out.iterrows()
-    ]
-    out["Region"] = out.apply(generation_region, axis=1)
-
-    # Reihenfolge innerhalb gleicher Busse und gleicher Technologie, damit sich
-    # Marker nicht exakt überdecken.
-    if "Bus" in out.columns:
-        group_cols = ["Bus", "Typ"]
-    else:
-        group_cols = ["lat", "lon", "Typ"]
-
-    out["_local_idx"] = out.groupby(group_cols).cumcount()
-    out["_local_count"] = out.groupby(group_cols)["Name"].transform("count")
-
-    display_lat = []
-    display_lon = []
-
-    for _, row in out.iterrows():
-        typ = str(row["Typ"])
-        lat = float(row["lat"])
-        lon = float(row["lon"])
-        idx = int(row["_local_idx"])
-        count = max(int(row["_local_count"]), 1)
-        name = str(row.get("Name", "")).lower()
-
-        # Grundversatz je Technologie: Erzeuger liegen dadurch sichtbar neben,
-        # nicht unter Verbraucher-Knoten.
-        if typ == "Wind":
-            base_dlat, base_dlon = 0.22, -0.18
-            radius = 0.10
-            # Offshore-/Nordwind grafisch Richtung Nordsee schieben.
-            if any(x in name for x in ("offshore", "nordsee", "north sea", "sea")) or lat >= 53.2:
-                base_dlat += 0.20
-                base_dlon -= 0.22
-        elif typ == "PV":
-            base_dlat, base_dlon = -0.20, 0.20
-            radius = 0.09
-            # PV-Schwerpunkt im Süden optisch deutlicher nach Süden versetzen.
-            if lat <= 50.2:
-                base_dlat -= 0.12
-        elif typ == "BESS":
-            base_dlat, base_dlon = 0.12, 0.24
-            radius = 0.08
-        else:
-            base_dlat, base_dlon = -0.12, -0.24
-            radius = 0.08
-
-        angle = 2.0 * np.pi * idx / max(count, 3)
-        display_lat.append(lat + base_dlat + radius * np.sin(angle))
-        display_lon.append(lon + base_dlon + radius * np.cos(angle))
-
-    out["display_lat"] = display_lat
-    out["display_lon"] = display_lon
-
-    return out.drop(columns=["_local_idx", "_local_count"], errors="ignore")
-
-
-def build_generation_distribution_chart(
-    generators: pd.DataFrame,
-    refs: dict[str, float],
-) -> go.Figure:
-    """
-    Zeigt installierte Erzeugungsleistung nach Technologie und Region.
-
-    Damit wird sichtbar:
-    - Wind konzentriert sich typischerweise stärker im Norden / offshore
-    - PV konzentriert sich typischerweise stärker im Süden
-    - dezentrale Verteilung zeigt sich über mehrere Regionen
-    """
-    fig = go.Figure()
-
-    if generators.empty:
-        fig.update_layout(title="Keine Erzeugerdaten verfügbar", height=340)
-        return fig
-
-    df = generators.copy()
-    df["Region"] = df.apply(generation_region, axis=1)
-    df["Kapazitaet_GW"] = [
-        generator_capacity_gw_by_row(row, refs) for _, row in df.iterrows()
-    ]
-
-    region_order = ["Nordsee/Offshore", "Nord", "Mitte/Ost", "Mitte/West", "Süd", "unbekannt"]
-    tech_order = ["Wind", "PV", "BESS", "Konventionell"]
-
-    grouped = (
-        df.groupby(["Region", "Typ"], as_index=False)["Kapazitaet_GW"]
-        .sum()
-    )
-
-    for typ in tech_order:
-        sub = grouped[grouped["Typ"] == typ]
-        y_values = []
-        for region in region_order:
-            val = sub.loc[sub["Region"] == region, "Kapazitaet_GW"].sum()
-            y_values.append(float(val))
-
-        if max(y_values, default=0.0) <= 0:
-            continue
-
-        fig.add_trace(go.Bar(
-            x=region_order,
-            y=y_values,
-            name=typ,
-            marker_color=TYP_COLORS.get(typ, None),
-            hovertemplate="%{x}<br>" + typ + ": %{y:.2f} GW<extra></extra>",
-        ))
-
-    fig.update_layout(
-        barmode="stack",
-        title="Räumliche Erzeugerstruktur: installierte Leistung nach Region",
-        xaxis_title="Region",
-        yaxis_title="Installierte Leistung [GW]",
-        height=420,
-        hovermode="x unified",
-        margin=dict(l=40, r=20, t=55, b=80),
-    )
-    return fig
-
-
-def build_decentralization_table(
-    generators: pd.DataFrame,
-    refs: dict[str, float],
-) -> pd.DataFrame:
-    """
-    Kompakte Kennzahlen zur räumlichen Konzentration.
-
-    HHI nahe 1:
-        stark konzentriert, wenige Standorte dominieren.
-
-    HHI niedrig:
-        dezentraler verteilt.
-    """
-    if generators.empty:
-        return pd.DataFrame(columns=[
-            "Technologie", "Standorte", "installiert_GW", "größter_Standort_%",
-            "HHI", "Einordnung", "Schwerpunkt"
-        ])
-
-    df = generators.copy()
-    df["Region"] = df.apply(generation_region, axis=1)
-    df["Kapazitaet_GW"] = [
-        generator_capacity_gw_by_row(row, refs) for _, row in df.iterrows()
-    ]
-
-    rows: list[dict[str, object]] = []
-
-    for typ in ["Wind", "PV", "BESS", "Konventionell"]:
-        sub = df[df["Typ"] == typ].copy()
-        if sub.empty:
-            continue
-
-        total = float(sub["Kapazitaet_GW"].sum())
-        if total <= 0:
-            shares = np.ones(len(sub)) / max(len(sub), 1)
-        else:
-            shares = sub["Kapazitaet_GW"].to_numpy(dtype=float) / total
-
-        hhi = float(np.sum(shares**2))
-        max_share = float(np.max(shares) * 100.0) if len(shares) else 0.0
-
-        if hhi < 0.25:
-            interpretation = "eher dezentral"
-        elif hhi < 0.50:
-            interpretation = "teilweise konzentriert"
-        else:
-            interpretation = "stark konzentriert"
-
-        region_sum = sub.groupby("Region")["Kapazitaet_GW"].sum()
-        Schwerpunkt = str(region_sum.idxmax()) if not region_sum.empty else "-"
-
-        rows.append({
-            "Technologie": typ,
-            "Standorte": int(len(sub)),
-            "installiert_GW": round(total, 2),
-            "größter_Standort_%": round(max_share, 1),
-            "HHI": round(hhi, 3),
-            "Einordnung": interpretation,
-            "Schwerpunkt": Schwerpunkt,
-        })
-
-    return pd.DataFrame(rows)
-
 
 def build_map(
     generators: pd.DataFrame,
@@ -835,16 +545,7 @@ def build_map(
     bess_scale: float,
     refs: dict[str, float],
 ) -> go.Figure:
-    """
-    Karte mit aktueller Stunde.
-
-    Darstellungsprinzip:
-    - Leitungen unten
-    - Verbraucher-/Bus-Knoten halbtransparent darunter
-    - Erzeuger bewusst versetzt und größer darüber
-
-    Die Versetzung der Erzeugermarker ist rein grafisch.
-    """
+    """Karte mit aktueller Stunde."""
     fig = go.Figure()
 
     total_gen = (
@@ -856,9 +557,6 @@ def build_map(
     load = float(hour_row["Last_GW"])
     fallback_factor = min(1.5, max(0.2, float(total_gen) / max(load, 1e-3)))
 
-    # -----------------------------------------------------------------
-    # Leitungen
-    # -----------------------------------------------------------------
     if not lines.empty:
         for _, ln in lines.iterrows():
             if "Auslastung_pct" in lines.columns:
@@ -884,7 +582,7 @@ def build_map(
                 lat=[ln["lat0"], ln["lat1"]],
                 mode="lines",
                 line=dict(width=2 + 4 * min(util, 1.5), color=color),
-                opacity=0.72,
+                opacity=0.78,
                 hoverinfo="text",
                 text=(
                     f"{ln['Name']} ({ln['von']} -> {ln['nach']})<br>"
@@ -896,124 +594,73 @@ def build_map(
                 showlegend=False,
             ))
 
-    # -----------------------------------------------------------------
-    # Verbraucher-/Bus-Knoten zuerst, damit Erzeuger darüber liegen
-    # -----------------------------------------------------------------
-    if not consumers.empty:
-        cluster_load = consumers["Anteil"] * float(hour_row["Last_GW"])
-        fig.add_trace(go.Scattergeo(
-            lon=consumers["lon"],
-            lat=consumers["lat"],
-            text=[
-                f"<b>{c}</b><br>Bus: {bus}<br>Last aktuell: {l:.2f} GW"
-                for c, bus, l in zip(
-                    consumers["Cluster"],
-                    consumers["Bus"] if "Bus" in consumers.columns else consumers["Cluster"],
-                    cluster_load,
-                )
-            ],
-            hoverinfo="text",
-            mode="markers+text",
-            name="Verbraucher / Bus",
-            textposition="bottom center",
-            textfont=dict(size=10, color="rgba(80,80,80,0.85)"),
-            marker=dict(
-                size=10 + cluster_load * 0.8,
-                color=TYP_COLORS["Verbraucher"],
-                symbol=TYP_SYMBOLS["Verbraucher"],
-                line=dict(width=1.0, color="black"),
-                opacity=0.48,
-            ),
-        ))
-
-    # -----------------------------------------------------------------
-    # Erzeuger sichtbar versetzt und oben
-    # -----------------------------------------------------------------
-    display_generators = make_generator_display_df(
-        generators=generators,
-        consumers=consumers,
-        hour_row=hour_row,
-        wind_scale=wind_scale,
-        pv_scale=pv_scale,
-        bess_scale=bess_scale,
-        refs=refs,
-    )
+    typ_to_value = {
+        "Wind": float(hour_row["Wind_GW"]),
+        "PV": float(hour_row["PV_GW"]),
+        "BESS": float(hour_row["BESS_GW"]),
+        "Konventionell": float(hour_row["Konv_GW"]),
+    }
+    typ_to_inst = {
+        "Wind": refs["wind_gw"] * wind_scale,
+        "PV": refs["pv_gw"] * pv_scale,
+        "BESS": refs["bess_gw"] * bess_scale,
+        "Konventionell": refs["konv_gw"],
+    }
 
     for typ in ["Wind", "PV", "BESS", "Konventionell"]:
-        sub = display_generators[display_generators["Typ"] == typ].copy()
+        sub = generators[generators["Typ"] == typ].copy()
         if sub.empty:
             continue
 
+        akt_total = typ_to_value[typ]
+        inst_total = typ_to_inst[typ]
+        sub["Aktuell_GW"] = sub["Anteil"] * akt_total
+        sub["Installiert_GW"] = sub["Anteil"] * inst_total
+
         bus_values = sub["Bus"] if "Bus" in sub.columns else pd.Series(["-"] * len(sub))
 
-        if typ == "Wind":
-            symbol = "triangle-up"
-        elif typ == "PV":
-            symbol = "square"
-        elif typ == "BESS":
-            symbol = "diamond"
-        else:
-            symbol = "circle"
-
-        # Sichtbare Größe: Momentanleistung + installierte Leistung.
-        marker_size = (
-            16
-            + 3.5 * np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"].to_numpy(dtype=float)), 0.0))
-            + 1.5 * np.sqrt(np.maximum(sub["Kapazitaet_Basis_GW"].to_numpy(dtype=float), 0.0))
-        )
-
         fig.add_trace(go.Scattergeo(
-            lon=sub["display_lon"],
-            lat=sub["display_lat"],
-            customdata=np.stack([sub["lon"], sub["lat"]], axis=-1),
+            lon=sub["lon"],
+            lat=sub["lat"],
             text=[
-                f"<b>{n}</b><br>"
-                f"Bus: {bus}<br>"
-                f"Typ: {typ}<br>"
-                f"Region: {region}<br>"
-                f"Marker grafisch versetzt vom Bus<br>"
-                f"Aktuell: {a:.2f} GW<br>"
-                f"Installiert/Referenz: {i:.2f} GW"
-                for n, bus, region, a, i in zip(
-                    sub["Name"],
-                    bus_values,
-                    sub["Region"],
-                    sub["Aktuell_GW"],
-                    sub["Installiert_GW"],
+                f"<b>{n}</b><br>Bus: {bus}<br>Typ: {typ}<br>"
+                f"Aktuell: {a:.2f} GW<br>Installiert/Referenz: {i:.2f} GW"
+                for n, bus, a, i in zip(
+                    sub["Name"], bus_values, sub["Aktuell_GW"], sub["Installiert_GW"]
                 )
             ],
             hoverinfo="text",
             mode="markers",
-            name=f"{typ} Erzeuger",
+            name=typ,
             marker=dict(
-                size=marker_size,
+                size=10 + np.abs(sub["Aktuell_GW"]) * 2.0,
                 color=TYP_COLORS[typ],
-                symbol=symbol,
-                line=dict(width=2.0, color="black"),
-                opacity=0.96,
+                symbol=TYP_SYMBOLS[typ],
+                line=dict(width=1, color="black"),
+                opacity=0.9,
             ),
         ))
 
-        # Dünne Verbindung vom sichtbaren Marker zum echten Bus.
-        for _, row in sub.iterrows():
-            fig.add_trace(go.Scattergeo(
-                lon=[row["lon"], row["display_lon"]],
-                lat=[row["lat"], row["display_lat"]],
-                mode="lines",
-                line=dict(width=1, color="rgba(40,40,40,0.35)", dash="dot"),
-                hoverinfo="skip",
-                showlegend=False,
-            ))
-
-    # Orientierungstexte für räumliches Gefühl
+    cluster_load = consumers["Anteil"] * float(hour_row["Last_GW"])
     fig.add_trace(go.Scattergeo(
-        lon=[7.4, 11.2],
-        lat=[55.25, 48.05],
-        mode="text",
-        text=["Wind-Schwerpunkt: Nord / Offshore", "PV-Schwerpunkt: Süden"],
-        textfont=dict(size=13, color="black"),
-        hoverinfo="skip",
-        showlegend=False,
+        lon=consumers["lon"],
+        lat=consumers["lat"],
+        text=[
+            f"<b>{c}</b><br>Last aktuell: {l:.2f} GW"
+            for c, l in zip(consumers["Cluster"], cluster_load)
+        ],
+        hoverinfo="text",
+        mode="markers+text",
+        name="Verbraucher-Cluster",
+        textposition="top center",
+        textfont=dict(size=11, color="black"),
+        marker=dict(
+            size=14 + cluster_load * 1.2,
+            color=TYP_COLORS["Verbraucher"],
+            symbol=TYP_SYMBOLS["Verbraucher"],
+            line=dict(width=1.2, color="black"),
+            opacity=0.9,
+        ),
     ))
 
     fig.update_geos(
@@ -1026,36 +673,14 @@ def build_map(
         landcolor="rgb(240,240,235)",
         showocean=True,
         oceancolor="rgb(220,235,245)",
-        lataxis_range=[46.8, 56.1],
-        lonaxis_range=[4.7, 16.4],
+        lataxis_range=[47.0, 55.8],
+        lonaxis_range=[5.0, 16.2],
     )
 
     fig.update_layout(
-        height=680,
+        height=620,
         margin=dict(l=0, r=0, t=10, b=0),
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.08,
-            x=0.5,
-            xanchor="center",
-        ),
-        annotations=[
-            dict(
-                text=(
-                    "Hinweis: Erzeuger-Marker sind grafisch vom Bus versetzt, "
-                    "damit sie nicht unter Verbraucher-Knoten liegen."
-                ),
-                x=0.01,
-                y=0.01,
-                xref="paper",
-                yref="paper",
-                showarrow=False,
-                align="left",
-                font=dict(size=11, color="rgba(60,60,60,0.85)"),
-                bgcolor="rgba(255,255,255,0.75)",
-            )
-        ],
+        legend=dict(orientation="h", yanchor="bottom", y=-0.05, x=0.5, xanchor="center"),
     )
     return fig
 
@@ -1372,14 +997,6 @@ def main() -> None:
     )
     st.plotly_chart(fig_map, use_container_width=True)
 
-    st.subheader("Räumliche Erzeugerstruktur")
-    fig_distribution = build_generation_distribution_chart(generators, refs)
-    st.plotly_chart(fig_distribution, use_container_width=True)
-
-    decentralization = build_decentralization_table(generators, refs)
-    if not decentralization.empty:
-        st.dataframe(decentralization, use_container_width=True, hide_index=True)
-
     st.subheader("Leitungsauslastung")
     fig_line = build_line_utilization_chart(line_status)
     st.plotly_chart(fig_line, use_container_width=True)
@@ -1406,16 +1023,7 @@ def main() -> None:
         st.dataframe(consumers.round(4), use_container_width=True)
 
     with st.expander("PyPSA-Erzeuger"):
-        gen_display = make_generator_display_df(
-            generators=generators,
-            consumers=consumers,
-            hour_row=hour_row,
-            wind_scale=wind_scale,
-            pv_scale=pv_scale,
-            bess_scale=bess_scale,
-            refs=refs,
-        )
-        st.dataframe(gen_display.round(4), use_container_width=True)
+        st.dataframe(generators.round(4), use_container_width=True)
 
     with st.expander("PyPSA-Leitungen und Links mit Auslastung"):
         st.dataframe(line_status.round(4), use_container_width=True)
