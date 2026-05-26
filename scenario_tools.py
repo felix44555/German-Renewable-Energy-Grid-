@@ -1,396 +1,192 @@
 from __future__ import annotations
 
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
 
-SCENARIOS: dict[str, dict[str, object]] = {
-    "training": {
-        "name": "Freies Training",
-        "task": (
-            "Keine feste Störung. Ziel: Netzbilanz nahe 0 GW halten und "
-            "Leitungsüberlastungen vermeiden."
-        ),
-        "defaults": {
-            "wind_pct": 100,
-            "pv_pct": 100,
-            "bess_pct": 100,
-            "load_pct": 100,
-            "soc_pct": 50,
-            "hour": 12,
-            "line_capacity_pct": 100,
-            "ee_curtail_pct": 0,
-        },
-        "wind_profile_factor": 1.0,
-        "pv_profile_factor": 1.0,
-        "load_event_boost": 0.0,
-        "load_event_hour": 19,
-        "load_event_width": 4.0,
-        "line_stress_factor": 1.0,
-        "max_abs_balance_gw": 1.0,
-        "max_curtailment_gw": 1.0,
-        "max_line_util_pct": 100.0,
-    },
-    "unterdeckung": {
-        "name": "Szenario 1: Dunkelflaute + Abendspitze",
-        "task": (
-            "Es herrscht wenig Wind und PV, gleichzeitig steigt abends die Last. "
-            "Der Nutzer muss Unterdeckung vermeiden."
-        ),
-        "defaults": {
-            "wind_pct": 35,
-            "pv_pct": 50,
-            "bess_pct": 50,
-            "load_pct": 160,
-            "soc_pct": 20,
-            "hour": 19,
-            "line_capacity_pct": 100,
-            "ee_curtail_pct": 0,
-        },
-        "wind_profile_factor": 0.35,
-        "pv_profile_factor": 0.75,
-        "load_event_boost": 0.18,
-        "load_event_hour": 19,
-        "load_event_width": 3.0,
-        "line_stress_factor": 1.0,
-        "max_abs_balance_gw": 1.0,
-        "max_curtailment_gw": 1.0,
-        "max_line_util_pct": 100.0,
-    },
-    "ueberschuss": {
-        "name": "Szenario 2: PV-Überschuss am Mittag",
-        "task": (
-            "Starke PV-Einspeisung trifft auf geringe Last. "
-            "Der Nutzer muss Überdeckung und unnötige Abregelung begrenzen."
-        ),
-        "defaults": {
-            "wind_pct": 120,
-            "pv_pct": 280,
-            "bess_pct": 40,
-            "load_pct": 65,
-            "soc_pct": 85,
-            "hour": 13,
-            "line_capacity_pct": 100,
-            "ee_curtail_pct": 0,
-        },
-        "wind_profile_factor": 1.0,
-        "pv_profile_factor": 1.20,
-        "load_event_boost": -0.12,
-        "load_event_hour": 13,
-        "load_event_width": 4.0,
-        "line_stress_factor": 1.1,
-        "max_abs_balance_gw": 1.0,
-        "max_curtailment_gw": 1.0,
-        "max_line_util_pct": 100.0,
-    },
-    "leitung": {
-        "name": "Szenario 3: Nord-Süd-Engpass",
-        "task": (
-            "Hohe Windleistung im Norden/Osten und hohe Last im Süden/Westen "
-            "belasten die Übertragungsleitungen. Der Nutzer muss Leitungsüberlastung vermeiden."
-        ),
-        "defaults": {
-            "wind_pct": 260,
-            "pv_pct": 80,
-            "bess_pct": 60,
-            "load_pct": 135,
-            "soc_pct": 45,
-            "hour": 18,
-            "line_capacity_pct": 65,
-            "ee_curtail_pct": 0,
-        },
-        "wind_profile_factor": 1.35,
-        "pv_profile_factor": 0.85,
-        "load_event_boost": 0.08,
-        "load_event_hour": 18,
-        "load_event_width": 5.0,
-        "line_stress_factor": 1.85,
-        "max_abs_balance_gw": 1.0,
-        "max_curtailment_gw": 2.0,
-        "max_line_util_pct": 100.0,
-    },
-}
+def _read_smard_csv(path: str | Path) -> pd.DataFrame:
+    """Read a SMARD CSV with German decimal format and semicolon separator."""
+    df = pd.read_csv(
+        path,
+        sep=";",
+        decimal=",",
+        thousands=".",
+        na_values=["-", "", " "],
+        encoding="utf-8-sig",
+    )
+    df["timestamp"] = pd.to_datetime(df["Datum von"], format="%d.%m.%Y %H:%M")
+    return df
 
 
-def apply_scenario_to_profiles(
-    df: pd.DataFrame,
-    scenario_key: str,
-    ee_curtail_pct: float = 0.0,
+def _sum_existing(df: pd.DataFrame, cols: list[str]) -> pd.Series:
+    existing = [c for c in cols if c in df.columns]
+    if not existing:
+        return pd.Series(0.0, index=df.index)
+    return df[existing].apply(pd.to_numeric, errors="coerce").fillna(0.0).sum(axis=1)
+
+
+def load_smard_dispatch_profile(
+    generation_csv: str | Path,
+    load_csv: str | Path,
+    installed_capacity_csv: str | Path | None = None,
+    date: str | None = None,
+    pct_basis: str = "total_installed",
+    load_pct_reference: str = "mean",
 ) -> pd.DataFrame:
     """
-    Verändert die 24-h-Profile durch eine didaktische Störung.
+    Convert SMARD quarter-hour CSV files into the simplified 24 h dispatch profile.
 
-    ee_curtail_pct:
-    - 0 %   = keine vorsorgliche EE-Abregelung
-    - 100 % = Wind und PV vollständig abgeregelt
+    Output columns fit the existing scenario_tools code:
+        Stunde, Wind_GW, PV_GW, Konv_GW, Last_GW, Netzbilanz_GW, Curtailment_GW,
+        Wind_pct, PV_pct, Konv_pct, Load_pct
+
+    Interpretation:
+    - pct_basis="total_installed": all percentages are normalised to the same denominator:
+      total installed generation capacity = Wind + PV + Konv capacity. This includes Load_pct.
+    - pct_basis="own_capacity": Wind/PV/Konv are normalised to their own installed capacity.
+      Load_pct is then normalised to the chosen daily load reference.
+    - Konv_GW contains all non-wind/PV generation available in the SMARD generation file.
+      This keeps the simplified model balanced better because biomass, hydro etc. are not
+      separate technologies in the GUI.
     """
-    sc = SCENARIOS.get(scenario_key, SCENARIOS["training"])
-    out = df.copy()
+    gen = _read_smard_csv(generation_csv)
+    load = _read_smard_csv(load_csv)
 
-    out["Wind_GW"] *= float(sc.get("wind_profile_factor", 1.0))
-    out["PV_GW"] *= float(sc.get("pv_profile_factor", 1.0))
+    if date is not None:
+        day = pd.to_datetime(date).date()
+        gen = gen[gen["timestamp"].dt.date == day].copy()
+        load = load[load["timestamp"].dt.date == day].copy()
 
-    boost = float(sc.get("load_event_boost", 0.0))
-    if abs(boost) > 1e-12:
-        h0 = float(sc.get("load_event_hour", 19))
-        width = max(float(sc.get("load_event_width", 4.0)), 0.5)
-        h = out["Stunde"].astype(float).to_numpy()
-        shape = np.exp(-((h - h0) ** 2) / width)
-        out["Last_GW"] *= 1.0 + boost * shape
+    gen_cols_wind = [
+        "Wind Offshore [MWh] Originalauflösungen",
+        "Wind Onshore [MWh] Originalauflösungen",
+    ]
+    gen_cols_pv = ["Photovoltaik [MWh] Originalauflösungen"]
+    gen_cols_all_non_wind_pv = [
+        "Biomasse [MWh] Originalauflösungen",
+        "Wasserkraft [MWh] Originalauflösungen",
+        "Sonstige Erneuerbare [MWh] Originalauflösungen",
+        "Kernenergie [MWh] Originalauflösungen",
+        "Braunkohle [MWh] Originalauflösungen",
+        "Steinkohle [MWh] Originalauflösungen",
+        "Erdgas [MWh] Originalauflösungen",
+        "Pumpspeicher [MWh] Originalauflösungen",
+        "Sonstige Konventionelle [MWh] Originalauflösungen",
+    ]
 
-    curtail_factor = 1.0 - np.clip(float(ee_curtail_pct), 0.0, 100.0) / 100.0
-    out["Wind_GW"] *= curtail_factor
-    out["PV_GW"] *= curtail_factor
+    # Quarter-hour values are energy in MWh. Summing four quarters gives hourly MWh,
+    # numerically equal to average MW over that hour.
+    g = pd.DataFrame(
+        {
+            "timestamp": gen["timestamp"],
+            "Wind_MWh": _sum_existing(gen, gen_cols_wind),
+            "PV_MWh": _sum_existing(gen, gen_cols_pv),
+            "Konv_MWh": _sum_existing(gen, gen_cols_all_non_wind_pv),
+        }
+    )
+    l = pd.DataFrame(
+        {
+            "timestamp": load["timestamp"],
+            "Last_MWh": pd.to_numeric(
+                load["Netzlast [MWh] Originalauflösungen"], errors="coerce"
+            ).fillna(0.0),
+        }
+    )
 
-    return out
+    hourly_gen = g.set_index("timestamp").resample("1h").sum()
+    hourly_load = l.set_index("timestamp").resample("1h").sum()
+    hourly = hourly_gen.join(hourly_load, how="inner")
 
+    out = pd.DataFrame(index=hourly.index)
+    out["Stunde"] = out.index.hour
+    out["Wind_GW"] = hourly["Wind_MWh"] / 1000.0
+    out["PV_GW"] = hourly["PV_MWh"] / 1000.0
+    out["Konv_GW"] = hourly["Konv_MWh"] / 1000.0
+    out["Last_GW"] = hourly["Last_MWh"] / 1000.0
+    out["BESS_GW"] = 0.0
+    out["Curtailment_GW"] = 0.0
+    out["Netzbilanz_GW"] = out["Wind_GW"] + out["PV_GW"] + out["Konv_GW"] + out["BESS_GW"] - out["Last_GW"]
 
-def _nearest_consumer_bus(lat: float, lon: float, consumers: pd.DataFrame) -> str:
-    """
-    Ordnet einen Standort dem nächsten Verbraucher-/Bus-Knoten zu.
-    Nur Proxy-Logik, kein elektrischer Lastfluss.
-    """
-    if consumers.empty:
-        return ""
+    if installed_capacity_csv is not None:
+        cap = _read_smard_csv(installed_capacity_csv)
+        if date is not None:
+            cap = cap[cap["timestamp"].dt.date == pd.to_datetime(date).date()].copy()
 
-    lat_arr = pd.to_numeric(consumers["lat"], errors="coerce").to_numpy(dtype=float)
-    lon_arr = pd.to_numeric(consumers["lon"], errors="coerce").to_numpy(dtype=float)
+        wind_cap_mw = _sum_existing(
+            cap,
+            [
+                "Wind Offshore [MW] Berechnete Auflösungen",
+                "Wind Onshore [MW] Berechnete Auflösungen",
+            ],
+        ).replace(0.0, np.nan)
+        pv_cap_mw = _sum_existing(cap, ["Photovoltaik [MW] Berechnete Auflösungen"]).replace(0.0, np.nan)
+        konv_cap_mw = _sum_existing(
+            cap,
+            [
+                "Biomasse [MW] Berechnete Auflösungen",
+                "Wasserkraft [MW] Berechnete Auflösungen",
+                "Sonstige Erneuerbare [MW] Berechnete Auflösungen",
+                "Kernenergie [MW] Berechnete Auflösungen",
+                "Braunkohle [MW] Berechnete Auflösungen",
+                "Steinkohle [MW] Berechnete Auflösungen",
+                "Erdgas [MW] Berechnete Auflösungen",
+                "Pumpspeicher [MW] Berechnete Auflösungen",
+                "Sonstige Konventionelle [MW] Berechnete Auflösungen",
+            ],
+        ).replace(0.0, np.nan)
 
-    valid = np.isfinite(lat_arr) & np.isfinite(lon_arr)
-    if not valid.any():
-        if "Bus" in consumers.columns:
-            return str(consumers.iloc[0]["Bus"])
-        return str(consumers.iloc[0]["Cluster"])
+        c = pd.DataFrame(
+            {
+                "timestamp": cap["timestamp"],
+                "Wind_cap_MW": wind_cap_mw,
+                "PV_cap_MW": pv_cap_mw,
+                "Konv_cap_MW": konv_cap_mw,
+            }
+        ).set_index("timestamp").resample("1h").mean()
 
-    d2 = (lat_arr - float(lat)) ** 2 + ((lon_arr - float(lon)) * 0.65) ** 2
-    d2[~valid] = np.inf
-    idx = int(np.argmin(d2))
-
-    if "Bus" in consumers.columns:
-        return str(consumers.iloc[idx]["Bus"])
-    return str(consumers.iloc[idx]["Cluster"])
-
-
-def compute_bus_balance_proxy(
-    generators: pd.DataFrame,
-    consumers: pd.DataFrame,
-    hour_row: pd.Series,
-) -> pd.Series:
-    """
-    Näherung der Knoteneinspeisung in GW.
-
-    Positiv:
-        Einspeisung überwiegt.
-
-    Negativ:
-        Last überwiegt.
-
-    Hinweis:
-        Dies ist ein didaktischer Proxy. Es wird kein AC/DC-Lastfluss gerechnet.
-    """
-    if consumers.empty:
-        return pd.Series(dtype=float)
-
-    bus_col = "Bus" if "Bus" in consumers.columns else "Cluster"
-    buses = consumers[bus_col].astype(str).tolist()
-    balance = pd.Series(0.0, index=buses, dtype=float)
-
-    # Last je Bus abziehen
-    for _, row in consumers.iterrows():
-        bus = str(row[bus_col])
-        balance.loc[bus] -= float(row["Anteil"]) * float(hour_row["Last_GW"])
-
-    # Erzeugung je Typ auf Standorte verteilen
-    type_power = {
-        "Wind": float(hour_row.get("Wind_GW", 0.0)),
-        "PV": float(hour_row.get("PV_GW", 0.0)),
-        "Konventionell": float(hour_row.get("Konv_GW", 0.0)),
-        # BESS_GW > 0: Entladung; BESS_GW < 0: Ladung als zusätzliche Last
-        "BESS": float(hour_row.get("BESS_GW", 0.0)),
-    }
-
-    if generators.empty:
-        return balance
-
-    for _, row in generators.iterrows():
-        typ = str(row["Typ"])
-        if typ not in type_power:
-            continue
-
-        if "Bus" in generators.columns and pd.notna(row.get("Bus", None)):
-            bus = str(row["Bus"])
-        else:
-            bus = _nearest_consumer_bus(float(row["lat"]), float(row["lon"]), consumers)
-
-        if bus not in balance.index:
-            bus = _nearest_consumer_bus(float(row["lat"]), float(row["lon"]), consumers)
-
-        if bus in balance.index:
-            balance.loc[bus] += float(row["Anteil"]) * type_power[typ]
-
-    return balance
-
-
-def compute_line_status_proxy(
-    generators: pd.DataFrame,
-    consumers: pd.DataFrame,
-    lines: pd.DataFrame,
-    hour_row: pd.Series,
-    line_capacity_pct: float = 100.0,
-    line_stress_factor: float = 1.0,
-) -> pd.DataFrame:
-    """
-    Erzeugt eine didaktische Leitungsauslastung.
-
-    Eingang:
-        generators:
-            App-DataFrame der Generatoren.
-
-        consumers:
-            App-DataFrame der Verbraucher-/Bus-Knoten.
-
-        lines:
-            App-DataFrame der Leitungen/Links.
-
-        hour_row:
-            Eine Zeile aus dem Dispatch-DataFrame für die aktuelle Stunde.
-
-        line_capacity_pct:
-            Nutzermaßnahme Netzausbau. 100 = Basis, 200 = doppelte Kapazität.
-
-        line_stress_factor:
-            Szenariofaktor für stärkere/schwächere Leitungsbelastung.
-
-    Wichtig:
-        Das ist KEIN echter Lastfluss.
-        Es ist ein Proxy aus Knoteneinspeisung, lokaler Leistungsdifferenz
-        und Leitungskapazität.
-    """
-    if lines.empty:
-        return lines.copy()
-
-    out = lines.copy()
-    balance = compute_bus_balance_proxy(generators, consumers, hour_row)
-
-    cap_scale = max(float(line_capacity_pct), 1.0) / 100.0
-    stress = max(float(line_stress_factor), 0.1)
-
-    positive_caps = pd.to_numeric(out["Kapazitaet_GW"], errors="coerce")
-    positive_caps = positive_caps[positive_caps > 0]
-    fallback_cap = float(positive_caps.median()) if not positive_caps.empty else 1.0
-    fallback_cap = max(fallback_cap, 0.5)
-
-    max_lat_span = max(float((out["lat0"] - out["lat1"]).abs().max()), 0.5)
-    system_imbalance = abs(float(hour_row.get("Netzbilanz_GW", 0.0)))
-
-    flows: list[float] = []
-    utils: list[float] = []
-    overloads: list[bool] = []
-
-    for _, ln in out.iterrows():
-        bus0 = str(ln["von"])
-        bus1 = str(ln["nach"])
-
-        # Falls von/nach nicht exakt Bus-Namen sind, geografisch auf nächsten Bus mappen.
-        if bus0 not in balance.index:
-            bus0 = _nearest_consumer_bus(float(ln["lat0"]), float(ln["lon0"]), consumers)
-        if bus1 not in balance.index:
-            bus1 = _nearest_consumer_bus(float(ln["lat1"]), float(ln["lon1"]), consumers)
-
-        p0 = float(balance.get(bus0, 0.0))
-        p1 = float(balance.get(bus1, 0.0))
-
-        cap = float(ln.get("Kapazitaet_GW", 0.0))
-        if not np.isfinite(cap) or cap <= 0:
-            cap = fallback_cap
-        cap *= cap_scale
-
-        local_pressure = abs(p0 - p1)
-        ns_factor = 1.0 + 0.65 * abs(float(ln["lat0"]) - float(ln["lat1"])) / max_lat_span
-
-        # Skalierung absichtlich didaktisch:
-        # lokale Erzeugungs-/Lastdifferenz dominiert, Systembilanz wirkt schwächer.
-        flow = stress * ns_factor * (0.32 * local_pressure + 0.05 * system_imbalance)
-        util_pct = 100.0 * flow / max(cap, 1e-6)
-
-        flows.append(flow)
-        utils.append(util_pct)
-        overloads.append(util_pct > 100.0)
-
-    out["Flow_Proxy_GW"] = flows
-    out["Auslastung_pct"] = utils
-    out["Ueberlast"] = overloads
-
-    return out
-
-
-def evaluate_scenario(
-    hour_row: pd.Series,
-    line_status: pd.DataFrame,
-    scenario_key: str,
-) -> dict[str, object]:
-    """
-    Bewertet, ob der Nutzer das gewählte Szenario bewältigt hat.
-
-    Bestehen bedeutet:
-    - keine relevante Unterdeckung
-    - keine relevante Überdeckung
-    - Abregelung unter Grenzwert
-    - keine Leitung über Grenzwert
-    """
-    sc = SCENARIOS.get(scenario_key, SCENARIOS["training"])
-
-    max_abs_balance = float(sc.get("max_abs_balance_gw", 1.0))
-    max_curtail = float(sc.get("max_curtailment_gw", 1.0))
-    max_line_util = float(sc.get("max_line_util_pct", 100.0))
-
-    balance = float(hour_row.get("Netzbilanz_GW", 0.0))
-    curtail = float(hour_row.get("Curtailment_GW", 0.0))
-
-    if line_status.empty or "Auslastung_pct" not in line_status.columns:
-        peak_line_util = 0.0
-        overloaded_count = 0
-        worst_line = "-"
-    else:
-        peak_line_util = float(line_status["Auslastung_pct"].max())
-        overloaded_count = int((line_status["Auslastung_pct"] > max_line_util).sum())
-        worst_idx = line_status["Auslastung_pct"].idxmax()
-        worst_line = str(line_status.loc[worst_idx, "Name"])
-
-    under = balance < -max_abs_balance
-    over = balance > max_abs_balance or curtail > max_curtail
-    line_over = peak_line_util > max_line_util
-
-    messages: list[str] = []
-
-    if under:
-        messages.append(f"Unterdeckung: Netzbilanz {balance:+.2f} GW.")
-
-    if over:
-        if balance > max_abs_balance:
-            messages.append(f"Überdeckung: Netzbilanz {balance:+.2f} GW.")
-        if curtail > max_curtail:
-            messages.append(f"Abregelung zu hoch: {curtail:.2f} GW.")
-
-    if line_over:
-        messages.append(
-            f"Leitungsüberlastung: {worst_line} bei {peak_line_util:.0f} %."
+        out = out.join(c, how="left")
+        out["Total_installed_cap_MW"] = (
+            out["Wind_cap_MW"] + out["PV_cap_MW"] + out["Konv_cap_MW"]
         )
 
-    solved = not under and not over and not line_over
+        if pct_basis == "total_installed":
+            denom = out["Total_installed_cap_MW"].replace(0.0, np.nan)
+            out["Wind_pct"] = 100.0 * out["Wind_GW"] * 1000.0 / denom
+            out["PV_pct"] = 100.0 * out["PV_GW"] * 1000.0 / denom
+            out["Konv_pct"] = 100.0 * out["Konv_GW"] * 1000.0 / denom
+            out["Load_pct"] = 100.0 * out["Last_GW"] * 1000.0 / denom
+        elif pct_basis == "own_capacity":
+            out["Wind_pct"] = 100.0 * out["Wind_GW"] * 1000.0 / out["Wind_cap_MW"]
+            out["PV_pct"] = 100.0 * out["PV_GW"] * 1000.0 / out["PV_cap_MW"]
+            out["Konv_pct"] = 100.0 * out["Konv_GW"] * 1000.0 / out["Konv_cap_MW"]
 
-    if solved:
-        messages.append("Szenario bewältigt: Bilanz stabil und keine Leitungsüberlastung.")
+            if load_pct_reference == "max":
+                ref = out["Last_GW"].max()
+            elif load_pct_reference == "mean":
+                ref = out["Last_GW"].mean()
+            else:
+                raise ValueError("load_pct_reference must be 'mean' or 'max'")
+            out["Load_pct"] = 100.0 * out["Last_GW"] / max(float(ref), 1e-9)
+        else:
+            raise ValueError("pct_basis must be 'total_installed' or 'own_capacity'")
+    else:
+        out["Wind_pct"] = np.nan
+        out["PV_pct"] = np.nan
+        out["Konv_pct"] = np.nan
+        out["Load_pct"] = np.nan
 
+    return out.reset_index(names="timestamp")
+
+
+def smard_defaults_for_hour(profile: pd.DataFrame, hour: int) -> dict[str, int]:
+    """Return slider defaults from one hour of a SMARD-derived profile."""
+    row = profile.loc[profile["Stunde"].astype(int) == int(hour)].iloc[0]
     return {
-        "solved": solved,
-        "under": under,
-        "over": over,
-        "line_over": line_over,
-        "balance_gw": balance,
-        "curtailment_gw": curtail,
-        "peak_line_util_pct": peak_line_util,
-        "overloaded_count": overloaded_count,
-        "worst_line": worst_line,
-        "messages": messages,
+        "wind_pct": int(round(row["Wind_pct"])),
+        "pv_pct": int(round(row["PV_pct"])),
+        "load_pct": int(round(row["Load_pct"])),
+        "hour": int(hour),
+        # If you use the existing app sliders, this can be used as conventional generation slider.
+        "konv_pct": int(round(row["Konv_pct"])),
     }
