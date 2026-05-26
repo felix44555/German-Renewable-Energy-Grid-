@@ -12,12 +12,16 @@ try:
 except ImportError:
     pypsa = None
 
-from scenario_tools import (
-    SCENARIOS,
-    apply_scenario_to_profiles,
-    compute_line_status_proxy,
-    evaluate_scenario,
-)
+# scenario_tools.py wird hier nur für Hilfsfunktionen genutzt.
+# Szenario-Definitionen werden bevorzugt aus scenarios.py oder szenarien.py geladen.
+try:
+    from scenario_tools import load_smard_dispatch_profile
+except Exception:
+    load_smard_dispatch_profile = None
+
+import importlib
+from types import ModuleType
+from typing import Any
 
 
 # =============================================================================
@@ -40,6 +44,334 @@ FALLBACK_REFS = {
 
 
 # =============================================================================
+# Szenario-Integration
+# =============================================================================
+# Erwartete externe Datei:
+#   scenarios.py    bevorzugt
+#   szenarien.py    alternativ
+#   scenario_tools.py nur als Fallback, falls sie doch Szenario-Symbole enthält
+#
+# Erforderliche Symbole:
+#   SCENARIOS
+#   apply_scenario_to_profiles
+#   compute_line_status_proxy
+#   evaluate_scenario
+
+REQUIRED_SCENARIO_SYMBOLS = (
+    "SCENARIOS",
+    "apply_scenario_to_profiles",
+    "compute_line_status_proxy",
+    "evaluate_scenario",
+)
+
+
+LOCAL_SCENARIOS: dict[str, dict[str, Any]] = {
+    "training": {
+        "name": "Training: stabiler Grundbetrieb",
+        "task": (
+            "Stelle Wind, PV, BESS, Last, Abregelung und Netzausbau so ein, "
+            "dass die Bilanz stabil bleibt und keine Leitung überlastet."
+        ),
+        "defaults": {
+            "wind_pct": 100,
+            "pv_pct": 100,
+            "bess_pct": 100,
+            "load_pct": 100,
+            "soc_pct": 50,
+            "line_capacity_pct": 100,
+            "ee_curtail_pct": 0,
+            "hour": 12,
+        },
+        "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
+        "line_stress_factor": 1.00,
+        "limits": {
+            "balance_abs_gw": 1.0,
+            "max_curtailment_gw": 1.0,
+            "max_line_util_pct": 100.0,
+        },
+    },
+    "unterdeckung": {
+        "name": "Unterdeckung: Dunkelflaute + hohe Last",
+        "task": (
+            "Es herrscht wenig Wind und wenig PV bei hoher Last. "
+            "Nutze Speicher, Erzeugung und Last-/Netzmaßnahmen, um die Unterdeckung zu beseitigen."
+        ),
+        "defaults": {
+            "wind_pct": 55,
+            "pv_pct": 45,
+            "bess_pct": 70,
+            "load_pct": 130,
+            "soc_pct": 35,
+            "line_capacity_pct": 100,
+            "ee_curtail_pct": 0,
+            "hour": 19,
+        },
+        "profile_factors": {"wind": 0.70, "pv": 0.55, "load": 1.12},
+        "line_stress_factor": 0.95,
+        "limits": {
+            "balance_abs_gw": 1.0,
+            "max_curtailment_gw": 2.0,
+            "max_line_util_pct": 100.0,
+        },
+    },
+    "ueberschuss": {
+        "name": "Überdeckung: viel EE + geringe Last",
+        "task": (
+            "Viel Wind/PV trifft auf geringe Last. Vermeide starke Überdeckung und halte "
+            "die Abregelung unter dem Grenzwert."
+        ),
+        "defaults": {
+            "wind_pct": 145,
+            "pv_pct": 165,
+            "bess_pct": 80,
+            "load_pct": 80,
+            "soc_pct": 80,
+            "line_capacity_pct": 100,
+            "ee_curtail_pct": 0,
+            "hour": 13,
+        },
+        "profile_factors": {"wind": 1.18, "pv": 1.25, "load": 0.90},
+        "line_stress_factor": 1.10,
+        "limits": {
+            "balance_abs_gw": 1.0,
+            "max_curtailment_gw": 5.0,
+            "max_line_util_pct": 100.0,
+        },
+    },
+    "leitungsueberlast": {
+        "name": "Leitungsüberlast: Nord-Süd-Transport",
+        "task": (
+            "Hohe Windleistung belastet die Transportachsen. Entlaste das Netz durch "
+            "Netzausbau, Speicher, Abregelung oder angepassten Erzeugungsmix."
+        ),
+        "defaults": {
+            "wind_pct": 170,
+            "pv_pct": 95,
+            "bess_pct": 80,
+            "load_pct": 95,
+            "soc_pct": 50,
+            "line_capacity_pct": 70,
+            "ee_curtail_pct": 0,
+            "hour": 21,
+        },
+        "profile_factors": {"wind": 1.30, "pv": 0.95, "load": 0.98},
+        "line_stress_factor": 1.55,
+        "limits": {
+            "balance_abs_gw": 1.0,
+            "max_curtailment_gw": 6.0,
+            "max_line_util_pct": 100.0,
+        },
+    },
+}
+
+
+def _scenario_module_is_valid(module: ModuleType) -> bool:
+    return all(hasattr(module, name) for name in REQUIRED_SCENARIO_SYMBOLS)
+
+
+def _load_external_scenarios() -> tuple[dict[str, dict[str, Any]], Any, Any, Any, str]:
+    """Lädt Szenario-Logik aus externer Datei, sonst lokale robuste Defaults."""
+    candidates = ("scenarios", "szenarien", "scenario_tools")
+    import_errors: list[str] = []
+
+    for module_name in candidates:
+        try:
+            module = importlib.import_module(module_name)
+        except Exception as exc:
+            import_errors.append(f"{module_name}: {exc}")
+            continue
+
+        if _scenario_module_is_valid(module):
+            scenarios = getattr(module, "SCENARIOS")
+            if not isinstance(scenarios, dict) or "training" not in scenarios:
+                import_errors.append(f"{module_name}: SCENARIOS fehlt oder enthält kein 'training'")
+                continue
+
+            return (
+                scenarios,
+                getattr(module, "apply_scenario_to_profiles"),
+                getattr(module, "compute_line_status_proxy"),
+                getattr(module, "evaluate_scenario"),
+                f"extern: {module_name}.py",
+            )
+
+        missing = [name for name in REQUIRED_SCENARIO_SYMBOLS if not hasattr(module, name)]
+        import_errors.append(f"{module_name}: fehlende Symbole {missing}")
+
+    return (
+        LOCAL_SCENARIOS,
+        _local_apply_scenario_to_profiles,
+        _local_compute_line_status_proxy,
+        _local_evaluate_scenario,
+        "lokaler Fallback in app.py (" + " | ".join(import_errors) + ")",
+    )
+
+
+def _local_apply_scenario_to_profiles(
+    profiles: pd.DataFrame,
+    scenario_key: str,
+    ee_curtail_pct: float = 0.0,
+) -> pd.DataFrame:
+    """Wendet einfache Szenariofaktoren und manuelle EE-Abregelung an."""
+    scenario = LOCAL_SCENARIOS.get(scenario_key, LOCAL_SCENARIOS["training"])
+    factors = scenario.get("profile_factors", {})
+
+    out = profiles.copy()
+    out["Pre_Curtailment_GW"] = 0.0
+
+    if "Wind_GW" in out.columns:
+        out["Wind_GW"] = pd.to_numeric(out["Wind_GW"], errors="coerce").fillna(0.0) * float(factors.get("wind", 1.0))
+    if "PV_GW" in out.columns:
+        out["PV_GW"] = pd.to_numeric(out["PV_GW"], errors="coerce").fillna(0.0) * float(factors.get("pv", 1.0))
+    if "Last_GW" in out.columns:
+        out["Last_GW"] = pd.to_numeric(out["Last_GW"], errors="coerce").fillna(0.0) * float(factors.get("load", 1.0))
+
+    curtail_frac = float(np.clip(ee_curtail_pct, 0.0, 100.0)) / 100.0
+    if curtail_frac > 0:
+        old_ee = out.get("Wind_GW", 0.0) + out.get("PV_GW", 0.0)
+        if "Wind_GW" in out.columns:
+            out["Wind_GW"] *= 1.0 - curtail_frac
+        if "PV_GW" in out.columns:
+            out["PV_GW"] *= 1.0 - curtail_frac
+        new_ee = out.get("Wind_GW", 0.0) + out.get("PV_GW", 0.0)
+        out["Pre_Curtailment_GW"] = old_ee - new_ee
+
+    return out
+
+
+def _local_compute_line_status_proxy(
+    generators: pd.DataFrame,
+    consumers: pd.DataFrame,
+    lines: pd.DataFrame,
+    hour_row: pd.Series,
+    line_capacity_pct: float,
+    line_stress_factor: float = 1.0,
+) -> pd.DataFrame:
+    """Berechnet eine didaktische Leitungsauslastung ohne AC/DC-Lastfluss."""
+    if lines.empty:
+        return lines.copy()
+
+    out = lines.copy()
+    buses = sorted(set(out["von"].astype(str)).union(set(out["nach"].astype(str))))
+    nodal_balance = pd.Series(0.0, index=buses, dtype=float)
+
+    typ_power = {
+        "Wind": float(hour_row.get("Wind_GW", 0.0)),
+        "PV": float(hour_row.get("PV_GW", 0.0)),
+        "Konventionell": float(hour_row.get("Konv_GW", 0.0)),
+        "BESS": float(hour_row.get("BESS_GW", 0.0)),
+    }
+
+    if not generators.empty and "Bus" in generators.columns:
+        for _, gen in generators.iterrows():
+            bus = str(gen.get("Bus", ""))
+            typ = str(gen.get("Typ", ""))
+            if bus not in nodal_balance.index:
+                continue
+            share = float(gen.get("Anteil", 0.0))
+            nodal_balance.loc[bus] += share * typ_power.get(typ, 0.0)
+
+    if not consumers.empty and "Bus" in consumers.columns:
+        total_load = float(hour_row.get("Last_GW", 0.0))
+        for _, load in consumers.iterrows():
+            bus = str(load.get("Bus", ""))
+            if bus not in nodal_balance.index:
+                continue
+            share = float(load.get("Anteil", 0.0))
+            nodal_balance.loc[bus] -= share * total_load
+
+    balance_spread = float(nodal_balance.std(ddof=0)) if len(nodal_balance) > 1 else 0.0
+    global_imbalance = abs(float(hour_row.get("Netzbilanz_GW", 0.0)))
+
+    flow_values: list[float] = []
+    util_values: list[float] = []
+    overload_flags: list[bool] = []
+    effective_caps: list[float] = []
+
+    cap_factor = float(np.clip(line_capacity_pct, 1.0, 500.0)) / 100.0
+    stress = float(max(line_stress_factor, 0.0))
+
+    for _, ln in out.iterrows():
+        bus0 = str(ln.get("von", ""))
+        bus1 = str(ln.get("nach", ""))
+        b0 = float(nodal_balance.get(bus0, 0.0))
+        b1 = float(nodal_balance.get(bus1, 0.0))
+
+        raw_cap = float(ln.get("Kapazitaet_GW", 0.0))
+        # Wenn in der .nc keine Kapazität steht, wird ein didaktischer Mindestwert verwendet.
+        effective_cap = max(raw_cap * cap_factor, 0.30)
+
+        flow = stress * (0.70 * abs(b0 - b1) + 0.20 * balance_spread + 0.10 * global_imbalance)
+        util_pct = 100.0 * flow / effective_cap
+
+        effective_caps.append(effective_cap)
+        flow_values.append(flow)
+        util_values.append(util_pct)
+        overload_flags.append(util_pct > 100.0)
+
+    out["Effektive_Kapazitaet_GW"] = effective_caps
+    out["Flow_Proxy_GW"] = flow_values
+    out["Auslastung_pct"] = util_values
+    out["Ueberlast"] = overload_flags
+    return out
+
+
+def _local_evaluate_scenario(
+    hour_row: pd.Series,
+    line_status: pd.DataFrame,
+    scenario_key: str,
+) -> dict[str, Any]:
+    """Bewertet, ob das aktuell gewählte Szenario gelöst ist."""
+    scenario = LOCAL_SCENARIOS.get(scenario_key, LOCAL_SCENARIOS["training"])
+    limits = scenario.get("limits", {})
+
+    balance_limit = float(limits.get("balance_abs_gw", 1.0))
+    curtail_limit = float(limits.get("max_curtailment_gw", 5.0))
+    line_limit = float(limits.get("max_line_util_pct", 100.0))
+
+    balance = float(hour_row.get("Netzbilanz_GW", 0.0))
+    curtailment = float(hour_row.get("Curtailment_GW", 0.0))
+
+    if line_status.empty or "Auslastung_pct" not in line_status.columns:
+        peak_line = 0.0
+        overloaded_count = 0
+    else:
+        peak_line = float(pd.to_numeric(line_status["Auslastung_pct"], errors="coerce").fillna(0.0).max())
+        overloaded_count = int((pd.to_numeric(line_status["Auslastung_pct"], errors="coerce").fillna(0.0) > line_limit).sum())
+
+    messages: list[str] = []
+    if abs(balance) <= balance_limit:
+        messages.append(f"Bilanz ok: {balance:+.2f} GW innerhalb ±{balance_limit:.1f} GW.")
+    elif balance < -balance_limit:
+        messages.append(f"Unterdeckung: {balance:+.2f} GW. Mehr Erzeugung, Speicherentladung oder Lastsenkung nötig.")
+    else:
+        messages.append(f"Überdeckung: {balance:+.2f} GW. Speicherladung, EE-Abregelung oder Lastanhebung nötig.")
+
+    if curtailment <= curtail_limit:
+        messages.append(f"Abregelung ok: {curtailment:.2f} GW ≤ {curtail_limit:.2f} GW.")
+    else:
+        messages.append(f"Abregelung zu hoch: {curtailment:.2f} GW > {curtail_limit:.2f} GW.")
+
+    if overloaded_count == 0:
+        messages.append(f"Leitungen ok: maximale Auslastung {peak_line:.0f} %.")
+    else:
+        messages.append(f"Leitungsüberlast: {overloaded_count} Leitung(en), Maximum {peak_line:.0f} %.")
+
+    solved = abs(balance) <= balance_limit and curtailment <= curtail_limit and overloaded_count == 0
+    return {
+        "solved": solved,
+        "messages": messages,
+        "balance_gw": balance,
+        "curtailment_gw": curtailment,
+        "peak_line_util_pct": peak_line,
+        "overloaded_count": overloaded_count,
+    }
+
+
+SCENARIOS, apply_scenario_to_profiles, compute_line_status_proxy, evaluate_scenario, SCENARIO_SOURCE = _load_external_scenarios()
+
+
+# =============================================================================
 # Laden des PyPSA-Netzes
 # =============================================================================
 @st.cache_resource(show_spinner=False)
@@ -54,7 +386,7 @@ def load_pypsa_network(path: str | Path):
     if not path.exists():
         raise FileNotFoundError(
             f"Netzdatei nicht gefunden: {path.name}. "
-            "Lege simplified_germany_8node.nc in denselben Ordner wie diese Python-Datei."
+            f"Lege {path.name} in denselben Ordner wie diese Python-Datei."
         )
 
     return pypsa.Network(path)
@@ -474,9 +806,9 @@ def simulate_dispatch(
 
         k_ges = k_base + spitze
 
-        cur = 0.0
+        cur = float(row.get("Pre_Curtailment_GW", 0.0))
         if residual2 < -1e-9 and b_power <= 0.0:
-            cur = -residual2
+            cur += -residual2
 
         gen_eff = pv + wind + k_ges + max(b_power, 0.0) - cur
         charging = max(-b_power, 0.0)
@@ -899,8 +1231,8 @@ def main() -> None:
 
     st.title("Deutschland-Netzkarte mit Szenario-Modus")
     st.markdown(
-        """
-        Diese App lädt ein PyPSA-Netz aus `simplified_germany_8node.nc` und nutzt daraus
+        f"""
+        Diese App lädt ein PyPSA-Netz aus `{NETWORK_FILE.name}` und nutzt daraus
         Busse, Leitungen/Links, Generatoren, Speicher und Lastverteilung.
 
         Aufgabe des Nutzers: ein Szenario so einstellen, dass weder Unterdeckung noch
@@ -910,6 +1242,8 @@ def main() -> None:
         AC/DC-Lastfluss gerechnet.
         """
     )
+
+    st.caption(f"Szenarioquelle: {SCENARIO_SOURCE}")
 
     try:
         n = load_pypsa_network(NETWORK_FILE)
@@ -937,6 +1271,21 @@ def main() -> None:
         if st.button("Szenario-Startwerte laden"):
             load_scenario_defaults(scenario_key)
             st.rerun()
+
+        st.header("Profilquelle")
+        profile_source = st.radio(
+            "Zeitreihe",
+            options=["synthetisch", "SMARD-CSV"],
+            index=0,
+            help=(
+                "SMARD-CSV nutzt load_smard_dispatch_profile aus scenario_tools.py. "
+                "Die Dateien müssen im App-Ordner liegen."
+            ),
+        )
+        smard_generation_csv = st.text_input("SMARD Erzeugung CSV", "smard_generation.csv")
+        smard_load_csv = st.text_input("SMARD Last CSV", "smard_load.csv")
+        smard_capacity_csv = st.text_input("SMARD installierte Leistung CSV optional", "")
+        smard_date = st.text_input("SMARD Datum optional, YYYY-MM-DD", "")
 
         st.header("Maßnahmen / Stellgrößen")
 
@@ -987,12 +1336,46 @@ def main() -> None:
     bess_scale = bess_pct / 100.0
     load_scale = load_pct / 100.0
 
-    profiles = generate_profiles(
-        wind_scale=wind_scale,
-        pv_scale=pv_scale,
-        load_scale=load_scale,
-        refs=refs,
-    )
+    if profile_source == "SMARD-CSV":
+        if load_smard_dispatch_profile is None:
+            st.error("scenario_tools.py enthält keine nutzbare Funktion load_smard_dispatch_profile().")
+            st.stop()
+
+        generation_path = BASE_DIR / smard_generation_csv
+        load_path = BASE_DIR / smard_load_csv
+        capacity_path = BASE_DIR / smard_capacity_csv if smard_capacity_csv.strip() else None
+
+        try:
+            profiles = load_smard_dispatch_profile(
+                generation_csv=generation_path,
+                load_csv=load_path,
+                installed_capacity_csv=capacity_path,
+                date=smard_date.strip() or None,
+            )
+        except Exception as exc:
+            st.error(f"SMARD-Profile konnten nicht geladen werden: {exc}")
+            st.stop()
+
+        if profiles.empty:
+            st.error("SMARD-Profile sind leer. Prüfe Datum und CSV-Dateien.")
+            st.stop()
+
+        if "timestamp" in profiles.columns:
+            profiles = profiles.sort_values("timestamp").head(24).copy()
+        else:
+            profiles = profiles.sort_values("Stunde").head(24).copy()
+        profiles["Stunde"] = profiles["Stunde"].astype(int)
+        profiles["Wind_GW"] = pd.to_numeric(profiles["Wind_GW"], errors="coerce").fillna(0.0) * wind_scale
+        profiles["PV_GW"] = pd.to_numeric(profiles["PV_GW"], errors="coerce").fillna(0.0) * pv_scale
+        profiles["Last_GW"] = pd.to_numeric(profiles["Last_GW"], errors="coerce").fillna(0.0) * load_scale
+        profiles = profiles[["Stunde", "Last_GW", "PV_GW", "Wind_GW"]]
+    else:
+        profiles = generate_profiles(
+            wind_scale=wind_scale,
+            pv_scale=pv_scale,
+            load_scale=load_scale,
+            refs=refs,
+        )
 
     profiles = apply_scenario_to_profiles(
         profiles,
@@ -1064,10 +1447,11 @@ def main() -> None:
     b4.metric("überlastete Leitungen", str(scenario_eval["overloaded_count"]))
 
     with st.expander("Zielbedingungen"):
+        limits = scenario.get("limits", {})
         st.write(
-            "- Netzbilanz zwischen -1 GW und +1 GW\n"
-            "- Abregelung unter Szenario-Grenzwert\n"
-            "- keine Leitung über 100 % Auslastung\n"
+            f"- Netzbilanz innerhalb ±{float(limits.get('balance_abs_gw', 1.0)):.1f} GW\n"
+            f"- Abregelung unter {float(limits.get('max_curtailment_gw', 5.0)):.1f} GW\n"
+            f"- keine Leitung über {float(limits.get('max_line_util_pct', 100.0)):.0f} % Auslastung\n"
             "- Leitungswerte sind Proxy-Werte, kein echter Lastfluss"
         )
 
