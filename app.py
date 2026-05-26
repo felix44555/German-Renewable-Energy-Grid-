@@ -24,7 +24,7 @@ from scenario_tools import (
 # Konfiguration
 # =============================================================================
 BASE_DIR = Path(__file__).resolve().parent
-NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
+NETWORK_FILE = BASE_DIR / "real_germany_8n_configured.nc"
 
 HOURS = np.arange(24)
 

@@ -1,0 +1,73 @@
+component,name,bus,bus0,bus1,carrier,p_or_s_nom_mw,extra
+Line,0,,DE0 0,DE0 6,AC,7552.087931161819,
+Line,1,,DE0 0,DE0 7,AC,5094.3078352215825,
+Line,10,,DE0 4,DE0 5,AC,21851.89939845047,
+Line,11,,DE0 4,DE0 5,AC,5265.43,
+Line,12,,DE0 4,DE0 6,AC,6792.41044696211,
+Line,13,,DE0 4,DE0 6,AC,3396.21,
+Line,14,,DE0 6,DE0 7,AC,1698.1026117405274,
+Line,15,,DE0 6,DE0 7,AC,5265.43,
+Line,2,,DE0 1,DE0 4,AC,3396.205223481055,
+Line,3,,DE0 1,DE0 5,AC,14076.376913112266,
+Line,4,,DE0 1,DE0 6,AC,8982.069077890685,
+Line,5,,DE0 1,DE0 7,AC,16534.157009052506,
+Line,6,,DE0 2,DE0 3,AC,10948.293154642874,
+Line,7,,DE0 2,DE0 3,AC,5265.43,
+Line,8,,DE0 2,DE0 6,AC,18947.250194157463,
+Line,9,,DE0 3,DE0 4,AC,16042.600989864457,
+Generator,solar_DE0 0,DE0 0,,,solar,16668.80217061148,PV
+Generator,solar_DE0 1,DE0 1,,,solar,12737.376237444667,PV
+Generator,solar_DE0 2,DE0 2,,,solar,3060.0971146938336,PV
+Generator,solar_DE0 3,DE0 3,,,solar,0.0,PV
+Generator,solar_DE0 4,DE0 4,,,solar,3209.1689016050645,PV
+Generator,solar_DE0 5,DE0 5,,,solar,7381.008917666634,PV
+Generator,solar_DE0 6,DE0 6,,,solar,10352.965722489183,PV
+Generator,solar_DE0 7,DE0 7,,,solar,16590.580935489135,PV
+Generator,wind_DE0 0,DE0 0,,,wind,0.0,Wind
+Generator,wind_DE0 1,DE0 1,,,wind,5585.256557143084,Wind
+Generator,wind_DE0 2,DE0 2,,,wind,19333.470969543298,Wind
+Generator,wind_DE0 3,DE0 3,,,wind,23680.85732906985,Wind
+Generator,wind_DE0 4,DE0 4,,,wind,19121.689242128097,Wind
+Generator,wind_DE0 5,DE0 5,,,wind,13194.883751914856,Wind
+Generator,wind_DE0 6,DE0 6,,,wind,8972.715634325437,Wind
+Generator,wind_DE0 7,DE0 7,,,wind,111.1265158753744,Wind
+Generator,backup_DE0 0,DE0 0,,,backup,1000.0,Konventionell
+Generator,backup_DE0 1,DE0 1,,,backup,1000.0,Konventionell
+Generator,backup_DE0 2,DE0 2,,,backup,1000.0,Konventionell
+Generator,backup_DE0 3,DE0 3,,,backup,1000.0,Konventionell
+Generator,backup_DE0 4,DE0 4,,,backup,1000.0,Konventionell
+Generator,backup_DE0 5,DE0 5,,,backup,1000.0,Konventionell
+Generator,backup_DE0 6,DE0 6,,,backup,1000.0,Konventionell
+Generator,backup_DE0 7,DE0 7,,,backup,1000.0,Konventionell
+Generator,import_north,DE0 3,,,import,5000.0,Import
+Generator,import_south,DE0 0,,,import,5000.0,Import
+Generator,import_east,DE0 2,,,import,5000.0,Import
+Generator,import_west,DE0 5,,,import,5000.0,Import
+Generator,load_shedding_DE0 0,DE0 0,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 1,DE0 1,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 2,DE0 2,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 3,DE0 3,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 4,DE0 4,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 5,DE0 5,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 6,DE0 6,,,load_shedding,0.0,Lastabwurf
+Generator,load_shedding_DE0 7,DE0 7,,,load_shedding,0.0,Lastabwurf
+Load,demand_DE0 0,DE0 0,,,demand,7500.0,
+Load,demand_DE0 1,DE0 1,,,demand,7500.0,
+Load,demand_DE0 2,DE0 2,,,demand,7500.0,
+Load,demand_DE0 3,DE0 3,,,demand,7500.0,
+Load,demand_DE0 4,DE0 4,,,demand,7500.0,
+Load,demand_DE0 5,DE0 5,,,demand,7500.0,
+Load,demand_DE0 6,DE0 6,,,demand,7500.0,
+Load,demand_DE0 7,DE0 7,,,demand,7500.0,
+Load,export_north,DE0 3,,,export,0.0,
+Load,export_south,DE0 0,,,export,0.0,
+Load,export_east,DE0 2,,,export,0.0,
+Load,export_west,DE0 5,,,export,0.0,
+StorageUnit,battery_DE0 0,DE0 0,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 1,DE0 1,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 2,DE0 2,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 3,DE0 3,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 4,DE0 4,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 5,DE0 5,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 6,DE0 6,,,battery,1000.0,max_hours=4.0
+StorageUnit,battery_DE0 7,DE0 7,,,battery,1000.0,max_hours=4.0
