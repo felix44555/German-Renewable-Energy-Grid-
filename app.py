@@ -495,7 +495,10 @@ def smard_load_series(
     idx = smard_index(filter_id, region=region, resolution=resolution)
     used_ts = _choose_index_timestamp(idx, target_ms)
 
-    url = f"{SMARD_BASE_URL}/{filter_id}/{region}/{filter_id}{region}{resolution}_{used_ts}.json"
+    url = (
+        f"{SMARD_BASE_URL}/{filter_id}/{region}/"
+        f"{filter_id}_{region}_{resolution}_{used_ts}.json"
+    )
     payload = _http_get_json(url)
     pairs = _extract_time_series(payload)
     if not pairs:
