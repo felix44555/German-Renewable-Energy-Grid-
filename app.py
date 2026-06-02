@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from pathlib import Path
 import importlib
 import math
-import os
 from types import ModuleType
 from typing import Any
 
@@ -30,11 +29,27 @@ except ImportError:  # pragma: no cover
 BASE_DIR = Path(__file__).resolve().parent
 NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
 
+APP_TZ = "Europe/Berlin"
+HOURS = np.arange(24)
 SMARD_BASE_URL = "https://www.smard.de/app/chart_data"
 SMARD_REGION = "DE"
 SMARD_RESOLUTION = "hour"
-APP_TZ = "Europe/Berlin"
-HOURS = np.arange(24)
+
+# SMARD ist in diesem Modell nur Orientierungsquelle für Last, Wind und PV.
+# Importe/Exporte und restliche Erzeuger werden bewusst nicht geladen.
+SMARD_FILTERS = {
+    "wind_offshore": 1225,
+    "wind_onshore": 4067,
+    "pv": 4068,
+    "load": 410,
+}
+
+FILTER_LABELS = {
+    "wind_offshore": "Wind Offshore",
+    "wind_onshore": "Wind Onshore",
+    "pv": "Photovoltaik",
+    "load": "Netzlast",
+}
 
 FALLBACK_REFS = {
     "wind_gw": 70.0,
@@ -43,54 +58,6 @@ FALLBACK_REFS = {
     "bess_gw": 12.0,
     "bess_gwh": 24.0,
     "load_mean_gw": 60.0,
-}
-
-SMARD_FILTERS = {
-    # Wind/PV explizit
-    "wind_offshore": 1225,
-    "wind_onshore": 4067,
-    "pv": 4068,
-    # Netzlast, kein Import/Export
-    "load": 410,
-    # Alle übrigen Erzeuger, die nicht Wind oder PV sind.
-    # Import/Export-Flüsse werden absichtlich nicht verwendet.
-    "biomass": 4066,
-    "hydro": 1226,
-    "other_renewable": 1228,
-    "nuclear": 1224,
-    "lignite": 1223,
-    "hard_coal": 4069,
-    "gas": 4071,
-    "pumped_storage_generation": 4070,
-    "other_conventional": 1227,
-}
-
-RESTLICHE_ERZEUGER_KEYS = [
-    "biomass",
-    "hydro",
-    "other_renewable",
-    "nuclear",
-    "lignite",
-    "hard_coal",
-    "gas",
-    "pumped_storage_generation",
-    "other_conventional",
-]
-
-FILTER_LABELS = {
-    "wind_offshore": "Wind Offshore",
-    "wind_onshore": "Wind Onshore",
-    "pv": "Photovoltaik",
-    "load": "Netzlast",
-    "biomass": "Biomasse",
-    "hydro": "Wasserkraft",
-    "other_renewable": "Sonstige Erneuerbare",
-    "nuclear": "Kernenergie",
-    "lignite": "Braunkohle",
-    "hard_coal": "Steinkohle",
-    "gas": "Erdgas",
-    "pumped_storage_generation": "Pumpspeicher Erzeugung",
-    "other_conventional": "Sonstige Konventionelle",
 }
 
 # =============================================================================
@@ -105,15 +72,17 @@ REQUIRED_SCENARIO_SYMBOLS = (
 
 LOCAL_SCENARIOS: dict[str, dict[str, Any]] = {
     "training": {
-        "name": "Training: SMARD-Grundlage",
+        "name": "Training: SMARD-Orientierung",
         "task": (
-            "Nutze die Stellgrößen so, dass die SMARD-Netzlast ohne externe Importe "
-            "durch Wind, PV, restliche Erzeuger und BESS bilanziell gedeckt wird."
+            "Nutze Wind, PV, restliche Erzeuger, BESS, Last und Abregelung so, "
+            "dass die SMARD-Netzlast ohne Importe/Exporte bilanziell gedeckt wird. "
+            "Restliche Erzeuger sind eine künstlich regelbare Stellgröße und nicht an SMARD gekoppelt."
         ),
         "defaults": {
             "wind_pct": 100,
             "pv_pct": 100,
             "konv_pct": 100,
+            "konv_min_pct": 0,
             "bess_pct": 100,
             "load_pct": 100,
             "soc_pct": 50,
@@ -121,41 +90,43 @@ LOCAL_SCENARIOS: dict[str, dict[str, Any]] = {
             "ee_curtail_pct": 0,
             "hour": 12,
         },
-        "profile_factors": {"wind": 1.00, "pv": 1.00, "konv": 1.00, "load": 1.00},
+        "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
         "line_stress_factor": 1.00,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "unterdeckung": {
-        "name": "Unterdeckung: Importlücke schließen",
+        "name": "Unterdeckung: Restleistung reicht nicht",
         "task": (
-            "Die externe Importhilfe ist nicht verfügbar. Schließe die positive Ziellücke "
-            "mit BESS, mehr verfügbarer Erzeugung oder Lastsenkung."
+            "Wind/PV sind niedrig und die Last ist hoch. Die restlichen Erzeuger fahren bis zur verfügbaren "
+            "Leistung hoch; verbleibende Unterdeckung muss durch BESS, Lastsenkung oder höhere Verfügbarkeit gelöst werden."
         ),
         "defaults": {
-            "wind_pct": 80,
-            "pv_pct": 75,
-            "konv_pct": 90,
+            "wind_pct": 70,
+            "pv_pct": 65,
+            "konv_pct": 70,
+            "konv_min_pct": 0,
             "bess_pct": 100,
-            "load_pct": 110,
+            "load_pct": 115,
             "soc_pct": 75,
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
             "hour": 19,
         },
-        "profile_factors": {"wind": 0.80, "pv": 0.75, "konv": 0.92, "load": 1.08},
+        "profile_factors": {"wind": 0.75, "pv": 0.75, "load": 1.08},
         "line_stress_factor": 1.05,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 3.0, "max_line_util_pct": 100.0},
     },
     "ueberschuss": {
-        "name": "Überdeckung: EE-Überschuss beherrschen",
+        "name": "Überdeckung: EE hoch, Rest runterfahren",
         "task": (
-            "Hohe Wind- und PV-Leistung trifft auf geringe Last. Halte die Bilanz nahe null, "
-            "ohne übermäßig viel EE abzuregeln."
+            "Hohe Wind- und PV-Leistung trifft auf geringe Last. Fahre restliche Erzeuger herunter, lade BESS "
+            "oder regle EE ab, ohne zu viel Curtailment zu erzeugen."
         ),
         "defaults": {
             "wind_pct": 145,
             "pv_pct": 160,
-            "konv_pct": 80,
+            "konv_pct": 100,
+            "konv_min_pct": 15,
             "bess_pct": 120,
             "load_pct": 85,
             "soc_pct": 30,
@@ -163,20 +134,21 @@ LOCAL_SCENARIOS: dict[str, dict[str, Any]] = {
             "ee_curtail_pct": 0,
             "hour": 13,
         },
-        "profile_factors": {"wind": 1.15, "pv": 1.25, "konv": 0.85, "load": 0.90},
+        "profile_factors": {"wind": 1.15, "pv": 1.25, "load": 0.90},
         "line_stress_factor": 1.10,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 8.0, "max_line_util_pct": 100.0},
     },
     "leitungsueberlast": {
         "name": "Leitungsüberlast: Nord-Süd-Transport",
         "task": (
-            "Hoher Windanteil belastet Transportachsen. Löse die Bilanz und halte gleichzeitig "
-            "die Leitungsauslastung unter 100 %."
+            "Hoher Windanteil erzeugt räumliche Überschüsse. Löse Bilanz und Leitungsauslastung über "
+            "Netzausbau, BESS, Abregelung oder veränderte verfügbare Restleistung."
         ),
         "defaults": {
             "wind_pct": 170,
             "pv_pct": 100,
-            "konv_pct": 85,
+            "konv_pct": 90,
+            "konv_min_pct": 5,
             "bess_pct": 100,
             "load_pct": 100,
             "soc_pct": 50,
@@ -184,7 +156,7 @@ LOCAL_SCENARIOS: dict[str, dict[str, Any]] = {
             "ee_curtail_pct": 0,
             "hour": 21,
         },
-        "profile_factors": {"wind": 1.35, "pv": 0.95, "konv": 0.92, "load": 1.00},
+        "profile_factors": {"wind": 1.35, "pv": 0.95, "load": 1.00},
         "line_stress_factor": 1.55,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
@@ -235,22 +207,19 @@ def _local_apply_scenario_to_profiles(
     scenario_key: str,
     ee_curtail_pct: float = 0.0,
 ) -> pd.DataFrame:
+    """Szenariofaktoren wirken nur auf SMARD-orientierte Größen: Last, Wind, PV."""
     scenario = LOCAL_SCENARIOS.get(scenario_key, LOCAL_SCENARIOS["training"])
     factors = scenario.get("profile_factors", {})
     out = profiles.copy()
 
-    for col, key in (
-        ("Wind_GW", "wind"),
-        ("PV_GW", "pv"),
-        ("Konv_GW", "konv"),
-        ("Last_GW", "load"),
-    ):
+    for col, key in (("Wind_GW", "wind"), ("PV_GW", "pv"), ("Last_GW", "load")):
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0.0) * float(factors.get(key, 1.0))
 
+    # EE-Abregelung wird im Dispatch angewendet. Diese Spalte hält nur Vorab-Abregelung aus externen Szenarien kompatibel.
     out["Pre_Curtailment_GW"] = 0.0
-    curtail_frac = float(np.clip(ee_curtail_pct, 0.0, 100.0)) / 100.0
-    if curtail_frac > 0.0:
+    if ee_curtail_pct:
+        curtail_frac = float(np.clip(ee_curtail_pct, 0.0, 100.0)) / 100.0
         old_ee = out.get("Wind_GW", 0.0) + out.get("PV_GW", 0.0)
         if "Wind_GW" in out.columns:
             out["Wind_GW"] *= 1.0 - curtail_frac
@@ -270,6 +239,7 @@ def _local_compute_line_status_proxy(
     line_capacity_pct: float,
     line_stress_factor: float = 1.0,
 ) -> pd.DataFrame:
+    """Didaktischer Leitungs-Proxy. Kein AC-/DC-Lastfluss."""
     if lines.empty:
         return lines.copy()
 
@@ -288,8 +258,8 @@ def _local_compute_line_status_proxy(
         for _, gen in generators.iterrows():
             bus = str(gen.get("Bus", ""))
             typ = str(gen.get("Typ", ""))
-            if bus in nodal_balance.index:
-                nodal_balance.loc[bus] += float(gen.get("Anteil", 0.0)) * typ_power.get(typ, 0.0)
+            if bus in nodal_balance.index and typ in typ_power:
+                nodal_balance.loc[bus] += float(gen.get("Anteil", 0.0)) * typ_power[typ]
 
     if not consumers.empty and "Bus" in consumers.columns:
         total_load = float(hour_row.get("Last_GW", 0.0))
@@ -352,9 +322,9 @@ def _local_evaluate_scenario(hour_row: pd.Series, line_status: pd.DataFrame, sce
     if abs(balance) <= balance_limit:
         messages.append(f"Bilanz ok: {balance:+.2f} GW innerhalb ±{balance_limit:.1f} GW.")
     elif balance < -balance_limit:
-        messages.append(f"Unterdeckung: {balance:+.2f} GW. Mehr Erzeugung, BESS-Entladung oder Lastsenkung nötig.")
+        messages.append(f"Unterdeckung: {balance:+.2f} GW. Mehr verfügbare Restleistung, BESS-Entladung oder Lastsenkung nötig.")
     else:
-        messages.append(f"Überdeckung: {balance:+.2f} GW. BESS-Ladung, EE-Abregelung oder Lastanhebung nötig.")
+        messages.append(f"Überdeckung: {balance:+.2f} GW. Restleistung senken, BESS laden, EE abregeln oder Last erhöhen.")
 
     if curtailment <= curtail_limit:
         messages.append(f"Abregelung ok: {curtailment:.2f} GW ≤ {curtail_limit:.2f} GW.")
@@ -380,7 +350,7 @@ def _local_evaluate_scenario(hour_row: pd.Series, line_status: pd.DataFrame, sce
 SCENARIOS, apply_scenario_to_profiles, compute_line_status_proxy, evaluate_scenario, SCENARIO_SOURCE = _load_external_scenarios()
 
 # =============================================================================
-# SMARD API
+# SMARD API: nur Last, Wind, PV
 # =============================================================================
 @dataclass(frozen=True)
 class SmardSeriesResult:
@@ -408,19 +378,18 @@ def _extract_timestamps(payload: dict[str, Any] | list[Any]) -> list[int]:
     if isinstance(payload, list):
         data = payload
     elif isinstance(payload, dict):
-        for key in ("timestamps", "timestamp", "indices", "index"):
+        data = []
+        for key in ("timestamps", "timestamp", "indices", "index", "data"):
             if key in payload:
                 data = payload[key]
                 break
-        else:
-            data = payload.get("data", [])
     else:
         data = []
 
     out: list[int] = []
     for item in data:
         if isinstance(item, dict):
-            val = item.get("timestamp") or item.get("date") or item.get("ts")
+            val = item.get("timestamp", item.get("date", item.get("ts")))
         else:
             val = item
         try:
@@ -432,20 +401,19 @@ def _extract_timestamps(payload: dict[str, Any] | list[Any]) -> list[int]:
 
 def _extract_time_series(payload: dict[str, Any] | list[Any]) -> list[tuple[int, float]]:
     if isinstance(payload, dict):
+        raw = []
         for key in ("series", "values", "data"):
             if key in payload:
                 raw = payload[key]
                 break
-        else:
-            raw = []
     else:
         raw = payload
 
     pairs: list[tuple[int, float]] = []
     for item in raw:
         if isinstance(item, dict):
-            ts = item.get("timestamp") or item.get("date") or item.get("x")
-            value = item.get("value") or item.get("y")
+            ts = item.get("timestamp", item.get("date", item.get("x")))
+            value = item.get("value", item.get("y"))
         elif isinstance(item, (list, tuple)) and len(item) >= 2:
             ts, value = item[0], item[1]
         else:
@@ -461,7 +429,6 @@ def _extract_time_series(payload: dict[str, Any] | list[Any]) -> list[tuple[int,
 
 
 def _target_timestamp_ms(day: date) -> int:
-    # SMARD arbeitet mit Unix-ms-Zeitstempeln. Die lokale Tagesfilterung erfolgt später explizit.
     return int(pd.Timestamp(day, tz=APP_TZ).timestamp() * 1000)
 
 
@@ -495,10 +462,7 @@ def smard_load_series(
     idx = smard_index(filter_id, region=region, resolution=resolution)
     used_ts = _choose_index_timestamp(idx, target_ms)
 
-    url = (
-        f"{SMARD_BASE_URL}/{filter_id}/{region}/"
-        f"{filter_id}_{region}_{resolution}_{used_ts}.json"
-    )
+    url = f"{SMARD_BASE_URL}/{filter_id}/{region}/{filter_id}_{region}_{resolution}_{used_ts}.json"
     payload = _http_get_json(url)
     pairs = _extract_time_series(payload)
     if not pairs:
@@ -509,7 +473,6 @@ def smard_load_series(
     vals = vals[vals.index.date == day]
 
     if vals.empty:
-        # Fallback: Manche API-Blöcke enthalten um den Zieltag herum nur UTC-nahe Zeitpunkte.
         raw = pd.Series([p[1] for p in pairs], index=pd.to_datetime([p[0] for p in pairs], unit="ms", utc=True))
         vals = pd.to_numeric(raw, errors="coerce").fillna(0.0)
         vals = vals[vals.index.date == day]
@@ -520,23 +483,18 @@ def smard_load_series(
 def _series_to_24h_gw(values: pd.Series) -> pd.Series:
     if values.empty:
         return pd.Series(0.0, index=HOURS, dtype=float)
-
-    s = values.copy()
-    if not isinstance(s.index, pd.DatetimeIndex):
+    if not isinstance(values.index, pd.DatetimeIndex):
         raise TypeError("SMARD-Zeitreihe braucht DatetimeIndex.")
 
-    # API-Werte in stündlicher Auflösung sind MWh je Stunde; numerisch entspricht das MW.
-    # Für die App wird nach GW umgerechnet.
-    by_hour = s.groupby(s.index.hour).mean() / 1000.0
+    # Bei stündlicher SMARD-Auflösung sind die Werte MWh je Stunde; numerisch entspricht das MW.
+    by_hour = values.groupby(values.index.hour).mean() / 1000.0
     by_hour = by_hour.reindex(HOURS)
-
     if by_hour.isna().any():
         by_hour = by_hour.interpolate(limit_direction="both").fillna(0.0)
-
     return by_hour.astype(float)
 
 
-@st.cache_data(ttl=3600, show_spinner="Lade SMARD-Daten über API ...")
+@st.cache_data(ttl=3600, show_spinner="Lade SMARD-Orientierungsdaten ...")
 def load_smard_api_profile(day_iso: str, region: str = SMARD_REGION) -> tuple[pd.DataFrame, pd.DataFrame]:
     results: dict[str, SmardSeriesResult] = {}
     meta_rows: list[dict[str, Any]] = []
@@ -555,203 +513,32 @@ def load_smard_api_profile(day_iso: str, region: str = SMARD_REGION) -> tuple[pd
     wind = _series_to_24h_gw(results["wind_offshore"].values) + _series_to_24h_gw(results["wind_onshore"].values)
     pv = _series_to_24h_gw(results["pv"].values)
     load = _series_to_24h_gw(results["load"].values)
-    konv_parts = [_series_to_24h_gw(results[key].values) for key in RESTLICHE_ERZEUGER_KEYS]
-    konv = pd.concat(konv_parts, axis=1).sum(axis=1)
 
     profile = pd.DataFrame({
         "Stunde": HOURS.astype(int),
         "Last_GW": load.to_numpy(dtype=float),
         "Wind_GW": wind.to_numpy(dtype=float),
         "PV_GW": pv.to_numpy(dtype=float),
-        "Konv_GW": konv.to_numpy(dtype=float),
+        # Nicht aus SMARD. Wird im Dispatch künstlich gesetzt.
+        "Konv_GW": np.zeros(24, dtype=float),
+        "BESS_GW": np.zeros(24, dtype=float),
     })
-    profile["BESS_GW"] = 0.0
-    profile["SMARD_Inlaendische_Erzeugung_GW"] = profile["Wind_GW"] + profile["PV_GW"] + profile["Konv_GW"]
-    profile["SMARD_Zielluecke_GW"] = profile["Last_GW"] - profile["SMARD_Inlaendische_Erzeugung_GW"]
+    profile["SMARD_EE_Orientierung_GW"] = profile["Wind_GW"] + profile["PV_GW"]
+    profile["SMARD_Zielluecke_GW"] = profile["Last_GW"] - profile["SMARD_EE_Orientierung_GW"]
     profile["timestamp"] = pd.to_datetime(day_iso) + pd.to_timedelta(profile["Stunde"], unit="h")
 
-    meta = pd.DataFrame(meta_rows)
-    return profile, meta
-
-
-def _safe_ref_value(refs: dict[str, float], key: str, fallback: float = 1.0) -> float:
-    """Positive Referenzleistung holen, damit Prozentrechnung nicht durch 0 teilt."""
-    try:
-        value = float(refs.get(key, fallback))
-    except (TypeError, ValueError):
-        value = fallback
-    return value if value > 0 else fallback
-
-
-def compute_hourly_utilization_defaults(profiles: pd.DataFrame, refs: dict[str, float]) -> pd.DataFrame:
-    """
-    Wandelt SMARD-Stundenleistungen in Default-Auslastungen um.
-
-    Definition:
-    - Wind/PV/Restliche Erzeuger: Leistung_GW / installierte Referenzleistung_GW * 100
-    - Last: Last_GW / mittlere Referenzlast_GW * 100
-
-    Die Last hat keine installierte Leistung im selben Sinn wie Erzeuger. Deshalb wird hier
-    die mittlere Referenzlast als Bezugsgröße verwendet.
-    """
-    out = pd.DataFrame({"Stunde": pd.to_numeric(profiles["Stunde"], errors="coerce").fillna(0).astype(int)})
-
-    wind_ref = _safe_ref_value(refs, "wind_gw")
-    pv_ref = _safe_ref_value(refs, "pv_gw")
-    konv_ref = _safe_ref_value(refs, "konv_gw")
-    load_ref = _safe_ref_value(refs, "load_mean_gw")
-
-    out["Last_Default_pct"] = pd.to_numeric(profiles.get("Last_GW", 0.0), errors="coerce").fillna(0.0) / load_ref * 100.0
-    out["Wind_Default_pct"] = pd.to_numeric(profiles.get("Wind_GW", 0.0), errors="coerce").fillna(0.0) / wind_ref * 100.0
-    out["PV_Default_pct"] = pd.to_numeric(profiles.get("PV_GW", 0.0), errors="coerce").fillna(0.0) / pv_ref * 100.0
-    out["Konv_Default_pct"] = pd.to_numeric(profiles.get("Konv_GW", 0.0), errors="coerce").fillna(0.0) / konv_ref * 100.0
-
-    for col in ("Last_Default_pct", "Wind_Default_pct", "PV_Default_pct", "Konv_Default_pct"):
-        out[col] = out[col].replace([np.inf, -np.inf], np.nan).fillna(0.0)
-
-    return out
-
-
-def make_empty_hourly_offset_table() -> pd.DataFrame:
-    return pd.DataFrame({
-        "Stunde": HOURS.astype(int),
-        "Last_Offset_pp": np.zeros(24, dtype=float),
-        "Wind_Offset_pp": np.zeros(24, dtype=float),
-        "PV_Offset_pp": np.zeros(24, dtype=float),
-        "Konv_Offset_pp": np.zeros(24, dtype=float),
-    })
-
-
-def _hourly_offset_array(offset_table: pd.DataFrame | None, column: str) -> np.ndarray:
-    if offset_table is None or offset_table.empty or column not in offset_table.columns or "Stunde" not in offset_table.columns:
-        return np.zeros(24, dtype=float)
-
-    tmp = offset_table[["Stunde", column]].copy()
-    tmp["Stunde"] = pd.to_numeric(tmp["Stunde"], errors="coerce").astype("Int64")
-    tmp[column] = pd.to_numeric(tmp[column], errors="coerce").fillna(0.0)
-    tmp = tmp.dropna(subset=["Stunde"])
-    tmp = tmp[(tmp["Stunde"] >= 0) & (tmp["Stunde"] <= 23)]
-    if tmp.empty:
-        return np.zeros(24, dtype=float)
-
-    return tmp.groupby("Stunde")[column].mean().reindex(HOURS, fill_value=0.0).to_numpy(dtype=float)
-
-
-def apply_utilization_offsets(
-    profiles: pd.DataFrame,
-    refs: dict[str, float],
-    last_offset_pp: float = 0.0,
-    wind_offset_pp: float = 0.0,
-    pv_offset_pp: float = 0.0,
-    konv_offset_pp: float = 0.0,
-    hourly_offsets: pd.DataFrame | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Nimmt die SMARD-Leistung als Default-Auslastungsreihe und addiert Nutzer-Offsets.
-
-    Offset-Einheit: Prozentpunkte, nicht Prozent relativ.
-    Beispiel: Default Wind 35 %, Offset +5 pp -> finale Auslastung 40 %.
-    """
-    out = profiles.copy()
-    defaults = compute_hourly_utilization_defaults(out, refs)
-
-    last_offset = float(last_offset_pp) + _hourly_offset_array(hourly_offsets, "Last_Offset_pp")
-    wind_offset = float(wind_offset_pp) + _hourly_offset_array(hourly_offsets, "Wind_Offset_pp")
-    pv_offset = float(pv_offset_pp) + _hourly_offset_array(hourly_offsets, "PV_Offset_pp")
-    konv_offset = float(konv_offset_pp) + _hourly_offset_array(hourly_offsets, "Konv_Offset_pp")
-
-    # Erzeuger werden auf 0...100 % der Referenzkapazität begrenzt.
-    # Last wird großzügiger begrenzt, weil Lastspitzen relativ zur mittleren Referenzlast >100 % sein können.
-    final_last_pct = np.clip(defaults["Last_Default_pct"].to_numpy(dtype=float) + last_offset, 0.0, 300.0)
-    final_wind_pct = np.clip(defaults["Wind_Default_pct"].to_numpy(dtype=float) + wind_offset, 0.0, 100.0)
-    final_pv_pct = np.clip(defaults["PV_Default_pct"].to_numpy(dtype=float) + pv_offset, 0.0, 100.0)
-    final_konv_pct = np.clip(defaults["Konv_Default_pct"].to_numpy(dtype=float) + konv_offset, 0.0, 100.0)
-
-    load_ref = _safe_ref_value(refs, "load_mean_gw")
-    wind_ref = _safe_ref_value(refs, "wind_gw")
-    pv_ref = _safe_ref_value(refs, "pv_gw")
-    konv_ref = _safe_ref_value(refs, "konv_gw")
-
-    out["Last_GW"] = load_ref * final_last_pct / 100.0
-    out["Wind_GW"] = wind_ref * final_wind_pct / 100.0
-    out["PV_GW"] = pv_ref * final_pv_pct / 100.0
-    out["Konv_GW"] = konv_ref * final_konv_pct / 100.0
-
-    out["Last_Default_pct"] = defaults["Last_Default_pct"].to_numpy(dtype=float)
-    out["Wind_Default_pct"] = defaults["Wind_Default_pct"].to_numpy(dtype=float)
-    out["PV_Default_pct"] = defaults["PV_Default_pct"].to_numpy(dtype=float)
-    out["Konv_Default_pct"] = defaults["Konv_Default_pct"].to_numpy(dtype=float)
-
-    out["Last_Offset_pp"] = last_offset
-    out["Wind_Offset_pp"] = wind_offset
-    out["PV_Offset_pp"] = pv_offset
-    out["Konv_Offset_pp"] = konv_offset
-
-    out["Last_Final_pct"] = final_last_pct
-    out["Wind_Final_pct"] = final_wind_pct
-    out["PV_Final_pct"] = final_pv_pct
-    out["Konv_Final_pct"] = final_konv_pct
-
-    out["SMARD_Inlaendische_Erzeugung_GW"] = out["Wind_GW"] + out["PV_GW"] + out["Konv_GW"]
-    out["SMARD_Zielluecke_GW"] = out["Last_GW"] - out["SMARD_Inlaendische_Erzeugung_GW"]
-
-    util_meta = defaults.copy()
-    util_meta["Last_Offset_pp"] = last_offset
-    util_meta["Wind_Offset_pp"] = wind_offset
-    util_meta["PV_Offset_pp"] = pv_offset
-    util_meta["Konv_Offset_pp"] = konv_offset
-    util_meta["Last_Final_pct"] = final_last_pct
-    util_meta["Wind_Final_pct"] = final_wind_pct
-    util_meta["PV_Final_pct"] = final_pv_pct
-    util_meta["Konv_Final_pct"] = final_konv_pct
-    util_meta["Zielluecke_nach_Offset_GW"] = out["SMARD_Zielluecke_GW"].to_numpy(dtype=float)
-
-    return out, util_meta
-
-
-def generate_synthetic_profiles(wind_scale: float, pv_scale: float, load_scale: float, refs: dict[str, float], seed: int = 7) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    h = HOURS
-
-    raw_load_shape = (
-        55.0
-        + 12.0 * np.exp(-((h - 8) ** 2) / 6.0)
-        + 8.0 * np.exp(-((h - 13) ** 2) / 10.0)
-        + 18.0 * np.exp(-((h - 19) ** 2) / 5.0)
-    )
-    load_shape = raw_load_shape / float(np.mean(raw_load_shape))
-    load = refs["load_mean_gw"] * load_scale * load_shape
-
-    pv_shape = np.where((h >= 6) & (h <= 20), np.exp(-((h - 13) ** 2) / 9.0), 0.0)
-    pv = refs["pv_gw"] * pv_scale * 0.55 * pv_shape
-
-    raw_wind = rng.normal(loc=0.45, scale=0.18, size=24)
-    wind_factor = np.convolve(raw_wind, np.ones(5) / 5.0, mode="same")
-    wind_factor = np.clip(wind_factor, 0.08, 0.85)
-    wind = refs["wind_gw"] * wind_scale * wind_factor
-
-    konv_shape = np.maximum(0.35, 0.65 + 0.08 * np.sin((h - 6) / 24 * 2 * np.pi))
-    konv = refs["konv_gw"] * 0.55 * konv_shape
-
-    out = pd.DataFrame({"Stunde": h, "Last_GW": load, "Wind_GW": wind, "PV_GW": pv, "Konv_GW": konv})
-    out["BESS_GW"] = 0.0
-    out["SMARD_Inlaendische_Erzeugung_GW"] = out["Wind_GW"] + out["PV_GW"] + out["Konv_GW"]
-    out["SMARD_Zielluecke_GW"] = out["Last_GW"] - out["SMARD_Inlaendische_Erzeugung_GW"]
-    return out
+    return profile, pd.DataFrame(meta_rows)
 
 # =============================================================================
 # PyPSA -> App-Datenmodell
 # =============================================================================
 @st.cache_resource(show_spinner=False)
-def load_pypsa_network(path: str | Path):
+def load_pypsa_network(path_str: str, mtime_ns: int):
     if pypsa is None:
         raise RuntimeError("PyPSA ist nicht installiert. Ergänze 'pypsa' in requirements.txt.")
-
-    path = Path(path)
+    path = Path(path_str)
     if not path.exists():
-        raise FileNotFoundError(
-            f"Netzdatei nicht gefunden: {path.name}. Lege {path.name} in denselben Ordner wie app.py."
-        )
+        raise FileNotFoundError(f"Netzdatei nicht gefunden: {path.name}. Lege {path.name} in denselben Ordner wie app.py.")
     return pypsa.Network(path)
 
 
@@ -763,6 +550,10 @@ def carrier_to_typ(carrier: object) -> str:
         return "PV"
     if "battery" in c or "bess" in c or "storage" in c:
         return "BESS"
+    if "load_shedding" in c or "load shedding" in c:
+        return "Lastabwurf"
+    if "import" in c or "export" in c:
+        return "Import/Export"
     return "Konventionell"
 
 
@@ -876,9 +667,7 @@ def pypsa_to_lines(n) -> pd.DataFrame:
                 "Kapazitaet_GW": cap_mw / 1000.0,
             })
 
-    return pd.DataFrame(rows, columns=[
-        "Name", "Typ", "von", "nach", "lat0", "lon0", "lat1", "lon1", "Kapazitaet_GW"
-    ])
+    return pd.DataFrame(rows, columns=["Name", "Typ", "von", "nach", "lat0", "lon0", "lat1", "lon1", "Kapazitaet_GW"])
 
 
 def pypsa_to_generators(n) -> pd.DataFrame:
@@ -892,8 +681,8 @@ def pypsa_to_generators(n) -> pd.DataFrame:
             bus = str(gen["bus"])
             if bus not in bus_index:
                 continue
-            b = buses.loc[bus]
             typ = carrier_to_typ(gen.get("carrier", ""))
+            b = buses.loc[bus]
             p_nom_mw = _component_capacity_mw(gen, ("p_nom", "p_nom_opt"))
             rows.append({
                 "Name": str(name),
@@ -922,7 +711,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
 
     df = pd.DataFrame(rows)
     if df.empty:
-        return pd.DataFrame(columns=["Name", "Bus", "Typ", "lat", "lon", "Anteil"])
+        return pd.DataFrame(columns=["Name", "Bus", "Typ", "lat", "lon", "Anteil", "p_nom_MW"])
 
     df["Anteil"] = 0.0
     for typ in df["Typ"].unique():
@@ -930,7 +719,7 @@ def pypsa_to_generators(n) -> pd.DataFrame:
         total = float(df.loc[mask, "p_nom_MW"].sum())
         df.loc[mask, "Anteil"] = df.loc[mask, "p_nom_MW"] / total if total > 0 else 1.0 / int(mask.sum())
 
-    return df[["Name", "Bus", "Typ", "lat", "lon", "Anteil"]]
+    return df[["Name", "Bus", "Typ", "lat", "lon", "Anteil", "p_nom_MW"]]
 
 
 def ensure_bess_visible(generators: pd.DataFrame, consumers: pd.DataFrame) -> pd.DataFrame:
@@ -939,8 +728,6 @@ def ensure_bess_visible(generators: pd.DataFrame, consumers: pd.DataFrame) -> pd
     if consumers.empty:
         return generators
 
-    # Didaktischer Fallback: Falls das Netz keine StorageUnits enthält, werden BESS-Marker
-    # an den größten Lastknoten angezeigt. Fachlich ist das nur eine Visualisierung der Stellgröße.
     top = consumers.sort_values("Anteil", ascending=False).head(min(4, len(consumers))).copy()
     total = float(top["Anteil"].sum())
     rows = []
@@ -952,6 +739,7 @@ def ensure_bess_visible(generators: pd.DataFrame, consumers: pd.DataFrame) -> pd
             "lat": float(row["lat"]),
             "lon": float(row["lon"]),
             "Anteil": float(row["Anteil"]) / total if total > 0 else 1.0 / len(top),
+            "p_nom_MW": np.nan,
         })
     return pd.concat([generators, pd.DataFrame(rows)], ignore_index=True)
 
@@ -990,8 +778,36 @@ def get_reference_values(n) -> dict[str, float]:
     return refs
 
 # =============================================================================
-# Dispatch
+# Profile und Dispatch
 # =============================================================================
+def generate_synthetic_profiles(refs: dict[str, float], seed: int = 7) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    h = HOURS
+    raw_load_shape = (
+        55.0
+        + 12.0 * np.exp(-((h - 8) ** 2) / 6.0)
+        + 8.0 * np.exp(-((h - 13) ** 2) / 10.0)
+        + 18.0 * np.exp(-((h - 19) ** 2) / 5.0)
+    )
+    load_shape = raw_load_shape / float(np.mean(raw_load_shape))
+    load = refs["load_mean_gw"] * load_shape
+
+    pv_shape = np.where((h >= 6) & (h <= 20), np.exp(-((h - 13) ** 2) / 9.0), 0.0)
+    pv = refs["pv_gw"] * 0.55 * pv_shape
+
+    raw_wind = rng.normal(loc=0.45, scale=0.18, size=24)
+    wind_factor = np.convolve(raw_wind, np.ones(5) / 5.0, mode="same")
+    wind_factor = np.clip(wind_factor, 0.08, 0.85)
+    wind = refs["wind_gw"] * wind_factor
+
+    out = pd.DataFrame({"Stunde": h, "Last_GW": load, "Wind_GW": wind, "PV_GW": pv})
+    out["Konv_GW"] = 0.0
+    out["BESS_GW"] = 0.0
+    out["SMARD_EE_Orientierung_GW"] = out["Wind_GW"] + out["PV_GW"]
+    out["SMARD_Zielluecke_GW"] = out["Last_GW"] - out["SMARD_EE_Orientierung_GW"]
+    return out
+
+
 def prepare_dispatch_profiles(
     profiles: pd.DataFrame,
     wind_scale: float,
@@ -1002,19 +818,27 @@ def prepare_dispatch_profiles(
     refs: dict[str, float],
     soc_start_pct: float,
     ee_curtail_pct: float,
+    konv_min_pct: float = 0.0,
     eta: float = 0.90,
 ) -> pd.DataFrame:
+    """
+    Dispatch-Modell:
+    - SMARD liefert nur Last, Wind und PV als Orientierung.
+    - Restliche Erzeuger sind nicht SMARD-gekoppelt.
+    - Konv_GW wird künstlich auf die Residuallast gefahren, begrenzt durch .nc-/Fallback-Kapazität.
+    - BESS gleicht danach verbleibende Unter-/Überdeckung aus.
+    """
     out = profiles.copy()
-    for col in ("Wind_GW", "PV_GW", "Konv_GW", "Last_GW"):
+    for col in ("Wind_GW", "PV_GW", "Last_GW"):
         if col not in out.columns:
             out[col] = 0.0
         out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0.0)
 
     out["Wind_GW"] *= wind_scale
     out["PV_GW"] *= pv_scale
-    out["Konv_GW"] *= konv_scale
     out["Last_GW"] *= load_scale
 
+    # EE-Abregelung nach Skalierung.
     curtail_frac = float(np.clip(ee_curtail_pct, 0.0, 100.0)) / 100.0
     ee_before = out["Wind_GW"] + out["PV_GW"]
     out["Wind_GW"] *= 1.0 - curtail_frac
@@ -1023,8 +847,20 @@ def prepare_dispatch_profiles(
     if "Pre_Curtailment_GW" in out.columns:
         out["Curtailment_GW"] += pd.to_numeric(out["Pre_Curtailment_GW"], errors="coerce").fillna(0.0)
 
-    p_bess_max = max(refs["bess_gw"] * bess_scale, 0.0)
-    cap_bess = max(refs["bess_gwh"] * bess_scale, 0.0)
+    # Restliche Erzeuger als künstlich regelbare Leistung.
+    konv_max = max(float(refs["konv_gw"]) * float(konv_scale), 0.0)
+    konv_min = konv_max * float(np.clip(konv_min_pct, 0.0, 100.0)) / 100.0
+    residual_after_ee = out["Last_GW"] - out["Wind_GW"] - out["PV_GW"]
+
+    out["Konv_Soll_GW"] = residual_after_ee
+    out["Konv_Min_GW"] = konv_min
+    out["Konv_Max_GW"] = konv_max
+    out["Konv_GW"] = np.clip(residual_after_ee, konv_min, konv_max)
+    out["Konv_Fehlleistung_GW"] = np.maximum(residual_after_ee - konv_max, 0.0)
+    out["Konv_Mindestlauf_Ueberschuss_GW"] = np.maximum(konv_min - residual_after_ee, 0.0)
+
+    p_bess_max = max(float(refs["bess_gw"]) * float(bess_scale), 0.0)
+    cap_bess = max(float(refs["bess_gwh"]) * float(bess_scale), 0.0)
     soc = cap_bess * float(np.clip(soc_start_pct, 0.0, 100.0)) / 100.0
     soc_min = 0.10 * cap_bess
     soc_max = 0.95 * cap_bess
@@ -1095,6 +931,8 @@ TYP_COLORS = {
     "PV": "#ff7f0e",
     "BESS": "#2ca02c",
     "Konventionell": "#7f7f7f",
+    "Import/Export": "#9467bd",
+    "Lastabwurf": "#8c564b",
     "Verbraucher": "#d62728",
 }
 
@@ -1103,6 +941,8 @@ TYP_SYMBOLS = {
     "PV": "square",
     "BESS": "diamond",
     "Konventionell": "circle",
+    "Import/Export": "x",
+    "Lastabwurf": "cross",
     "Verbraucher": "star",
 }
 
@@ -1280,18 +1120,18 @@ def build_map(
 def build_stack(df: pd.DataFrame, highlight_hour: int) -> go.Figure:
     h = df["Stunde"]
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=h, y=df["Konv_GW"], name="Restliche Erzeuger", marker_color=TYP_COLORS["Konventionell"]))
+    fig.add_trace(go.Bar(x=h, y=df["Konv_GW"], name="Restliche Erzeuger geregelt", marker_color=TYP_COLORS["Konventionell"]))
     fig.add_trace(go.Bar(x=h, y=df["Wind_GW"], name="Wind", marker_color=TYP_COLORS["Wind"]))
     fig.add_trace(go.Bar(x=h, y=df["PV_GW"], name="PV", marker_color=TYP_COLORS["PV"]))
     fig.add_trace(go.Bar(x=h, y=df["BESS_Entladen_GW"], name="BESS Entladen", marker_color=TYP_COLORS["BESS"]))
     fig.add_trace(go.Bar(x=h, y=-df["BESS_Laden_GW"], name="BESS Laden", marker_color="rgba(44,160,44,0.5)"))
     fig.add_trace(go.Bar(x=h, y=-df["Curtailment_GW"], name="EE-Abregelung", marker_color="rgba(214,39,40,0.4)"))
     fig.add_trace(go.Scatter(x=h, y=df["Last_GW"], name="Last/Ziel", line=dict(color="black", width=3)))
-    fig.add_trace(go.Scatter(x=h, y=df["Inlaendische_Erzeugung_GW"], name="Erzeugung ohne BESS", line=dict(color="gray", width=2, dash="dot")))
+    fig.add_trace(go.Scatter(x=h, y=df["Konv_Soll_GW"], name="Soll Restl. Erz. vor Limits", line=dict(color="gray", width=2, dash="dot")))
     fig.add_vline(x=highlight_hour, line_dash="dash", line_color="red")
     fig.update_layout(
         barmode="relative",
-        title="SMARD-Erzeugung ohne Import/Export vs. Netzlast",
+        title="Dispatch: SMARD-Last/Wind/PV + künstlich geregelte restliche Erzeuger",
         xaxis_title="Stunde",
         yaxis_title="Leistung [GW]",
         height=440,
@@ -1309,7 +1149,7 @@ def build_balance_chart(df: pd.DataFrame, highlight_hour: int) -> go.Figure:
     fig.add_hline(y=-1, line_dash="dash", line_color="red")
     fig.add_vline(x=highlight_hour, line_dash="dash", line_color="red")
     fig.update_layout(
-        title="Ziellücke / Netzbilanz ohne externe Importe",
+        title="Ziellücke / Netzbilanz ohne externe Importe und Exporte",
         xaxis_title="Stunde",
         yaxis_title="GW",
         height=340,
@@ -1329,10 +1169,7 @@ def build_line_utilization_chart(line_status: pd.DataFrame) -> go.Figure:
         x=sorted_lines["Name"],
         y=sorted_lines["Auslastung_pct"],
         name="Auslastung",
-        marker_color=[
-            "red" if bool(x) else ("orange" if y >= 90 else "green")
-            for x, y in zip(sorted_lines["Ueberlast"], sorted_lines["Auslastung_pct"])
-        ],
+        marker_color=["red" if bool(x) else ("orange" if y >= 90 else "green") for x, y in zip(sorted_lines["Ueberlast"], sorted_lines["Auslastung_pct"])],
         hovertext=[
             f"{row['Name']}<br>{row['von']} → {row['nach']}<br>"
             f"Kapazität: {row['Kapazitaet_GW']:.2f} GW<br>"
@@ -1359,14 +1196,21 @@ def build_line_utilization_chart(line_status: pd.DataFrame) -> go.Figure:
 def init_session_state() -> None:
     if "scenario_key" not in st.session_state:
         st.session_state["scenario_key"] = "training"
-    defaults = SCENARIOS.get("training", LOCAL_SCENARIOS["training"])["defaults"]
+
+    scenario = SCENARIOS.get("training", LOCAL_SCENARIOS["training"])
+    defaults = dict(scenario.get("defaults", {}))
+    fallback_defaults = LOCAL_SCENARIOS["training"]["defaults"]
+    for key, value in fallback_defaults.items():
+        defaults.setdefault(key, value)
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
 
 
 def load_scenario_defaults(scenario_key: str) -> None:
     scenario = SCENARIOS.get(scenario_key, SCENARIOS.get("training", LOCAL_SCENARIOS["training"]))
-    for key, value in scenario["defaults"].items():
+    defaults = dict(LOCAL_SCENARIOS.get(scenario_key, LOCAL_SCENARIOS["training"]).get("defaults", {}))
+    defaults.update(scenario.get("defaults", {}))
+    for key, value in defaults.items():
         st.session_state[key] = value
 
 
@@ -1384,22 +1228,23 @@ def _format_gap(value: float) -> str:
 
 
 def main() -> None:
-    st.set_page_config(page_title="Deutschland-Netzkarte: SMARD-API Szenarien", layout="wide")
+    st.set_page_config(page_title="Deutschland-Netzkarte: SMARD + regelbare Restleistung", layout="wide")
     init_session_state()
 
-    st.title("Deutschland-Netzkarte mit SMARD-API und Szenario-Modus")
+    st.title("Deutschland-Netzkarte: SMARD-Orientierung und regelbare Restleistung")
     st.markdown(
-        "Die App lädt reale SMARD-Zeitreihen direkt über die API in 1-Stunden-Auflösung. "
-        "Aus den Stundenwerten wird eine Default-Auslastungsreihe gebildet: Leistung / Referenzkapazität. "
-        "Nutzer können darauf Prozentpunkt-Offsets legen, um die Ziellücke ohne externe Importe auszugleichen."
+        "SMARD wird nur für Netzlast, Wind und PV genutzt. Externe Importe/Exporte und SMARD-Restkategorien "
+        "werden nicht geladen. Die restlichen Erzeuger werden künstlich als regelbare Leistung aus der .nc-/Fallback-Kapazität modelliert."
     )
     st.caption(
-        "BESS ist keine eigene SMARD-Erzeugungskategorie. BESS wird als Stellgröße aus PyPSA/Fallback-Kapazitäten modelliert. "
+        "BESS ist eine vereinfachte Speicher-Stellgröße. Leitungsauslastung ist ein didaktischer Proxy, kein AC/DC-Lastfluss. "
         f"Szenarioquelle: {SCENARIO_SOURCE}"
     )
 
     try:
-        n = load_pypsa_network(NETWORK_FILE)
+        if not NETWORK_FILE.exists():
+            raise FileNotFoundError(f"Netzdatei nicht gefunden: {NETWORK_FILE.name}")
+        n = load_pypsa_network(str(NETWORK_FILE), NETWORK_FILE.stat().st_mtime_ns)
         refs = get_reference_values(n)
         consumers = pypsa_to_consumers(n)
         generators = ensure_bess_visible(pypsa_to_generators(n), consumers)
@@ -1427,7 +1272,7 @@ def main() -> None:
             "Zeitreihe",
             options=["SMARD-API", "synthetisch"],
             index=0,
-            help="SMARD-API lädt die Daten online. Synthetisch ist nur Fallback für Offline-Tests.",
+            help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         )
         default_day = date.today() - timedelta(days=2)
         smard_day = st.date_input(
@@ -1435,40 +1280,36 @@ def main() -> None:
             value=default_day,
             min_value=date(2018, 10, 1),
             max_value=date.today(),
-            help="Bei sehr aktuellen Tagen können SMARD-Daten noch unvollständig sein.",
+            help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
         region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
 
         st.header("Stellgrößen")
-        wind_pct = st.slider("Wind [%]", 0, 300, key="wind_pct", step=5)
-        pv_pct = st.slider("PV [%]", 0, 300, key="pv_pct", step=5)
-        konv_pct = st.slider("Restliche Erzeuger [%]", 0, 250, key="konv_pct", step=5)
+        wind_pct = st.slider("Wind [% der SMARD-Orientierung]", 0, 300, key="wind_pct", step=5)
+        pv_pct = st.slider("PV [% der SMARD-Orientierung]", 0, 300, key="pv_pct", step=5)
+        konv_pct = st.slider(
+            "Restliche Erzeuger verfügbare Leistung [%]",
+            0,
+            250,
+            key="konv_pct",
+            step=5,
+            help="Skaliert die verfügbare regelbare Leistung aus .nc/Fallback. Nicht SMARD-gekoppelt.",
+        )
+        konv_min_pct = st.slider(
+            "Restliche Erzeuger Mindestbetrieb [% verfügbar]",
+            0,
+            80,
+            key="konv_min_pct",
+            step=5,
+            help="0 % bedeutet vollständig herunterfahrbar. Höhere Werte erzeugen bei viel EE eher Überschuss.",
+        )
         bess_pct = st.slider("BESS Leistung/Energie [%]", 0, 300, key="bess_pct", step=5)
-        load_pct = st.slider("Last/Ziel [%]", 50, 200, key="load_pct", step=5)
+        load_pct = st.slider("Last/Ziel [% der SMARD-Last]", 50, 200, key="load_pct", step=5)
         soc_pct = st.slider("BESS Start-SOC [%]", 0, 100, key="soc_pct", step=5)
 
         st.header("Netz- und EE-Maßnahmen")
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
-        ee_curtail_pct = st.slider("EE-Abregelung [%]", 0, 80, key="ee_curtail_pct", step=5)
-
-        st.header("Auslastungs-Offset")
-        use_utilization_offsets = st.checkbox(
-            "Default-Auslastungsreihe + Offset verwenden",
-            value=True,
-            help=(
-                "Default je Stunde = SMARD-Leistung / Referenzkapazität. "
-                "Der Offset wird in Prozentpunkten addiert."
-            ),
-        )
-        use_hourly_offset_editor = st.checkbox(
-            "Stündliche Offset-Tabelle aktivieren",
-            value=False,
-            help="Ergänzt die konstanten Offset-Slider um 24 individuell editierbare Stundenwerte.",
-        )
-        last_offset_pp = st.slider("Last-Offset [Prozentpunkte]", -100, 100, 0, step=1)
-        wind_offset_pp = st.slider("Wind-Offset [Prozentpunkte]", -100, 100, 0, step=1)
-        pv_offset_pp = st.slider("PV-Offset [Prozentpunkte]", -100, 100, 0, step=1)
-        konv_offset_pp = st.slider("Restliche-Erzeuger-Offset [Prozentpunkte]", -100, 100, 0, step=1)
+        ee_curtail_pct = st.slider("EE-Abregelung [% von Wind+PV]", 0, 80, key="ee_curtail_pct", step=5)
 
         st.caption(
             f"Referenzwerte aus Netz/Fallback:\n"
@@ -1494,57 +1335,15 @@ def main() -> None:
             st.info("Prüfe Internetzugang, Datum und requirements.txt. Für Offline-Demo kann die synthetische Quelle genutzt werden.")
             st.stop()
     else:
-        base_profiles = generate_synthetic_profiles(1.0, 1.0, 1.0, refs)
+        base_profiles = generate_synthetic_profiles(refs)
 
-    # Szenariofaktoren werden vor den Nutzer-Stellgrößen angewandt.
     try:
         scenario_profiles = apply_scenario_to_profiles(base_profiles, scenario_key=scenario_key, ee_curtail_pct=0.0)
     except Exception:
         scenario_profiles = _local_apply_scenario_to_profiles(base_profiles, scenario_key=scenario_key, ee_curtail_pct=0.0)
 
-    hourly_offsets = None
-    if use_utilization_offsets and use_hourly_offset_editor:
-        st.subheader("Stündlicher Offset auf Default-Auslastungsreihe")
-        st.caption(
-            "Einheiten: Prozentpunkte. Beispiel: Default 35 %, Offset +5 -> finale Auslastung 40 %. "
-            "Erzeuger werden auf 0...100 % Referenzkapazität begrenzt."
-        )
-        hourly_offsets = st.data_editor(
-            make_empty_hourly_offset_table(),
-            hide_index=True,
-            disabled=["Stunde"],
-            use_container_width=True,
-            key="hourly_offset_editor",
-            column_config={
-                "Last_Offset_pp": st.column_config.NumberColumn("Last [pp]", min_value=-100.0, max_value=100.0, step=1.0),
-                "Wind_Offset_pp": st.column_config.NumberColumn("Wind [pp]", min_value=-100.0, max_value=100.0, step=1.0),
-                "PV_Offset_pp": st.column_config.NumberColumn("PV [pp]", min_value=-100.0, max_value=100.0, step=1.0),
-                "Konv_Offset_pp": st.column_config.NumberColumn("Restl. Erz. [pp]", min_value=-100.0, max_value=100.0, step=1.0),
-            },
-        )
-
-    if use_utilization_offsets:
-        dispatch_input_profiles, utilization_meta = apply_utilization_offsets(
-            scenario_profiles,
-            refs=refs,
-            last_offset_pp=last_offset_pp,
-            wind_offset_pp=wind_offset_pp,
-            pv_offset_pp=pv_offset_pp,
-            konv_offset_pp=konv_offset_pp,
-            hourly_offsets=hourly_offsets,
-        )
-    else:
-        dispatch_input_profiles = scenario_profiles
-        utilization_meta = compute_hourly_utilization_defaults(scenario_profiles, refs)
-        utilization_meta["Zielluecke_nach_Offset_GW"] = (
-            pd.to_numeric(scenario_profiles["Last_GW"], errors="coerce").fillna(0.0)
-            - pd.to_numeric(scenario_profiles["Wind_GW"], errors="coerce").fillna(0.0)
-            - pd.to_numeric(scenario_profiles["PV_GW"], errors="coerce").fillna(0.0)
-            - pd.to_numeric(scenario_profiles["Konv_GW"], errors="coerce").fillna(0.0)
-        )
-
     df = prepare_dispatch_profiles(
-        dispatch_input_profiles,
+        scenario_profiles,
         wind_scale=wind_scale,
         pv_scale=pv_scale,
         konv_scale=konv_scale,
@@ -1553,6 +1352,7 @@ def main() -> None:
         refs=refs,
         soc_start_pct=soc_pct,
         ee_curtail_pct=ee_curtail_pct,
+        konv_min_pct=konv_min_pct,
     )
 
     st.subheader("Zeitslider")
@@ -1579,18 +1379,18 @@ def main() -> None:
     k5.metric("BESS [GW]", f"{hour_row['BESS_GW']:+.2f}")
     k6.metric("Bilanz [GW]", f"{hour_row['Netzbilanz_GW']:+.2f}")
 
-    b1, b2, b3, b4 = st.columns(4)
-    b1.metric("Ziellücke vor BESS", _format_gap(float(hour_row["Zielluecke_vor_BESS_GW"])))
-    b2.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
-    b3.metric("Status", str(hour_row["Status"]))
-    b4.metric("SMARD-Importlücke Basis", _format_gap(float(base_profiles.iloc[int(hour)].get("SMARD_Zielluecke_GW", 0.0))))
+    b1, b2, b3, b4, b5 = st.columns(5)
+    b1.metric("Ziellücke nach EE", _format_gap(float(hour_row["Last_GW"] - hour_row["Wind_GW"] - hour_row["PV_GW"])))
+    b2.metric("Restl. Soll [GW]", f"{hour_row['Konv_Soll_GW']:.2f}")
+    b3.metric("Restl. verfügbar [GW]", f"{hour_row['Konv_Max_GW']:.2f}")
+    b4.metric("Ziellücke vor BESS", _format_gap(float(hour_row["Zielluecke_vor_BESS_GW"])))
+    b5.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
 
-    if use_utilization_offsets:
-        u1, u2, u3, u4 = st.columns(4)
-        u1.metric("Wind-Auslastung final", f"{hour_row.get('Wind_Final_pct', 0.0):.1f} %")
-        u2.metric("PV-Auslastung final", f"{hour_row.get('PV_Final_pct', 0.0):.1f} %")
-        u3.metric("Restl. Erz. Auslastung final", f"{hour_row.get('Konv_Final_pct', 0.0):.1f} %")
-        u4.metric("Lastprofil final", f"{hour_row.get('Last_Final_pct', 0.0):.1f} %")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Konv. Fehlleistung", f"{hour_row['Konv_Fehlleistung_GW']:.2f} GW")
+    c2.metric("Mindestlauf-Überschuss", f"{hour_row['Konv_Mindestlauf_Ueberschuss_GW']:.2f} GW")
+    c3.metric("Abregelung", f"{hour_row['Curtailment_GW']:.2f} GW")
+    c4.metric("Status", str(hour_row["Status"]))
 
     st.subheader("Szenario-Bewertung")
     if bool(scenario_eval.get("solved", False)):
@@ -1608,19 +1408,19 @@ def main() -> None:
     e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
 
     with st.expander("Modellannahmen"):
-        rest = ", ".join(FILTER_LABELS[k] for k in RESTLICHE_ERZEUGER_KEYS)
         st.write(
             "- Zielgröße ist die SMARD-Netzlast.\n"
-            "- Wind = Wind Offshore + Wind Onshore.\n"
-            "- PV = Photovoltaik.\n"
-            f"- Restliche Erzeuger = {rest}.\n"
+            "- Wind = SMARD Wind Offshore + Wind Onshore.\n"
+            "- PV = SMARD Photovoltaik.\n"
+            "- Restliche Erzeuger werden nicht aus SMARD geladen, sondern künstlich auf die Residuallast gefahren.\n"
             "- Externe Importe, Exporte und kommerzielle Austauschflüsse werden nicht geladen.\n"
-            "- BESS wird als vereinfachter Speicher-Dispatch modelliert: positiv = Entladung, negativ = Ladung.\n"
+            "- Import-/Export- und Lastabwurf-Carrier aus der .nc zählen nicht als konventionelle Referenzleistung.\n"
+            "- BESS: positiv = Entladung, negativ = Ladung.\n"
             "- Leitungsauslastung ist ein didaktischer Proxy, kein AC/DC-Lastfluss."
         )
 
-    c1, c2 = st.columns([1.2, 1.0])
-    with c1:
+    c_left, c_right = st.columns([1.2, 1.0])
+    with c_left:
         st.subheader("Netzkarte")
         st.plotly_chart(
             build_map(
@@ -1636,7 +1436,7 @@ def main() -> None:
             ),
             use_container_width=True,
         )
-    with c2:
+    with c_right:
         st.subheader("Leitungsauslastung")
         st.plotly_chart(build_line_utilization_chart(line_status), use_container_width=True)
 
@@ -1644,24 +1444,15 @@ def main() -> None:
     st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), use_container_width=True)
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), use_container_width=True)
 
-    with st.expander("Default-Auslastung und Offset"):
-        st.dataframe(utilization_meta.round(3), use_container_width=True)
-
     with st.expander("Stündliche Tabelle"):
         cols = [
-            "Stunde", "Last_GW", "Wind_GW", "PV_GW", "Konv_GW",
+            "Stunde", "Last_GW", "Wind_GW", "PV_GW", "Konv_Soll_GW", "Konv_Min_GW", "Konv_Max_GW",
+            "Konv_GW", "Konv_Fehlleistung_GW", "Konv_Mindestlauf_Ueberschuss_GW",
             "Inlaendische_Erzeugung_GW", "Bilanz_vor_BESS_GW", "Zielluecke_vor_BESS_GW",
             "BESS_GW", "BESS_Laden_GW", "BESS_Entladen_GW", "Curtailment_GW",
             "SOC_GWh", "SOC_pct", "Netzbilanz_GW", "Status",
         ]
-        offset_cols = [
-            "Last_Default_pct", "Last_Offset_pp", "Last_Final_pct",
-            "Wind_Default_pct", "Wind_Offset_pp", "Wind_Final_pct",
-            "PV_Default_pct", "PV_Offset_pp", "PV_Final_pct",
-            "Konv_Default_pct", "Konv_Offset_pp", "Konv_Final_pct",
-        ]
-        cols = cols + [c for c in offset_cols if c in df.columns]
-        st.dataframe(df[cols].round(3), use_container_width=True)
+        st.dataframe(df[[c for c in cols if c in df.columns]].round(3), use_container_width=True)
 
     with st.expander("SMARD-API Abrufe"):
         if api_meta.empty:
@@ -1683,8 +1474,8 @@ def main() -> None:
 
     st.caption(
         "Topologie und räumliche Verteilung kommen aus real_germany_8n.nc. "
-        "Zeitreihen kommen bei SMARD-API-Modus direkt von SMARD. "
-        "Die App löst kein PyPSA-Optimierungsproblem."
+        "Zeitreihen kommen bei SMARD-API-Modus nur für Last/Wind/PV direkt von SMARD. "
+        "Restliche Erzeuger sind regelbare Modellleistung. Die App löst kein PyPSA-Optimierungsproblem."
     )
 
 
