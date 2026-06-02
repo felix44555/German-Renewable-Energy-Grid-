@@ -410,7 +410,7 @@ def _solve_dc_angles(
         bbus[j, i] -= b
 
     theta = np.zeros(n_buses, dtype=float)
-    p = nodal["P_nach_Slack_GW"].to_numpy(dtype=float)
+    p = nodal["P_nach_Slack_GW"].to_numpy(dtype=float, copy=True)
 
     for comp in _connected_components(n_buses, branches):
         if len(comp) <= 1:
