@@ -1,0 +1,8 @@
+streamlit
+pandas
+numpy
+plotly
+requests
+pypsa
+netcdf4
+xarray
