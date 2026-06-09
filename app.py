@@ -1738,7 +1738,7 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # Tabellen
     # -------------------------------------------------------------------------
-    with st.expander("Stündliche Tabelle"):
+    with st.expander("Stündliche Tabelle"):sss
         st.dataframe(
             df[[
                 "Stunde", "Last_GW", "PV_GW", "Wind_GW",
