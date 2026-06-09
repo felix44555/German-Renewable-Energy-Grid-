@@ -401,6 +401,7 @@ def _solve_dc_angles(
     """
     n_buses = len(bus_names)
     bbus = np.zeros((n_buses, n_buses), dtype=float)
+
     for i, j, b in branches:
         if b <= 0.0:
             continue
@@ -410,35 +411,52 @@ def _solve_dc_angles(
         bbus[j, i] -= b
 
     theta = np.zeros(n_buses, dtype=float)
-    p = nodal["P_nach_Slack_GW"].to_numpy(dtype=float)
+
+    # WICHTIG:
+    # Kein to_numpy() mit späterer In-Place-Änderung.
+    # Unter Python 3.14 / pandas 3 / NumPy 2 kann das Array read-only sein.
+    p = (
+        pd.to_numeric(nodal["P_nach_Slack_GW"], errors="coerce")
+        .fillna(0.0)
+        .astype(float)
+        .tolist()
+    )
 
     for comp in _connected_components(n_buses, branches):
         if len(comp) <= 1:
             slack = comp[0]
             imbalance = float(p[slack])
-            p[slack] -= imbalance
+
+            p[slack] = float(p[slack]) - imbalance
+
             nodal.loc[bus_names[slack], "Slack_Ausgleich_GW"] -= imbalance
             nodal.loc[bus_names[slack], "P_nach_Slack_GW"] = p[slack]
             continue
 
         slack = _choose_component_slack(comp, bus_names, nodal)
-        imbalance = float(p[comp].sum())
-        p[slack] -= imbalance
+        imbalance = float(sum(float(p[idx]) for idx in comp))
+
+        p[slack] = float(p[slack]) - imbalance
+
         nodal.loc[bus_names[slack], "Slack_Ausgleich_GW"] -= imbalance
         nodal.loc[bus_names[slack], "P_nach_Slack_GW"] = p[slack]
 
         active = [idx for idx in comp if idx != slack]
+
         bred = bbus[np.ix_(active, active)]
-        pred = p[active]
+        pred = np.asarray([p[idx] for idx in active], dtype=float)
+
         try:
             theta_active = np.linalg.solve(bred, pred)
         except np.linalg.LinAlgError:
             theta_active = np.linalg.pinv(bred) @ pred
+
         theta[active] = theta_active
         theta[slack] = 0.0
 
     nodal["Theta_rad"] = theta
     nodal["Theta_grad"] = np.rad2deg(theta)
+
     return theta, nodal
 
 
