@@ -21,3 +21,6 @@ Archiv/
 
 # Optional: lokale Daten
 *.nc
+echo ".DS_Store" >> .gitignore
+echo "._*" >> .gitignore
+echo "__MACOSX/" >> .gitignore
