@@ -20,7 +20,6 @@ from grid_io import (
 from scenarios import SCENARIOS, apply_scenario_to_profiles, evaluate_scenario
 from smard_api import load_smard_api_profile
 from visualization import build_balance_chart, build_line_utilization_chart, build_map, build_stack
-from KPI_code import calculate_feasibility_kpi
 
 BASE_DIR = Path(__file__).resolve().parent
 NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
@@ -33,165 +32,14 @@ def _format_gap(value: float) -> str:
     if value < 0:
         return f"Überdeckung {abs(value):.2f} GW"
     return "ausgeglichen"
-def _calculate_current_kpi(
-    hour_row: pd.Series,
-    line_status: pd.DataFrame,
-    wind_pct: float,
-    pv_pct: float,
-    bess_pct: float,
-    line_capacity_pct: float,
-) -> dict[str, float]:
-    """
-    Berechnet den Engineering-Feasibility-KPI für die aktuell gewählte Stunde.
 
-    Annahmen:
-    - EE-Anteil = (Wind + PV) / Last, auf 0...100 % begrenzt.
-    - Ausbauwerte werden als Zusatz gegenüber 100 % Referenz interpretiert.
-      Beispiel: 150 % Wind-Slider => wind_added = 0.5.
-    - max_line_load kommt aus dem DC-Lastfluss.
-    """
-    load_gw = max(float(hour_row.get("Last_GW", 0.0)), 1e-9)
-    wind_gw = max(float(hour_row.get("Wind_GW", 0.0)), 0.0)
-    pv_gw = max(float(hour_row.get("PV_GW", 0.0)), 0.0)
-
-    re_share_pct = 100.0 * (wind_gw + pv_gw) / load_gw
-    re_share_pct = max(0.0, min(re_share_pct, 100.0))
-
-    if line_status.empty or "Auslastung_pct" not in line_status.columns:
-        max_line_load = 0.0
-    else:
-        max_line_load = float(
-            pd.to_numeric(line_status["Auslastung_pct"], errors="coerce")
-            .fillna(0.0)
-            .max()
-        )
-
-    grid_added = max(float(line_capacity_pct) / 100.0 - 1.0, 0.0)
-    bat_added = max(float(bess_pct) / 100.0 - 1.0, 0.0)
-    pv_added = max(float(pv_pct) / 100.0 - 1.0, 0.0)
-    wind_added = max(float(wind_pct) / 100.0 - 1.0, 0.0)
-
-    kpi = calculate_feasibility_kpi(
-        re_share_pct=re_share_pct,
-        grid_added=grid_added,
-        bat_added=bat_added,
-        pv_added=pv_added,
-        wind_added=wind_added,
-        max_line_load=max_line_load,
-    )
-
-    return {
-        "kpi": float(kpi),
-        "re_share_pct": float(re_share_pct),
-        "max_line_load": float(max_line_load),
-        "grid_added": float(grid_added),
-        "bat_added": float(bat_added),
-        "pv_added": float(pv_added),
-        "wind_added": float(wind_added),
-    }
 
 def _clean_for_display(df: pd.DataFrame) -> pd.DataFrame:
     """Streamlit/Arrow kann DataFrame.attrs mit DataFrame-Inhalt nicht serialisieren."""
     out = df.copy()
     out.attrs = {}
     return out
-def _calculate_24h_kpi(
-    df: pd.DataFrame,
-    generators: pd.DataFrame,
-    consumers: pd.DataFrame,
-    lines: pd.DataFrame,
-    wind_pct: float,
-    pv_pct: float,
-    bess_pct: float,
-    line_capacity_pct: float,
-    line_stress_factor: float,
-) -> dict[str, float | pd.DataFrame]:
-    """
-    Berechnet eine Tages-KPI-Zahl über alle 24 Stunden.
 
-    Definition:
-    - re_share_pct_24h = Summe(Wind + PV) / Summe(Last) über 24h
-    - max_line_load_24h = höchste Leitungsauslastung aus allen 24 DC-Lastflussrechnungen
-    - Ausbauwerte = Zusatz gegenüber 100 % Sliderwert
-    """
-
-    total_load_gwh = float(pd.to_numeric(df["Last_GW"], errors="coerce").fillna(0.0).sum())
-    total_re_gwh = float(
-        (
-            pd.to_numeric(df["Wind_GW"], errors="coerce").fillna(0.0)
-            + pd.to_numeric(df["PV_GW"], errors="coerce").fillna(0.0)
-        ).sum()
-    )
-
-    re_share_pct_24h = 100.0 * total_re_gwh / max(total_load_gwh, 1e-9)
-    re_share_pct_24h = max(0.0, min(re_share_pct_24h, 100.0))
-
-    hourly_rows: list[dict[str, float]] = []
-    max_line_load_24h = 0.0
-    overloaded_hours = 0
-
-    for _, row in df.iterrows():
-        line_status_h = compute_dc_line_status(
-            generators=generators,
-            consumers=consumers,
-            lines=lines,
-            hour_row=row,
-            line_capacity_pct=line_capacity_pct,
-            line_stress_factor=line_stress_factor,
-        )
-
-        if line_status_h.empty or "Auslastung_pct" not in line_status_h.columns:
-            max_line_h = 0.0
-            overloaded_count_h = 0
-        else:
-            util = pd.to_numeric(line_status_h["Auslastung_pct"], errors="coerce").fillna(0.0)
-            max_line_h = float(util.max())
-            overloaded_count_h = int((util > 100.0).sum())
-
-        if max_line_h > 100.0:
-            overloaded_hours += 1
-
-        max_line_load_24h = max(max_line_load_24h, max_line_h)
-
-        hourly_rows.append(
-            {
-                "Stunde": int(row.get("Stunde", 0)),
-                "Last_GW": float(row.get("Last_GW", 0.0)),
-                "Wind_GW": float(row.get("Wind_GW", 0.0)),
-                "PV_GW": float(row.get("PV_GW", 0.0)),
-                "Netzbilanz_GW": float(row.get("Netzbilanz_GW", 0.0)),
-                "Max_Leitung_pct": max_line_h,
-                "Ueberlastete_Leitungen": overloaded_count_h,
-            }
-        )
-
-    grid_added = max(float(line_capacity_pct) / 100.0 - 1.0, 0.0)
-    bat_added = max(float(bess_pct) / 100.0 - 1.0, 0.0)
-    pv_added = max(float(pv_pct) / 100.0 - 1.0, 0.0)
-    wind_added = max(float(wind_pct) / 100.0 - 1.0, 0.0)
-
-    kpi_24h = calculate_feasibility_kpi(
-        re_share_pct=re_share_pct_24h,
-        grid_added=grid_added,
-        bat_added=bat_added,
-        pv_added=pv_added,
-        wind_added=wind_added,
-        max_line_load=max_line_load_24h,
-    )
-
-    return {
-        "kpi_24h": float(kpi_24h),
-        "re_share_pct_24h": float(re_share_pct_24h),
-        "max_line_load_24h": float(max_line_load_24h),
-        "overloaded_hours": int(overloaded_hours),
-        "total_load_gwh": float(total_load_gwh),
-        "total_re_gwh": float(total_re_gwh),
-        "grid_added": float(grid_added),
-        "bat_added": float(bat_added),
-        "pv_added": float(pv_added),
-        "wind_added": float(wind_added),
-        "hourly_kpi_table": pd.DataFrame(hourly_rows),
-    }
 
 @st.cache_resource(show_spinner=False)
 def _cached_network(path_str: str, mtime_ns: int):
@@ -231,17 +79,7 @@ def load_scenario_defaults(scenario_key: str) -> None:
 def main() -> None:
     st.set_page_config(page_title="Deutschland-Netzkarte: SMARD + DC-Lastfluss", layout="wide")
     init_session_state()
-    # --- TUTORIAL BANNER START ---
-    
-    with st.container():
-    
-        st.info("👋 Neu im Simulator? Lerne die Grundlagen der Netzbalance in unserem Tutorial.")
-    
-        st.page_link("pages/tutorial.py", label="Zum Tutorial")
-    
-        st.divider()
 
-    # --- TUTORIAL BANNER END ---
     st.title("Deutschland-Netzkarte: SMARD-API, regelbare Restleistung und DC-Lastfluss")
     st.markdown(
         "SMARD wird nur für Netzlast, Wind und PV genutzt. Externe Importe/Exporte und SMARD-Restkategorien "
@@ -314,7 +152,7 @@ def main() -> None:
 
         st.header("Netz- und EE-Maßnahmen")
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
-        ee_curtail_pct = st.slider("EE-Abregelung [% von Wind+PV]", 0, 100, key="ee_curtail_pct", step=5)
+        ee_curtail_pct = st.slider("EE-Abregelung [% von Wind+PV]", 0, 80, key="ee_curtail_pct", step=5)
 
         st.caption(
             f"Referenzwerte aus Netz/Fallback:\n"
@@ -355,17 +193,6 @@ def main() -> None:
         ee_curtail_pct=ee_curtail_pct,
         konv_min_pct=konv_min_pct,
     )
-    kpi_24h = _calculate_24h_kpi(
-        df=df,
-        generators=generators,
-        consumers=consumers,
-        lines=lines,
-        wind_pct=wind_pct,
-        pv_pct=pv_pct,
-        bess_pct=bess_pct,
-        line_capacity_pct=line_capacity_pct,
-        line_stress_factor=float(SCENARIOS[scenario_key].get("line_stress_factor", 1.0)),
-    )
 
     st.subheader("Zeitslider")
     hour = st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
@@ -381,14 +208,7 @@ def main() -> None:
     )
     nodal_status = line_status.attrs.get("dc_nodal_status", pd.DataFrame())
     scenario_eval = evaluate_scenario(hour_row=hour_row, line_status=line_status, scenario_key=scenario_key)
-    kpi_result = _calculate_current_kpi(
-        hour_row=hour_row,
-        line_status=line_status,
-        wind_pct=wind_pct,
-        pv_pct=pv_pct,
-        bess_pct=bess_pct,
-        line_capacity_pct=line_capacity_pct,
-    )
+
     st.subheader("Live-Kennzahlen")
     k1, k2, k3, k4, k5, k6 = st.columns(6)
     k1.metric("Last/Ziel [GW]", f"{hour_row['Last_GW']:.2f}")
@@ -410,16 +230,7 @@ def main() -> None:
     c2.metric("Mindestlauf-Überschuss", f"{hour_row['Konv_Mindestlauf_Ueberschuss_GW']:.2f} GW")
     c3.metric("Abregelung", f"{hour_row['Curtailment_GW']:.2f} GW")
     c4.metric("Status", str(hour_row["Status"]))
-    st.subheader("Engineering-Feasibility-KPI")
-    
-    kpi_cols = st.columns(4)
-    kpi_cols[0].metric("Feasibility-KPI", f"{kpi_result['kpi']:.2f}")
-    kpi_cols[1].metric("EE-Anteil [%]", f"{kpi_result['re_share_pct']:.1f}")
-    kpi_cols[2].metric("max. Leitung [%]", f"{kpi_result['max_line_load']:.0f}")
-    kpi_cols[3].metric(
-        "Ausbau-Faktor",
-        f"{kpi_result['grid_added'] + kpi_result['bat_added'] + kpi_result['pv_added'] + kpi_result['wind_added']:.2f}",
-)
+
     st.subheader("Szenario-Bewertung")
     if bool(scenario_eval.get("solved", False)):
         st.success("Szenario bewältigt.")
@@ -434,31 +245,7 @@ def main() -> None:
     e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
     e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
     e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
-    
-    st.subheader("24h Engineering-Feasibility-KPI")
-    
-    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-    kpi1.metric("24h-KPI", f"{kpi_24h['kpi_24h']:.2f}")
-    kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
-    kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
-    kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
-    
-    kpi5, kpi6, kpi7 = st.columns(3)
-    kpi5.metric("24h Last [GWh]", f"{kpi_24h['total_load_gwh']:.1f}")
-    kpi6.metric("24h Wind+PV [GWh]", f"{kpi_24h['total_re_gwh']:.1f}")
-    kpi7.metric(
-        "Ausbau-Faktor",
-        f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
-    )
-    
-    if kpi_24h["max_line_load_24h"] > 100.0:
-        st.warning("24h-KPI stark reduziert, weil im Tagesverlauf mindestens eine Leitung über 100 % ausgelastet ist.")
-    elif kpi_24h["kpi_24h"] >= 70:
-        st.success("Hoher 24h-KPI: hoher EE-Anteil bei moderatem Ausbau und ohne Leitungsüberlast.")
-    elif kpi_24h["kpi_24h"] >= 40:
-        st.info("Mittlerer 24h-KPI: technisch brauchbar, aber Ausbau, EE-Anteil oder Netzbelastung sind nicht optimal.")
-    else:
-        st.warning("Niedriger 24h-KPI: geringe technische Güte durch niedrigen EE-Anteil, hohen Ausbau oder Netzüberlast.")
+
     with st.expander("Modellannahmen"):
         st.write(
             "- Zielgröße ist die SMARD-Netzlast.\n"

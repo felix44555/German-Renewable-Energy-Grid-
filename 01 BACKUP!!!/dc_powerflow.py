@@ -134,48 +134,22 @@ def _solve_dc_angles(
     nodal: pd.DataFrame,
 ) -> tuple[np.ndarray, pd.DataFrame]:
     """
-    Einfacher DC-Lastfluss-Kern mit b statt x.
+    Löst B_bus * theta = P je Netzinsel.
 
-    Modell:
-        B' · theta = P
-        P_ij = b_ij · (theta_i - theta_j)
-
-    Unterschied zur vorherigen robusteren Version:
-    - ein globaler Referenz-/Slack-Bus
-    - keine getrennte Behandlung mehrerer Netzinseln
-    - näher an deinem einfachen DC_load_flow.py-Aufbau
-
-    branches:
-        Liste aus (i, j, b)
-        i, j = Bus-Indizes
-        b    = DC-Suszeptanz in GW/rad
+    Die P-Werte werden als Python-Liste geführt, damit keine read-only NumPy-Views
+    in-place beschrieben werden. Das verhindert den bisherigen Streamlit/Pandas-Fehler.
     """
-
     n_buses = len(bus_names)
-
-    if n_buses == 0:
-        return np.array([], dtype=float), nodal
-
-    # ------------------------------------------------------------
-    # 1. B'-Matrix aufbauen
-    # ------------------------------------------------------------
-    B_prime = np.zeros((n_buses, n_buses), dtype=float)
-
+    bbus = np.zeros((n_buses, n_buses), dtype=float)
     for i, j, b in branches:
-        b = float(b)
-
-        if b <= 0.0 or not np.isfinite(b):
+        if b <= 0.0:
             continue
+        bbus[i, i] += b
+        bbus[j, j] += b
+        bbus[i, j] -= b
+        bbus[j, i] -= b
 
-        B_prime[i, i] += b
-        B_prime[j, j] += b
-        B_prime[i, j] -= b
-        B_prime[j, i] -= b
-
-    # ------------------------------------------------------------
-    # 2. Knoteneinspeisungen P aus nodal lesen
-    #    Erzeugung positiv, Last negativ
-    # ------------------------------------------------------------
+    theta = np.zeros(n_buses, dtype=float)
     p: list[float] = (
         pd.to_numeric(nodal["P_nach_Slack_GW"], errors="coerce")
         .fillna(0.0)
@@ -183,65 +157,35 @@ def _solve_dc_angles(
         .tolist()
     )
 
-    # ------------------------------------------------------------
-    # 3. Referenz-/Slack-Bus wählen
-    #    Hier nicht fest ref_bus=0, sondern sinnvoller:
-    #    größter Last-/Konv-Knoten.
-    # ------------------------------------------------------------
-    ref_bus = _choose_component_slack(
-        component=list(range(n_buses)),
-        bus_names=bus_names,
-        nodal=nodal,
-    )
+    for comp in _connected_components(n_buses, branches):
+        if len(comp) <= 1:
+            slack = comp[0]
+            imbalance = float(p[slack])
+            p[slack] = float(p[slack]) - imbalance
+            nodal.loc[bus_names[slack], "Slack_Ausgleich_GW"] -= imbalance
+            nodal.loc[bus_names[slack], "P_nach_Slack_GW"] = float(p[slack])
+            continue
 
-    # ------------------------------------------------------------
-    # 4. Globale Restbilanz auf Slack-Bus legen
-    #    DC-Lastfluss braucht Summe(P) = 0.
-    # ------------------------------------------------------------
-    total_power = float(sum(p))
+        slack = _choose_component_slack(comp, bus_names, nodal)
+        imbalance = float(sum(float(p[idx]) for idx in comp))
+        p[slack] = float(p[slack]) - imbalance
+        nodal.loc[bus_names[slack], "Slack_Ausgleich_GW"] -= imbalance
+        nodal.loc[bus_names[slack], "P_nach_Slack_GW"] = float(p[slack])
 
-    p[ref_bus] = float(p[ref_bus]) - total_power
+        active = [idx for idx in comp if idx != slack]
+        bred = bbus[np.ix_(active, active)]
+        pred = np.asarray([p[idx] for idx in active], dtype=float)
+        try:
+            theta_active = np.linalg.solve(bred, pred)
+        except np.linalg.LinAlgError:
+            theta_active = np.linalg.pinv(bred) @ pred
+        theta[active] = theta_active
+        theta[slack] = 0.0
 
-    nodal.loc[bus_names[ref_bus], "Slack_Ausgleich_GW"] -= total_power
-    nodal.loc[bus_names[ref_bus], "P_nach_Slack_GW"] = float(p[ref_bus])
-
-    # ------------------------------------------------------------
-    # 5. Referenzbus eliminieren:
-    #    theta_ref = 0
-    # ------------------------------------------------------------
-    active_buses = [idx for idx in range(n_buses) if idx != ref_bus]
-
-    theta = np.zeros(n_buses, dtype=float)
-
-    if not active_buses:
-        nodal["Theta_rad"] = theta
-        nodal["Theta_grad"] = np.rad2deg(theta)
-        return theta, nodal
-
-    B_red = B_prime[np.ix_(active_buses, active_buses)]
-    P_red = np.asarray([p[idx] for idx in active_buses], dtype=float)
-
-    # ------------------------------------------------------------
-    # 6. Winkel lösen
-    # ------------------------------------------------------------
-    try:
-        theta_red = np.linalg.solve(B_red, P_red)
-    except np.linalg.LinAlgError:
-        # Fallback, falls Matrix singulär ist.
-        theta_red = np.linalg.pinv(B_red) @ P_red
-
-    for pos, bus_idx in enumerate(active_buses):
-        theta[bus_idx] = float(theta_red[pos])
-
-    theta[ref_bus] = 0.0
-
-    # ------------------------------------------------------------
-    # 7. Ergebnisse zurück in nodal schreiben
-    # ------------------------------------------------------------
     nodal["Theta_rad"] = theta
     nodal["Theta_grad"] = np.rad2deg(theta)
-
     return theta, nodal
+
 
 def compute_dc_line_status(
     generators: pd.DataFrame,
