@@ -75,6 +75,7 @@ with st.expander("Didaktisch vereinfachte Herleitung des DC-Lastflusses", expand
     ### Schritt 1: Näherung der Knotenspannungen
     Die komplexe Spannung an einem Knoten $i$ lautet in der Exponentialform:
     $$ V_i = |V_i|e^{j\theta_i} $$
+                
     Wir setzen nun den konstanten Spannungsbetrag ($|V_i| \approx 1$) und die Taylor-Näherung für kleine Winkel ($e^{j\theta} \approx 1 + j\theta$) ein. Damit vereinfacht sich die Knotenspannung drastisch zu:
     $$ V_i \approx 1 + j\theta_i $$
 
