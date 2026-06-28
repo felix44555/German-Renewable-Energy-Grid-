@@ -53,15 +53,59 @@ with c3:
     st.write("Versuche dein Netz so effizient wie möglich zu bauen. Wenn du zu viel Kapazitäten hinzufügst, die garnicht genutzt werden, sinkt die Effizienz.")
 
 # 5. Wie funktioniert die Lastflussrechnung?
-st.header("5. Wie funktioniert die Lastflussrechnung (vereinfacht)?")
-with st.expander("Klicke hier für die technische Erklärung"):
-    st.markdown("""
-    Strom fließt nicht einfach von A nach B wie Pakete mit der Post. Strom verhält sich eher wie Wasser in einem komplexen Röhrensystem und sucht sich **immer den Weg des geringsten Widerstands**.
-    
-    In diesem Simulator nutzen wir eine **DC-Lastfluss-Näherung (Gleichstrom-Näherung)**. Das bedeutet (stark vereinfacht):
-    * Wir betrachten nur die *Wirkleistung* (den tatsächlichen Stromfluss) und ignorieren komplexe Faktoren wie Blindleistung oder Spannungsschwankungen (die bei AC/Wechselstrom eine Rolle spielen).
-    * Der Stromfluss durch eine bestimmte Leitung wird durch die Einspeisung an den Knotenpunkten und die physikalischen Eigenschaften (Reaktanz) des gesamten Netzes bestimmt.
-    * Wenn du an einem Ende (Knoten) viel Wind einspeist, verteilt sich dieser Strom gemäß der Physik über das *gesamte* Netz – und kann so auch Leitungen überlasten, die ganz woanders liegen.
+st.header("5. Wie funktioniert die Lastflussrechnung?")
+
+with st.expander("Didaktisch vereinfachte Herleitung des DC-Lastflusses", expanded=False):
+    st.info(
+        "**Motivation:** Die Berechnung des DC-Lastflusses ist eine etablierte Methode zur schnellen, linearen "
+        "Näherung von Leistungsflüssen in Hochspannungsnetzen. Anstatt zunächst die komplexen AC-Leistungsgleichungen "
+        "mit all ihren trigonometrischen Summen aufzustellen, können die bekannten Näherungen didaktisch sinnvoll direkt "
+        "zu Beginn an den fundamentalen physikalischen Größen angesetzt werden."
+    )
+
+    st.markdown(r"""
+    ### Grundlegende Annahmen
+    Folgende praxisnahe Annahmen für Hochspannungsnetze bilden die Grundlage:
+    * Die Spannungsbeträge an allen Knoten sind nahezu identisch und liegen nahe am Nennwert: $|V| \approx 1 \text{ p.u.}$
+    * Die Winkeldifferenzen zwischen benachbarten Knoten sind klein (erwartet unter 30°).
+    * Der ohmsche Widerstand $R$ der Leitungen ist sehr viel kleiner als die Leitungsreaktanz $X$ ($X \gg R$) und wird daher vernachlässigt.
+
+    ---
+
+    ### Schritt 1: Näherung der Knotenspannungen
+    Die komplexe Spannung an einem Knoten $i$ lautet in der Exponentialform:
+    $$ V_i = |V_i|e^{j\theta_i} $$
+    Wir setzen nun den konstanten Spannungsbetrag ($|V_i| \approx 1$) und die Taylor-Näherung für kleine Winkel ($e^{j\theta} \approx 1 + j\theta$) ein. Damit vereinfacht sich die Knotenspannung drastisch zu:
+    $$ V_i \approx 1 + j\theta_i $$
+
+    ### Schritt 2: Näherung der Netzadmittanzen
+    Die Admittanz $Y$ berechnet sich allgemein als Umkehrwert der Impedanz. Da der Wirkwiderstand $R$ vernachlässigt wird, besteht die Leitung zwischen den Knoten $i$ und $k$ rein aus der Suszeptanz $B_{ik}$. Für die Admittanz gilt somit:
+    $$ Y_{ik} \approx -jB_{ik} $$
+
+    ### Schritt 3: Berechnung des Zweigstroms (Ohmsches Gesetz)
+    Der Strom $I_{ik}$, der vom Knoten $i$ zum Knoten $k$ fließt, ergibt sich direkt aus der Spannungsdifferenz multipliziert mit der Admittanz:
+    $$ I_{ik} = Y_{ik}(V_i - V_k) $$
+    Setzen wir nun unsere sehr simplen Näherungen aus Schritt 1 und 2 ein:
+    $$ I_{ik} = -jB_{ik} \big( (1 + j\theta_i) - (1 + j\theta_k) \big) $$
+    Die reellen Einsen heben sich durch die Subtraktion auf:
+    $$ I_{ik} = -jB_{ik}(j\theta_i - j\theta_k) $$
+    Klammert man das $j$ aus, ergibt sich durch die Multiplikation $-j \cdot j = 1$. Wir erhalten einen rein reellen Ausdruck für den Strom:
+    $$ I_{ik} = B_{ik}(\theta_i - \theta_k) $$
+
+    ### Schritt 4: Berechnung der Wirkleistung
+    Die komplexe Scheinleistung $S_{ik}$, die in den Zweig fließt, ist das Produkt aus der Knotenspannung und dem konjugiert komplexen Strom:
+    $$ S_{ik} = V_i I_{ik}^* $$
+    Da unser genäherter Strom aus Schritt 3 rein reell ist, gilt $I_{ik}^* = I_{ik}$. Setzen wir die Gleichungen ein:
+    $$ S_{ik} \approx (1 + j\theta_i) \cdot B_{ik}(\theta_i - \theta_k) $$
+    Ausmultipliziert ergibt das:
+    $$ S_{ik} = B_{ik}(\theta_i - \theta_k) + j\theta_i B_{ik}(\theta_i - \theta_k) $$
+    Beim DC-Lastfluss interessiert uns definitionsgemäß ausschließlich die Wirkleistung $P$ (der Realteil der Scheinleistung). Wir ignorieren den Imaginärteil und erhalten sofort die finale, lineare Bestimmungsgleichung für den Leistungsfluss über den Leitungszweig:
+    $$ P_{ik} = B_{ik}(\theta_i - \theta_k) $$
+    """)
+
+    st.success(r"""
+    **Zusammenfassung:** Anstatt am Ende einer langen Herleitung Annahmen auf unhandliche Sinus- und Kosinus-Funktionen anzuwenden, zeigt dieser Ansatz direkt am Ohmschen Gesetz, wie sich das Wechselstromnetz durch die DC-Näherungen mathematisch quasi in ein lineares Gleichstromnetz verwandelt. Die Summe aller abfließenden Zweigleistungen $P_{ik}$ an einem Knoten führt dann nahtlos zur bekannten Gleichung für die Einspeiseleistung $P_i$ am Knoten $i$:
+    $$ P_i = \sum_{k=1}^N B_{ik}(\theta_i - \theta_k) $$
     """)
 
 st.divider()
