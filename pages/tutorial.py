@@ -78,7 +78,7 @@ with st.expander("Didaktisch vereinfachte Herleitung des DC-Lastflusses", expand
     st.markdown("Die komplexe Spannung an einem Knoten i lautet in der Exponentialform:")
     st.latex(r"V_i = |V_i|e^{j\theta_i}")
     
-    st.markdown("Wir setzen nun den konstanten Spannungsbetrag ($|V_i| \approx 1$) und die Taylor-Näherung für kleine Winkel ($e^{j\theta} \approx 1 + j\theta$) ein. Damit vereinfacht sich die Knotenspannung drastisch zu:")
+    st.markdown("Wir setzen nun den konstanten Spannungsbetrag (|V| ≈ 1) und die Taylor-Näherung für kleine Winkel ein. Damit vereinfacht sich die Knotenspannung drastisch zu:")
     st.latex(r"V_i \approx 1 + j\theta_i")
 
     st.markdown("### Schritt 2: Näherung der Netzadmittanzen")
@@ -115,7 +115,7 @@ with st.expander("Didaktisch vereinfachte Herleitung des DC-Lastflusses", expand
     
     st.latex(r"P_i = \sum_{k=1}^N B_{ik}(\theta_i - \theta_k)")
 
-    
+
 st.divider()
 
 # --- Return Button ---
