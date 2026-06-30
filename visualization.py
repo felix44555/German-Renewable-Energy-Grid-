@@ -175,13 +175,11 @@ def build_map(
         height=620,
         margin=dict(l=0, r=0, t=10, b=0),
         legend=dict(orientation="h", yanchor="bottom", y=-0.05, x=0.5, xanchor="center"),
-        # --- NEU: Die Mapbox-Konfiguration ---
+        # --- NEU: Die korrigierte Mapbox-Konfiguration ---
         mapbox=dict(
             style="carto-positron",  # Kostenloser Kartenstil (hell, ohne API-Key)
             center=dict(lat=51.16, lon=10.45), # Zentriert auf Deutschland
-            zoom=5,                  # Start-Zoomlevel
-            minzoom=4,               # HIER: Rauszoomen begrenzen
-            maxzoom=12               # HIER: Reinzoomen begrenzen
+            zoom=5                   # Start-Zoomlevel (ohne Limits)
         )
     )
     return fig
