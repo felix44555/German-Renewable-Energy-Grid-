@@ -120,6 +120,7 @@ def _calculate_24h_kpi(
 
     total_load_gwh = float(pd.to_numeric(df["Last_GW"], errors="coerce").fillna(0.0).sum())
     ''''Greift auf Spalte "LastGW" zu ersetzt alle ungültigen Datentypen durch NAN, ersetzt alle NAN durch 0.0'''
+    #Greift auf Spalte "LastGW" zu ersetzt alle ungültigen Datentypen durch NAN, ersetzt alle NAN durch 0.0'''
     total_re_gwh = float(
         (
             pd.to_numeric(df["Wind_GW"], errors="coerce").fillna(0.0)
@@ -129,8 +130,10 @@ def _calculate_24h_kpi(
 
     re_share_pct_24h = 100.0 * total_re_gwh / max(total_load_gwh, 1e-9)
     '''max() um Division durch 0 zu vermeiden'''
+    #max() um Division durch 0 zu vermeiden'''
     re_share_pct_24h = max(0.0, min(re_share_pct_24h, 100.0))
     '''sorgt dafür das Wert zwischen 0 und 100 ist'''
+    #sorgt dafür das Wert zwischen 0 und 100 ist'''
 
     hourly_rows: list[dict[str, float]] = []
     max_line_load_24h = 0.0
@@ -208,6 +211,7 @@ def _cached_network(path_str: str, mtime_ns: int):
 def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     return load_smard_api_profile(day_iso, region=region)
 '''ebenfalls wird funktion nicht jedes mal geladen, zeitlich jedoch auf 3600s begrenztz (STunde)'''
+#ebenfalls wird funktion nicht jedes mal geladen, zeitlich jedoch auf 3600s begrenztz (STunde)'''
 
 def _load_network_tables() -> tuple[Any, dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if not NETWORK_FILE.exists():
