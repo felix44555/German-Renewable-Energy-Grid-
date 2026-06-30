@@ -148,8 +148,6 @@ def build_map(
             marker=dict(
                 size=marker_size,
                 color=TYP_COLORS[typ],
-                symbol=TYP_SYMBOLS[typ],
-                line=dict(width=1, color="black"),
                 opacity=0.9,
             ),
         ))
@@ -168,8 +166,6 @@ def build_map(
             marker=dict(
                 size=14 + np.sqrt(np.maximum(cluster_load, 0.0)) * 5.0,
                 color=TYP_COLORS["Verbraucher"],
-                symbol=TYP_SYMBOLS["Verbraucher"],
-                line=dict(width=1.2, color="black"),
                 opacity=0.9,
             ),
         ))
