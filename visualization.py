@@ -14,12 +14,14 @@ TYP_COLORS = {
     "Verbraucher": "#d62728",
 }
 
-TYP_ICONS = {
-    "Wind": "⚙",          # Ersatz für Windrad, robust darstellbar
-    "PV": "▦",            # Ersatz für Solarpanel
-    "BESS": "🔋",
-    "Konventionell": "●",
-    "Verbraucher": "★",
+TYP_SYMBOLS = {
+    "Wind": "triangle-up",
+    "PV": "square",
+    "BESS": "diamond",
+    "Konventionell": "circle",
+    "Import/Export": "x",
+    "Lastabwurf": "cross",
+    "Verbraucher": "star",
 }
 
 MARKER_OFFSET_DIRECTIONS = {
