@@ -324,7 +324,6 @@ def main() -> None:
 
         st.header("Netz- und EE-Maßnahmen")
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
-        ee_curtail_pct = st.slider("EE-Abregelung [% von Wind+PV]", 0, 100, key="ee_curtail_pct", step=5)
         
         st.caption(
             f"Referenzwerte aus Netz/Fallback:\n"
