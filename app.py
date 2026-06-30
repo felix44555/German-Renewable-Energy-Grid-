@@ -412,15 +412,11 @@ def main() -> None:
     
     st.subheader("24h Engineering-Feasibility-KPI")
     
-    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+    kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
     kpi1.metric("24h-KPI", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
     kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
-    
-    kpi5, kpi6, kpi7 = st.columns(3)
-    kpi5.metric("24h Last [GWh]", f"{kpi_24h['total_load_gwh']:.1f}")
-    kpi6.metric("24h Wind+PV [GWh]", f"{kpi_24h['total_re_gwh']:.1f}")
     kpi7.metric(
         "Ausbau-Faktor",
         f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
@@ -470,6 +466,20 @@ def main() -> None:
     st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
     with st.expander("Weitere Kennzahlen"):
+        st.subheader("Ausführlich24h Engineering-Feasibility-KPI") 
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        kpi1.metric("24h-KPI", f"{kpi_24h['kpi_24h']:.2f}")
+        kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
+        kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
+        kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
+        
+        kpi5, kpi6, kpi7 = st.columns(3)
+        kpi5.metric("24h Last [GWh]", f"{kpi_24h['total_load_gwh']:.1f}")
+        kpi6.metric("24h Wind+PV [GWh]", f"{kpi_24h['total_re_gwh']:.1f}")
+        kpi7.metric(
+            "Ausbau-Faktor",
+            f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
+        )
         # ab hier runter
         st.subheader("Live-Kennzahlen")
         k1, k2, k3, k4, k5, k6 = st.columns(6)
