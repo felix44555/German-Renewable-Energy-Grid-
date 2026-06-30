@@ -73,7 +73,7 @@ def _branch_susceptance_gw_per_rad(row: pd.Series) -> float:
     return (v_nom**2) / x_ohm / 1000.0
 
 
-def _compute_nodal_injections_gw(
+def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
     generators: pd.DataFrame,
     consumers: pd.DataFrame,
     buses: list[str],
@@ -143,6 +143,7 @@ def _compute_nodal_injections_gw(
         + nodal["BESS_GW"]
         - nodal["Last_GW"]
     )
+
 
     # Kompatibilität / eindeutige Anzeige
     nodal["P_Loadflow_GW"] = nodal["P_Knotensaldo_GW"]
@@ -382,7 +383,8 @@ def compute_dc_line_status(
 
     out = lines.copy()
 
-    buses = sorted(
+    buses = sorted( #hier wird ein sortiertes Set erstelkl aus den unterschiedlichen Quellen für Nodes (jeder kommt nur einmal vor da Set)
+
         set(out["von"].astype(str))
         .union(set(out["nach"].astype(str)))
         .union(set(generators.get("Bus", pd.Series(dtype=str)).astype(str)))
@@ -398,8 +400,8 @@ def compute_dc_line_status(
         hour_row=hour_row,
     )
 
-    branches: list[tuple[int, int, float]] = []
-    b_values: list[float] = []
+    branches: list[tuple[int, int, float]] = [] #Deklarierung: Jedes Tuple besteht aus zwei Integern (die Start-/Ziel-Indizes) und einem Float (der Suszeptanz $B$).
+    b_values: list[float] = [] 
     x_values: list[float] = []
 
     for _, ln in out.iterrows():

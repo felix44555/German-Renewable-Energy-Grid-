@@ -28,11 +28,13 @@ APP_VERSION = "modular-smard-api-dc-safe-1"
 
 
 def _format_gap(value: float) -> str:
+    ''' input float, return Wert string'''
     if value > 0:
         return f"Unterdeckung {value:.2f} GW"
     if value < 0:
         return f"Überdeckung {abs(value):.2f} GW"
     return "ausgeglichen"
+
 def _calculate_current_kpi(
     hour_row: pd.Series,
     line_status: pd.DataFrame,
@@ -95,6 +97,7 @@ def _clean_for_display(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out.attrs = {}
     return out
+
 def _calculate_24h_kpi(
     df: pd.DataFrame,
     generators: pd.DataFrame,
@@ -116,6 +119,7 @@ def _calculate_24h_kpi(
     """
 
     total_load_gwh = float(pd.to_numeric(df["Last_GW"], errors="coerce").fillna(0.0).sum())
+    ''''Greift auf Spalte "LastGW" zu ersetzt alle ungültigen Datentypen durch NAN, ersetzt alle NAN durch 0.0'''
     total_re_gwh = float(
         (
             pd.to_numeric(df["Wind_GW"], errors="coerce").fillna(0.0)
@@ -124,7 +128,9 @@ def _calculate_24h_kpi(
     )
 
     re_share_pct_24h = 100.0 * total_re_gwh / max(total_load_gwh, 1e-9)
+    '''max() um Division durch 0 zu vermeiden'''
     re_share_pct_24h = max(0.0, min(re_share_pct_24h, 100.0))
+    '''sorgt dafür das Wert zwischen 0 und 100 ist'''
 
     hourly_rows: list[dict[str, float]] = []
     max_line_load_24h = 0.0
@@ -196,26 +202,29 @@ def _calculate_24h_kpi(
 @st.cache_resource(show_spinner=False)
 def _cached_network(path_str: str, mtime_ns: int):
     return load_pypsa_network(path_str)
-
+'''@... sorgt dafür das die funtion nicht jedes mal neu ausgeführt wird.'''
 
 @st.cache_data(ttl=3600, show_spinner="Lade SMARD-Orientierungsdaten ...")
 def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     return load_smard_api_profile(day_iso, region=region)
-
+'''ebenfalls wird funktion nicht jedes mal geladen, zeitlich jedoch auf 3600s begrenztz (STunde)'''
 
 def _load_network_tables() -> tuple[Any, dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if not NETWORK_FILE.exists():
         raise FileNotFoundError(f"Netzdatei nicht gefunden: {NETWORK_FILE.name}")
     n = _cached_network(str(NETWORK_FILE), NETWORK_FILE.stat().st_mtime_ns)
+    '''sorgt dafür das Netzdatei bei Änderung neu geladen wird'''
     refs = get_reference_values(n)
     consumers = pypsa_to_consumers(n)
     generators = ensure_bess_visible(pypsa_to_generators(n), consumers)
     lines = pypsa_to_lines(n)
+    '''extrahiert Pypsa Netzdaten in Panda Frames zur besseren verwendbarkeit in Streamlit'''
     return n, refs, consumers, generators, lines
 
 
 def init_session_state() -> None:
     st.session_state.setdefault("scenario_key", "training")
+    '''durch set default weden startwerte nur beim erstmaligen lafen gesetzt'''
     scenario = SCENARIOS.get("training", {})
     defaults = dict(scenario.get("defaults", {}))
     for key, value in defaults.items():
@@ -287,6 +296,7 @@ def main() -> None:
             max_value=date.today(),
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
+        '''!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
         region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
 
         st.header("Stellgrößen")
@@ -315,7 +325,7 @@ def main() -> None:
         st.header("Netz- und EE-Maßnahmen")
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
         ee_curtail_pct = st.slider("EE-Abregelung [% von Wind+PV]", 0, 100, key="ee_curtail_pct", step=5)
-
+        
         st.caption(
             f"Referenzwerte aus Netz/Fallback:\n"
             f"- Wind: {refs['wind_gw']:.2f} GW\n"
@@ -536,5 +546,13 @@ def main() -> None:
     )
 
 
+import sys
+from streamlit.web import cli as stcli
+
 if __name__ == "__main__":
-    main()
+    # Wenn das Skript direkt aus Spyder gestartet wird, simulieren wir den Terminal-Befehl
+    if not sys.argv[0].endswith("streamlit"):
+        sys.argv = ["streamlit", "run", __file__]
+        sys.exit(stcli.main())
+    else:
+        main()

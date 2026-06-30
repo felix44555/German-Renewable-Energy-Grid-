@@ -109,11 +109,11 @@ def apply_scenario_to_profiles(
     out = profiles.copy()
 
     for col, key in (("Wind_GW", "wind"), ("PV_GW", "pv"), ("Last_GW", "load")):
-        if col in out.columns:
-            out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0.0) * float(factors.get(key, 1.0))
+        if col in out.columns: # testet ob col Wert vorkommt
+            out[col] = pd.to_numeric(out[col], errors="coerce").fillna(0.0) * float(factors.get(key, 1.0)) #aufschlagung der Faktoren
 
     out["Pre_Curtailment_GW"] = 0.0
-    if ee_curtail_pct:
+    if ee_curtail_pct: #gesammte if Bedingung nicht ausgeführt da Abregelung von EE 0
         curtail_frac = max(0.0, min(float(ee_curtail_pct), 100.0)) / 100.0
         old_ee = out.get("Wind_GW", 0.0) + out.get("PV_GW", 0.0)
         if "Wind_GW" in out.columns:
