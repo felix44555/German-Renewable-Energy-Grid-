@@ -15,8 +15,21 @@ TYP_COLORS = {
 }
 
 TYP_SYMBOLS = {
-    "Wind": "triangle-up",
-    "PV": "square",
+    "Wind": (
+        "M -1.5 12 L 1.5 12 L 0.5 0 L -0.5 0 Z "      # Turm (Basis unten bei y=12, Spitze bei y=0)
+        "M 0 0 L -1.5 -10 L 1.5 -10 Z "               # Rotorblatt 1 (zeigt nach oben)
+        "M 0 0 L 8.6 5 L 6.5 6.5 Z "                  # Rotorblatt 2 (zeigt nach rechts unten)
+        "M 0 0 L -8.6 5 L -6.5 6.5 Z"                 # Rotorblatt 3 (zeigt nach links unten)
+    ),
+
+    # Solaranlage: Ein geneigtes Panel (Parallelogramm) auf einem Standfuß
+    "PV": (
+        "M -8 2 L 6 2 L 8 -6 L -6 -6 Z "              # Das PV-Panel (angewinkelt)
+        "M -1 2 L 1 2 L 1 8 L -1 8 Z "                # Der vertikale Mast
+        "M -4 8 L 4 8 L 4 10 L -4 10 Z"               # Die Bodenplatte/Verankerung
+    ),
+    #"Wind": "triangle-up",
+    #"PV": "square",
     "BESS": "diamond",
     "Konventionell": "circle",
     "Import/Export": "x",
