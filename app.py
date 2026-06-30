@@ -203,6 +203,7 @@ def _calculate_24h_kpi(
 def _cached_network(path_str: str, mtime_ns: int):
     return load_pypsa_network(path_str)
 '''@... sorgt dafür das die funtion nicht jedes mal neu ausgeführt wird.'''
+#@... sorgt dafür das die funtion nicht jedes mal neu ausgeführt wird.'''
 
 @st.cache_data(ttl=3600, show_spinner="Lade SMARD-Orientierungsdaten ...")
 def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -214,17 +215,20 @@ def _load_network_tables() -> tuple[Any, dict[str, float], pd.DataFrame, pd.Data
         raise FileNotFoundError(f"Netzdatei nicht gefunden: {NETWORK_FILE.name}")
     n = _cached_network(str(NETWORK_FILE), NETWORK_FILE.stat().st_mtime_ns)
     '''sorgt dafür das Netzdatei bei Änderung neu geladen wird'''
+    #sorgt dafür das Netzdatei bei Änderung neu geladen wird
     refs = get_reference_values(n)
     consumers = pypsa_to_consumers(n)
     generators = ensure_bess_visible(pypsa_to_generators(n), consumers)
     lines = pypsa_to_lines(n)
     '''extrahiert Pypsa Netzdaten in Panda Frames zur besseren verwendbarkeit in Streamlit'''
+    #extrahiert Pypsa Netzdaten in Panda Frames zur besseren verwendbarkeit in Streamlit'''
     return n, refs, consumers, generators, lines
 
 
 def init_session_state() -> None:
     st.session_state.setdefault("scenario_key", "training")
     '''durch set default weden startwerte nur beim erstmaligen lafen gesetzt'''
+    #durch set default weden startwerte nur beim erstmaligen lafen gesetzt'''
     scenario = SCENARIOS.get("training", {})
     defaults = dict(scenario.get("defaults", {}))
     for key, value in defaults.items():
@@ -297,6 +301,7 @@ def main() -> None:
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
         '''!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
         region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
 
         st.header("Stellgrößen")
