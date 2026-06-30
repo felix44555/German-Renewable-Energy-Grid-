@@ -409,11 +409,6 @@ def main() -> None:
     for msg in scenario_eval.get("messages", []):
         st.write(f"- {msg}")
 
-    e1, e2, e3, e4 = st.columns(4)
-    e1.metric("Bilanz [GW]", f"{scenario_eval.get('balance_gw', 0.0):+.2f}")
-    e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
-    e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
-    e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
     
     st.subheader("24h Engineering-Feasibility-KPI")
     
@@ -507,6 +502,11 @@ def main() -> None:
         "Ausbau-Faktor",
         f"{kpi_result['grid_added'] + kpi_result['bat_added'] + kpi_result['pv_added'] + kpi_result['wind_added']:.2f}",
 )
+    e1, e2, e3, e4 = st.columns(4)
+    e1.metric("Bilanz [GW]", f"{scenario_eval.get('balance_gw', 0.0):+.2f}")
+    e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
+    e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
+    e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
     #bis hier runter
     
     with st.expander("Stündliche Tabelle"):
