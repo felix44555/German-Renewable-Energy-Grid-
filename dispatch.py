@@ -53,7 +53,7 @@ def prepare_dispatch_profiles(
     bess_scale: float,
     refs: dict[str, float],
     soc_start_pct: float,
-    ee_curtail_pct: float,
+    ee_curtail_pct: float = 100.0,
     konv_min_pct: float = 0.0,
     eta: float = 0.90,
 ) -> pd.DataFrame:
@@ -70,6 +70,7 @@ def prepare_dispatch_profiles(
     - positiv  = Entladung / Einspeisung
     - negativ  = Ladung / zusätzliche Last
     """
+    ee_curtail_pct = 100.0 #setze Abregelung falls benötigt bis 100% von EE
     out = profiles.copy()
     for col in ("Wind_GW", "PV_GW", "Last_GW"):
         if col not in out.columns:
