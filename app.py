@@ -546,13 +546,6 @@ def main() -> None:
     )
 
 
-import sys
-from streamlit.web import cli as stcli
 
 if __name__ == "__main__":
-    # Wenn das Skript direkt aus Spyder gestartet wird, simulieren wir den Terminal-Befehl
-    if not sys.argv[0].endswith("streamlit"):
-        sys.argv = ["streamlit", "run", __file__]
-        sys.exit(stcli.main())
-    else:
-        main()    main()    main()    main()
+    main()
