@@ -469,45 +469,45 @@ def main() -> None:
     st.subheader("Bilanz und Erzeugungsmix")
     st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
-
-    # ab hier runter
-    st.subheader("Live-Kennzahlen")
-    k1, k2, k3, k4, k5, k6 = st.columns(6)
-    k1.metric("Last/Ziel [GW]", f"{hour_row['Last_GW']:.2f}")
-    k2.metric("Wind [GW]", f"{hour_row['Wind_GW']:.2f}")
-    k3.metric("PV [GW]", f"{hour_row['PV_GW']:.2f}")
-    k4.metric("Restl. Erz. [GW]", f"{hour_row['Konv_GW']:.2f}")
-    k5.metric("BESS [GW]", f"{hour_row['BESS_GW']:+.2f}")
-    k6.metric("Bilanz [GW]", f"{hour_row['Netzbilanz_GW']:+.2f}")
-
-    b1, b2, b3, b4, b5 = st.columns(5)
-    b1.metric("Ziellücke nach EE", _format_gap(float(hour_row["Last_GW"] - hour_row["Wind_GW"] - hour_row["PV_GW"])))
-    b2.metric("Restl. Soll [GW]", f"{hour_row['Konv_Soll_GW']:.2f}")
-    b3.metric("Restl. verfügbar [GW]", f"{hour_row['Konv_Max_GW']:.2f}")
-    b4.metric("Ziellücke vor BESS", _format_gap(float(hour_row["Zielluecke_vor_BESS_GW"])))
-    b5.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
-
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Konv. Fehlleistung", f"{hour_row['Konv_Fehlleistung_GW']:.2f} GW")
-    c2.metric("Mindestlauf-Überschuss", f"{hour_row['Konv_Mindestlauf_Ueberschuss_GW']:.2f} GW")
-    c3.metric("Abregelung", f"{hour_row['Curtailment_GW']:.2f} GW")
-    c4.metric("Status", str(hour_row["Status"]))
-    st.subheader("Engineering-Feasibility-KPI")
+    with st.expander("Weitere Kennzahlen"):
+        # ab hier runter
+        st.subheader("Live-Kennzahlen")
+        k1, k2, k3, k4, k5, k6 = st.columns(6)
+        k1.metric("Last/Ziel [GW]", f"{hour_row['Last_GW']:.2f}")
+        k2.metric("Wind [GW]", f"{hour_row['Wind_GW']:.2f}")
+        k3.metric("PV [GW]", f"{hour_row['PV_GW']:.2f}")
+        k4.metric("Restl. Erz. [GW]", f"{hour_row['Konv_GW']:.2f}")
+        k5.metric("BESS [GW]", f"{hour_row['BESS_GW']:+.2f}")
+        k6.metric("Bilanz [GW]", f"{hour_row['Netzbilanz_GW']:+.2f}")
     
-    kpi_cols = st.columns(4)
-    kpi_cols[0].metric("Feasibility-KPI", f"{kpi_result['kpi']:.2f}")
-    kpi_cols[1].metric("EE-Anteil [%]", f"{kpi_result['re_share_pct']:.1f}")
-    kpi_cols[2].metric("max. Leitung [%]", f"{kpi_result['max_line_load']:.0f}")
-    kpi_cols[3].metric(
-        "Ausbau-Faktor",
-        f"{kpi_result['grid_added'] + kpi_result['bat_added'] + kpi_result['pv_added'] + kpi_result['wind_added']:.2f}",
-)
-    e1, e2, e3, e4 = st.columns(4)
-    e1.metric("Bilanz [GW]", f"{scenario_eval.get('balance_gw', 0.0):+.2f}")
-    e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
-    e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
-    e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
-    #bis hier runter
+        b1, b2, b3, b4, b5 = st.columns(5)
+        b1.metric("Ziellücke nach EE", _format_gap(float(hour_row["Last_GW"] - hour_row["Wind_GW"] - hour_row["PV_GW"])))
+        b2.metric("Restl. Soll [GW]", f"{hour_row['Konv_Soll_GW']:.2f}")
+        b3.metric("Restl. verfügbar [GW]", f"{hour_row['Konv_Max_GW']:.2f}")
+        b4.metric("Ziellücke vor BESS", _format_gap(float(hour_row["Zielluecke_vor_BESS_GW"])))
+        b5.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
+    
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Konv. Fehlleistung", f"{hour_row['Konv_Fehlleistung_GW']:.2f} GW")
+        c2.metric("Mindestlauf-Überschuss", f"{hour_row['Konv_Mindestlauf_Ueberschuss_GW']:.2f} GW")
+        c3.metric("Abregelung", f"{hour_row['Curtailment_GW']:.2f} GW")
+        c4.metric("Status", str(hour_row["Status"]))
+        st.subheader("Engineering-Feasibility-KPI")
+        
+        kpi_cols = st.columns(4)
+        kpi_cols[0].metric("Feasibility-KPI", f"{kpi_result['kpi']:.2f}")
+        kpi_cols[1].metric("EE-Anteil [%]", f"{kpi_result['re_share_pct']:.1f}")
+        kpi_cols[2].metric("max. Leitung [%]", f"{kpi_result['max_line_load']:.0f}")
+        kpi_cols[3].metric(
+            "Ausbau-Faktor",
+            f"{kpi_result['grid_added'] + kpi_result['bat_added'] + kpi_result['pv_added'] + kpi_result['wind_added']:.2f}",
+    )
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Bilanz [GW]", f"{scenario_eval.get('balance_gw', 0.0):+.2f}")
+        e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
+        e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
+        e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
+        #bis hier runter
     
     with st.expander("Stündliche Tabelle"):
         cols = [
