@@ -93,7 +93,7 @@ def build_map(
             flow_dc = float(ln.get("Flow_DC_GW", ln.get("Flow_Proxy_GW", 0.0)))
             overloaded = bool(ln.get("Ueberlast", False))
             color = "red" if overloaded else ("orange" if util_pct >= 90 else "green")
-            fig.add_trace(go.Scattermapbox(
+            fig.add_trace(go.Scattergeo(
                 lon=[ln["lon0"], ln["lon1"]],
                 lat=[ln["lat0"], ln["lat1"]],
                 mode="lines",
@@ -131,7 +131,7 @@ def build_map(
         sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
         sub = apply_marker_offsets(sub)
         marker_size = 10 + np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"]), 0.0)) * 4.0
-        fig.add_trace(go.Scattermapbox(
+        fig.add_trace(go.Scattergeo(
             lon=sub["plot_lon"],
             lat=sub["plot_lat"],
             text=[
@@ -148,13 +148,15 @@ def build_map(
             marker=dict(
                 size=marker_size,
                 color=TYP_COLORS[typ],
+                symbol=TYP_SYMBOLS[typ],
+                line=dict(width=1, color="black"),
                 opacity=0.9,
             ),
         ))
 
     if not consumers.empty:
         cluster_load = consumers["Anteil"] * float(hour_row.get("Last_GW", 0.0))
-        fig.add_trace(go.Scattermapbox(
+        fig.add_trace(go.Scattergeo(
             lon=consumers["lon"],
             lat=consumers["lat"],
             text=[f"<b>{c}</b><br>Last aktuell: {l:.2f} GW" for c, l in zip(consumers["Cluster"], cluster_load)],
@@ -166,21 +168,29 @@ def build_map(
             marker=dict(
                 size=14 + np.sqrt(np.maximum(cluster_load, 0.0)) * 5.0,
                 color=TYP_COLORS["Verbraucher"],
+                symbol=TYP_SYMBOLS["Verbraucher"],
+                line=dict(width=1.2, color="black"),
                 opacity=0.9,
             ),
         ))
 
-
+    fig.update_geos(
+        visible=True,
+        resolution=50,
+        scope="europe",
+        showcountries=True,
+        countrycolor="black",
+        showland=True,
+        landcolor="rgb(240,240,235)",
+        showocean=True,
+        oceancolor="rgb(220,235,245)",
+        lataxis_range=[47.0, 55.8],
+        lonaxis_range=[5.0, 16.2],
+    )
     fig.update_layout(
         height=620,
         margin=dict(l=0, r=0, t=10, b=0),
         legend=dict(orientation="h", yanchor="bottom", y=-0.05, x=0.5, xanchor="center"),
-        # --- NEU: Die korrigierte Mapbox-Konfiguration ---
-        mapbox=dict(
-            style="carto-positron",  # Kostenloser Kartenstil (hell, ohne API-Key)
-            center=dict(lat=51.16, lon=10.45), # Zentriert auf Deutschland
-            zoom=5                   # Start-Zoomlevel (ohne Limits)
-        )
     )
     return fig
 
