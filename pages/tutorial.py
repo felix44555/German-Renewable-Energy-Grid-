@@ -21,7 +21,7 @@ st.header("2. Was ist ein Übertragungsnetz?")
 st.write(
     "Das Stromnetz besteht aus dem Übertragungsnetz und dem Verteilnetz. Das Übertragungsnetz ist dabei der Teil, "
     "der große Mengen Energie über weite Strecken bei Höchstspannung (220 kV und 380 kV) transportiert. Auch Hochspannugns-"
-    "Gleichstromübertragung (HGÜ) zählt zum Übertragungsnetz, jedoch wird diese in dieser Simulation nicht seperat betrachtet."
+    "Gleichstromübertragung (HGÜ) zählt zum Übertragungsnetz, jedoch wird diese in dieser Simulation nicht seperat betrachtet. "
     "Das Übertragungsnetz wird benötigt, da der Energiebedarf nicht immer an einem ort selber gedeckt werden kann."
 )
 
