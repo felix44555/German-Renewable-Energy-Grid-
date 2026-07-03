@@ -44,13 +44,13 @@ c1, c2, c3 = st.columns(3)
 
 with c1:
     st.subheader(" Leitungen schützen")
-    st.write("Keine Leitung darf über 100% ausgelastet sein, sonst drohen Stromausfälle.")
+    st.write("Keine Leitung darf über 100 % ausgelastet sein, sonst drohen Stromausfälle.")
 with c2:
     st.subheader(" Abregelung minimieren")
     st.write("Verhindere, dass sauberer Wind- und Solarstrom weggeworfen (abgeregelt) werden muss, weil das Netz voll ist.")
 with c3:
     st.subheader(" Nicht unnötig viel Ausbau")
-    st.write("Versuche dein Netz so effizient wie möglich zu bauen. Wenn du zu viel Kapazitäten hinzufügst, die garnicht genutzt werden, sinkt die Effizienz.")
+    st.write("Versuche dein Netz so effizient wie möglich zu bauen. Wenn du zu viel Kapazitäten hinzufügst, die garnicht genutzt werden, sinkt die Effizienz deines Netztes.")
 
 # 5. Wie funktioniert die Lastflussrechnung?
 st.header("5. Wie funktioniert die Lastflussrechnung?")
