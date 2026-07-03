@@ -1,4 +1,4 @@
-def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, tuning_factor=0.1):
+def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, tuning_factor=0.05):
     """
     Calculates the engineering feasibility KPI for the grid simulation.
     """
@@ -6,7 +6,7 @@ def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, win
     base_score = re_share_pct
     
     # 2. Infrastructure Bloat
-    total_new_infrastructure = grid_added + bat_added + pv_added + wind_added
+    total_new_infrastructure = 6.25*grid_added + bat_added + 2*pv_added + 4*wind_added
     efficiency_factor = 1.0 / (1.0 + (tuning_factor * total_new_infrastructure))
     
     # 3. Stability Constraint
