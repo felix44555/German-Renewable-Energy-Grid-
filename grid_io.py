@@ -179,10 +179,22 @@ def pypsa_to_lines(n: Any) -> pd.DataFrame:
                 "Num_parallel": 1.0,
             })
 
-    return pd.DataFrame(rows, columns=[
+    # 1. Tabelle erstellen und in einer Variable (df) zwischenspeichern
+    df = pd.DataFrame(rows, columns=[
         "Name", "Typ", "von", "nach", "lat0", "lon0", "lat1", "lon1",
         "Kapazitaet_GW", "X_Ohm", "R_Ohm", "B_Siemens", "V_nom_kV", "Laenge_km", "Num_parallel",
     ])
+
+    # 2. Den Wert manuell überschreiben (z.B. Kapazität auf 5.0 GW setzen)
+    # Syntax-Logik: df.loc[ZEILEN_BEDINGUNG, SPALTEN_NAME] = NEUER_WERT
+    df.loc[df["Name"] == "0", "Kapazitaet_GW"] *= 0.6
+
+    # 3. Das manipulierte Objekt zurückgeben
+    return df
+   # return pd.DataFrame(rows, columns=[
+    #    "Name", "Typ", "von", "nach", "lat0", "lon0", "lat1", "lon1",
+     #   "Kapazitaet_GW", "X_Ohm", "R_Ohm", "B_Siemens", "V_nom_kV", "Laenge_km", "Num_parallel",
+    #])
 
 
 def pypsa_to_generators(n: Any) -> pd.DataFrame:
