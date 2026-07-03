@@ -55,8 +55,9 @@ def _calculate_current_kpi(
     load_gw = max(float(hour_row.get("Last_GW", 0.0)), 1e-9)
     wind_gw = max(float(hour_row.get("Wind_GW", 0.0)), 0.0)
     pv_gw = max(float(hour_row.get("PV_GW", 0.0)), 0.0)
+    bess_gw = max(float(hour_row.get("BESS_GW", 0.0)), 0.0)
 
-    re_share_pct = 100.0 * (wind_gw + pv_gw) / load_gw
+    re_share_pct = 100.0 * (wind_gw + pv_gw + bess_gw) / load_gw
     re_share_pct = max(0.0, min(re_share_pct, 100.0))
 
     if line_status.empty or "Auslastung_pct" not in line_status.columns:
@@ -124,6 +125,7 @@ def _calculate_24h_kpi(
         (
             pd.to_numeric(df["Wind_GW"], errors="coerce").fillna(0.0)
             + pd.to_numeric(df["PV_GW"], errors="coerce").fillna(0.0)
+            +pd.to_numeric(df["BESS_GW"], errors="coerce").fillna(0.0)
         ).sum()
     )
 
