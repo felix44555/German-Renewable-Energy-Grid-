@@ -44,7 +44,7 @@ c1, c2, c3 = st.columns(3)
 
 with c1:
     st.subheader(" Leitungen schützen")
-    st.write("Keine Leitung darf über 100'%' ausgelastet sein, sonst drohen Stromausfälle.")
+    st.write("Keine Leitung darf über 100% ausgelastet sein, sonst drohen Stromausfälle.")
 with c2:
     st.subheader(" Abregelung minimieren")
     st.write("Verhindere, dass sauberer Wind- und Solarstrom weggeworfen (abgeregelt) werden muss, weil das Netz voll ist.")
