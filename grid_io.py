@@ -132,7 +132,8 @@ def pypsa_to_lines(n: Any) -> pd.DataFrame:
                 continue
             b0 = buses.loc[bus0]
             b1 = buses.loc[bus1]
-            cap_mw = _component_capacity_mw(ln, ("s_nom", "s_nom_opt", "p_nom", "p_nom_opt"))
+            #hier nur halbe Kapazität importiert
+            cap_mw = 0.5 * _component_capacity_mw(ln, ("s_nom", "s_nom_opt", "p_nom", "p_nom_opt"))
             rows.append({
                 "Name": str(name),
                 "Typ": "Line",
