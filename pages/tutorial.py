@@ -106,7 +106,7 @@ with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
     )
 
     st.image(
-        "pages/dc_3_knoten.png",
+        "pages/dc_3_knoten.jpeg",
         caption="Dreiknoten-Netz für die Beispielrechnung",
         width=300
 
