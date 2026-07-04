@@ -94,6 +94,118 @@ st.markdown(
     "Dabei ist $N(m)$ die Menge der Nachbarknoten von $m$."
 )
 
+st.divider()
+
+with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
+
+    st.markdown("### 1. Eingaben")
+
+    st.markdown(
+        "Wir betrachten ein kleines Netz mit drei Knoten $i$, $j$ und $k$. "
+        "Die Knoten $i$ und $j$ speisen jeweils Leistung ein, während Knoten $k$ Leistung aufnimmt."
+    )
+
+    st.image(
+        "pages/dc_3_knoten.png",
+        caption="Dreiknoten-Netz für die Beispielrechnung",
+        width=300
+
+    )
+
+    st.latex(r"P_i = +4 \ \mathrm{MW}")
+    st.latex(r"P_j = +4 \ \mathrm{MW}")
+    st.latex(r"P_k = -8 \ \mathrm{MW}")
+
+    st.markdown("Das Netz ist ausgeglichen, weil gilt:")
+
+    st.latex(r"P_i + P_j + P_k = 4 + 4 - 8 = 0")
+
+    st.markdown("Die Leitungsreaktanzen sind:")
+
+    st.latex(r"x_{ij} = 8")
+    st.latex(r"x_{ik} = 14")
+    st.latex(r"x_{jk} = 10")
+
+    st.markdown("Daraus ergeben sich die Leitwertfaktoren:")
+
+    st.latex(r"b_{ij} = \frac{1}{8}")
+    st.latex(r"b_{ik} = \frac{1}{14}")
+    st.latex(r"b_{jk} = \frac{1}{10}")
+
+    st.divider()
+
+    st.markdown("### 2. Reduzierte Gleichung")
+
+    st.markdown(
+        "Damit die Winkel eindeutig berechnet werden können, wird ein Knoten als Referenzknoten gewählt. "
+        "Hier setzen wir:"
+    )
+
+    st.latex(r"\theta_k = 0")
+
+    st.markdown("Die DC-Lastflussgleichung wird in Matrixform geschrieben als:")
+
+    st.latex(r"P = B' \theta")
+
+    st.markdown("Da Knoten $k$ der Referenzknoten ist, bleiben nur die Winkel $\\theta_i$ und $\\theta_j$ als Unbekannte übrig.")
+
+    st.latex(
+        r"""
+        \begin{bmatrix}
+        \frac{11}{56} & -\frac{1}{8} \\
+        -\frac{1}{8} & \frac{9}{40}
+        \end{bmatrix}
+        \begin{bmatrix}
+        \theta_i \\
+        \theta_j
+        \end{bmatrix}
+        =
+        \begin{bmatrix}
+        4 \\
+        4
+        \end{bmatrix}
+        """
+    )
+
+    st.markdown("Durch Lösen dieses linearen Gleichungssystems erhält man:")
+
+    st.latex(r"\theta_i = 49")
+    st.latex(r"\theta_j = 45")
+    st.latex(r"\theta_k = 0")
+
+    st.divider()
+
+    st.markdown("### 3. Ergebnisse")
+
+    st.markdown("Die Leistungsflüsse auf den Leitungen ergeben sich aus:")
+
+    st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
+
+    st.markdown("**Leitung von i nach k:**")
+
+    st.latex(r"P_{ik} = \frac{\theta_i - \theta_k}{x_{ik}} = \frac{49 - 0}{14} = 3{,}5 \ \mathrm{MW}")
+
+    st.markdown("**Leitung von j nach k:**")
+
+    st.latex(r"P_{jk} = \frac{\theta_j - \theta_k}{x_{jk}} = \frac{45 - 0}{10} = 4{,}5 \ \mathrm{MW}")
+
+    st.markdown("**Leitung von i nach j:**")
+
+    st.latex(r"P_{ij} = \frac{\theta_i - \theta_j}{x_{ij}} = \frac{49 - 45}{8} = 0{,}5 \ \mathrm{MW}")
+
+    st.markdown("Damit ergibt sich die Knotenkontrolle:")
+
+    st.latex(r"\text{Knoten } i: \quad P_{ik} + P_{ij} = 3{,}5 + 0{,}5 = 4 \ \mathrm{MW}")
+
+    st.latex(r"\text{Knoten } j: \quad P_{jk} - P_{ij} = 4{,}5 - 0{,}5 = 4 \ \mathrm{MW}")
+
+    st.latex(r"\text{Knoten } k: \quad P_{ik} + P_{jk} = 3{,}5 + 4{,}5 = 8 \ \mathrm{MW}")
+
+    st.success(
+        "Interpretation: Der Haupttransport erfolgt zu Knoten k. Zusätzlich fließt ein kleiner Ausgleichsstrom "
+        "von Knoten i nach Knoten j."
+    )
+
 
 
 st.divider()
