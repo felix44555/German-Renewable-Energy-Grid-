@@ -55,46 +55,46 @@ with c3:
 # 5. Wie funktioniert die Lastflussrechnung?
 st.header("5. Wie funktioniert die Lastflussrechnung?")
 
-with st.expander("DC-Lastflussmodell", expanded=False):
+st.markdown("### DC-Lastflussmodell")
 
-    st.markdown("### DC-Lastflussmodell")
+st.markdown("Im DC-Lastfluss gelten die vereinfachenden Annahmen:")
 
-    st.markdown("Im DC-Lastfluss gelten die vereinfachenden Annahmen:")
+st.markdown("**1. Spannungsbeträge sind näherungsweise konstant:**")
+st.latex(r"|V| \approx 1")
 
-    st.markdown("**Spannungsbeträge sind näherungsweise konstant:**")
-    st.latex(r"|V| \approx 1")
+st.markdown("**2. Leitungswiderstände werden vernachlässigt:**")
+st.latex(r"R \ll X")
 
-    st.markdown("**Leitungswiderstände werden vernachlässigt:**")
-    st.latex(r"R \ll X")
+st.markdown("**3. Winkeldifferenzen sind klein:**")
+st.latex(r"\sin(\theta_a - \theta_b) \approx \theta_a - \theta_b")
 
-    st.markdown("**Winkeldifferenzen sind klein:**")
-    st.latex(r"\sin(\theta_a - \theta_b) \approx \theta_a - \theta_b")
+st.markdown("**4. Es wird nur Wirkleistung betrachtet.**")
 
-    st.markdown("**Es wird nur Wirkleistung betrachtet.**")
+st.divider()
 
-    st.divider()
+st.markdown("Für eine Leitung zwischen zwei Knoten $a$ und $b$ gilt:")
 
-    st.markdown("Für eine Leitung zwischen zwei Knoten $a$ und $b$ gilt:")
+st.latex(r"P_{ab} = b_{ab}(\theta_a - \theta_b)")
 
-    st.latex(r"P_{ab} = b_{ab}(\theta_a - \theta_b)")
+st.markdown("mit")
 
-    st.markdown("mit")
+st.latex(r"b_{ab} = \frac{1}{x_{ab}}")
 
-    st.latex(r"b_{ab} = \frac{1}{x_{ab}}")
+st.markdown("Damit ergibt sich äquivalent:")
 
-    st.markdown("Damit ergibt sich äquivalent:")
+st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
 
-    st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
+st.divider()
 
-    st.divider()
+st.markdown("Die Knotengleichung für einen Knoten $m$ lautet allgemein:")
 
-    st.markdown("Die Knotengleichung für einen Knoten $m$ lautet allgemein:")
+st.latex(r"P_m = \sum_{n \in N(m)} b_{mn}(\theta_m - \theta_n)")
 
-    st.latex(r"P_m = \sum_{n \in N(m)} b_{mn}(\theta_m - \theta_n)")
+st.markdown(
+    "Dabei ist $N(m)$ die Menge der Nachbarknoten von $m$."
+)
 
-    st.markdown(
-        "Dabei ist $N(m)$ die Menge der Nachbarknoten von $m$."
-    )
+
 
 st.divider()
 
