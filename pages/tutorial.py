@@ -55,66 +55,46 @@ with c3:
 # 5. Wie funktioniert die Lastflussrechnung?
 st.header("5. Wie funktioniert die Lastflussrechnung?")
 
-with st.expander("Didaktisch vereinfachte Herleitung des DC-Lastflusses", expanded=False):
-    st.info(
-        "**Motivation:** Die Berechnung des DC-Lastflusses ist eine etablierte Methode zur schnellen, linearen "
-        "Näherung von Leistungsflüssen in Hochspannungsnetzen. Anstatt zunächst die komplexen AC-Leistungsgleichungen "
-        "mit all ihren trigonometrischen Summen aufzustellen, können die bekannten Näherungen didaktisch sinnvoll direkt "
-        "zu Beginn an den fundamentalen physikalischen Größen angesetzt werden."
-    )
+with st.expander("DC-Lastflussmodell", expanded=False):
 
-    st.markdown("### Grundlegende Annahmen")
-    st.markdown("Folgende praxisnahe Annahmen für Hochspannungsnetze bilden die Grundlage:")
-    st.markdown("* Die Spannungsbeträge an allen Knoten sind nahezu identisch und liegen nahe am Nennwert:")
-    st.latex(r"|V| \approx 1 \text{ p.u.}")
-    
-    st.markdown("* Die Winkeldifferenzen zwischen benachbarten Knoten sind klein (erwartet unter 30°).")
-    st.markdown("* Der ohmsche Widerstand R der Leitungen ist sehr viel kleiner als die Leitungsreaktanz X, weshalb er vernachlässigt wird:")
-    st.latex(r"X \gg R")
+    st.markdown("### DC-Lastflussmodell")
+
+    st.markdown("Im DC-Lastfluss gelten die vereinfachenden Annahmen:")
+
+    st.markdown("**Spannungsbeträge sind näherungsweise konstant:**")
+    st.latex(r"|V| \approx 1")
+
+    st.markdown("**Leitungswiderstände werden vernachlässigt:**")
+    st.latex(r"R \ll X")
+
+    st.markdown("**Winkeldifferenzen sind klein:**")
+    st.latex(r"\sin(\theta_a - \theta_b) \approx \theta_a - \theta_b")
+
+    st.markdown("**Es wird nur Wirkleistung betrachtet.**")
 
     st.divider()
 
-    st.markdown("### Schritt 1: Näherung der Knotenspannungen")
-    st.markdown("Die komplexe Spannung an einem Knoten i lautet in der Exponentialform:")
-    st.latex(r"V_i = |V_i|e^{j\theta_i}")
-    
-    st.markdown("Wir setzen nun den konstanten Spannungsbetrag (|V| ≈ 1) und die Taylor-Näherung für kleine Winkel ein. Damit vereinfacht sich die Knotenspannung drastisch zu:")
-    st.latex(r"V_i \approx 1 + j\theta_i")
+    st.markdown("Für eine Leitung zwischen zwei Knoten $a$ und $b$ gilt:")
 
-    st.markdown("### Schritt 2: Näherung der Netzadmittanzen")
-    st.markdown("Die Admittanz Y berechnet sich allgemein als Umkehrwert der Impedanz. Da der Wirkwiderstand R vernachlässigt wird, besteht die Leitung zwischen den Knoten i und k rein aus der Suszeptanz B. Für die Admittanz gilt somit:")
-    st.latex(r"Y_{ik} \approx -jB_{ik}")
+    st.latex(r"P_{ab} = b_{ab}(\theta_a - \theta_b)")
 
-    st.markdown("### Schritt 3: Berechnung des Zweigstroms (Ohmsches Gesetz)")
-    st.markdown("Der Strom I, der vom Knoten i zum Knoten k fließt, ergibt sich direkt aus der Spannungsdifferenz multipliziert mit der Admittanz:")
-    st.latex(r"I_{ik} = Y_{ik}(V_i - V_k)")
-    
-    st.markdown("Setzen wir nun unsere sehr simplen Näherungen aus Schritt 1 und 2 ein:")
-    st.latex(r"I_{ik} = -jB_{ik} \big( (1 + j\theta_i) - (1 + j\theta_k) \big)")
-    
-    st.markdown("Die reellen Einsen heben sich durch die Subtraktion auf:")
-    st.latex(r"I_{ik} = -jB_{ik}(j\theta_i - j\theta_k)")
-    
-    st.markdown("Klammert man das j aus, ergibt sich durch die Multiplikation $-j \cdot j = 1$. Wir erhalten einen rein reellen Ausdruck für den Strom:")
-    st.latex(r"I_{ik} = B_{ik}(\theta_i - \theta_k)")
+    st.markdown("mit")
 
-    st.markdown("### Schritt 4: Berechnung der Wirkleistung")
-    st.markdown("Die komplexe Scheinleistung S, die in den Zweig fließt, ist das Produkt aus der Knotenspannung und dem konjugiert komplexen Strom:")
-    st.latex(r"S_{ik} = V_i I_{ik}^*")
-    
-    st.markdown("Da unser genäherter Strom aus Schritt 3 rein reell ist, gilt $I_{ik}^* = I_{ik}$. Setzen wir die Gleichungen ein:")
-    st.latex(r"S_{ik} \approx (1 + j\theta_i) \cdot B_{ik}(\theta_i - \theta_k)")
-    
-    st.markdown("Ausmultipliziert ergibt das:")
-    st.latex(r"S_{ik} = B_{ik}(\theta_i - \theta_k) + j\theta_i B_{ik}(\theta_i - \theta_k)")
-    
-    st.markdown("Beim DC-Lastfluss interessiert uns definitionsgemäß ausschließlich die Wirkleistung P (der Realteil der Scheinleistung). Wir ignorieren den Imaginärteil und erhalten sofort die finale, lineare Bestimmungsgleichung für den Leistungsfluss über den Leitungszweig:")
-    st.latex(r"P_{ik} = B_{ik}(\theta_i - \theta_k)")
+    st.latex(r"b_{ab} = \frac{1}{x_{ab}}")
 
-    st.success("**Zusammenfassung:** Anstatt am Ende einer langen Herleitung Annahmen auf unhandliche Sinus- und Kosinus-Funktionen anzuwenden, zeigt dieser Ansatz direkt am Ohmschen Gesetz, wie sich das Wechselstromnetz durch die DC-Näherungen mathematisch quasi in ein lineares Gleichstromnetz verwandelt. Die Summe aller abfließenden Zweigleistungen P an einem Knoten führt dann nahtlos zur bekannten Gleichung für die Einspeiseleistung P am Knoten i:")
-    
-    st.latex(r"P_i = \sum_{k=1}^N B_{ik}(\theta_i - \theta_k)")
+    st.markdown("Damit ergibt sich äquivalent:")
 
+    st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
+
+    st.divider()
+
+    st.markdown("Die Knotengleichung für einen Knoten $m$ lautet allgemein:")
+
+    st.latex(r"P_m = \sum_{n \in N(m)} b_{mn}(\theta_m - \theta_n)")
+
+    st.markdown(
+        "Dabei ist $N(m)$ die Menge der Nachbarknoten von $m$."
+    )
 
 st.divider()
 
