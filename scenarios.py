@@ -48,7 +48,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "hour": 19,
         },
         "profile_factors": {"wind": 0.75, "pv": 0.75, "load": 1.08},
-        "line_stress_factor": 1.05,
+        "line_stress_factor": 1.00,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 3.0, "max_line_util_pct": 100.0},
     },
     "ueberschuss": {
