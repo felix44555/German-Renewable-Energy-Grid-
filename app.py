@@ -311,7 +311,7 @@ def main() -> None:
         konv_min_pct = 0.0
         bess_pct = st.slider("BESS Leistung/Energie [%]", 0, 500, key="bess_pct", step=5)
         #load_pct = st.slider("Last/Ziel [% der SMARD-Last]", 50, 200, key="load_pct", step=5)
-        load_pct = 100.0
+        #load_pct = 100.0
         soc_pct = st.slider("BESS Start-SOC [%]", 0, 100, key="soc_pct", step=5)
 
         st.header("Netz- und EE-Maßnahmen")
