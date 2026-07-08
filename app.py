@@ -305,14 +305,8 @@ def main() -> None:
         st.header("Stellgrößen")
         wind_pct = st.slider("Wind [% der SMARD-Orientierung]", 0, 300, key="wind_pct", step=5)
         pv_pct = st.slider("PV [% der SMARD-Orientierung]", 0, 300, key="pv_pct", step=5)
-        konv_pct = st.slider(
-            "Restliche Erzeuger verfügbare Leistung [%]",
-            0,
-            250,
-            key="konv_pct",
-            step=5,
-            help="Skaliert die verfügbare regelbare Leistung aus .nc/Fallback. Nicht SMARD-gekoppelt.",
-        )
+        #konv_pct = st.slider("Restliche Erzeuger verfügbare Leistung [%]", 0, 250, key="konv_pct", step=5, help="Skaliert die verfügbare regelbare Leistung aus .nc/Fallback. Nicht SMARD-gekoppelt.",)
+        konv_pct = 100.0
         #konv_min_pct = st.slider("Restliche Erzeuger Mindestbetrieb [% verfügbar]", 0, 80, key="konv_min_pct", step=5, help="0 % bedeutet vollständig herunterfahrbar. Höhere Werte erzeugen bei viel EE eher Überschuss.",)
         konv_min_pct = 0.0
         bess_pct = st.slider("BESS Leistung/Energie [%]", 0, 500, key="bess_pct", step=5)
