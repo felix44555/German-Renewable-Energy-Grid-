@@ -316,7 +316,7 @@ def main() -> None:
 
         st.header("Netz- und EE-Maßnahmen")
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
-        st.session_state["ee_curtail_pct"] = 100.0
+        ee_curtail_pct = 100.0
         
         st.caption(
             f"Referenzwerte aus Netz/Fallback:\n"
