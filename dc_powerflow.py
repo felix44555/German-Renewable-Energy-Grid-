@@ -215,7 +215,7 @@ def _choose_reference_bus(
     """
     if not component:
         return 0
-
+    '''
     scores: list[tuple[float, int]] = []
 
     for idx in component:
@@ -233,7 +233,8 @@ def _choose_reference_bus(
         scores.append((score, idx))
 
     return max(scores)[1]
-
+    '''
+    return component[0];
 
 def _solve_dc_angles(
     bus_names: list[str],
