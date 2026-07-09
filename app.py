@@ -23,7 +23,7 @@ from visualization import build_balance_chart, build_line_utilization_chart, bui
 from KPI_code import calculate_feasibility_kpi
 
 BASE_DIR = Path(__file__).resolve().parent
-NETWORK_FILE = BASE_DIR / "real_germany_8n_260630_edited.nc"
+NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
 APP_VERSION = "modular-smard-api-dc-safe-1"
 
 
