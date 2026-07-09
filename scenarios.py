@@ -44,7 +44,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "konv_pct": 100,
             "konv_min_pct": 0,
             "bess_pct": 100,
-            "load_pct": 170,
+            "load_pct": 135,
             "soc_pct": 50,
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
