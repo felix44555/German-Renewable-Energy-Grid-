@@ -105,12 +105,11 @@ with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
         "Die Knoten $i$ und $j$ speisen jeweils Leistung ein, während Knoten $k$ Leistung aufnimmt."
     )
 
-    st.image(
-        "pages/dc_3_knoten.jpeg",
-        caption="Dreiknoten-Netz für die Beispielrechnung",
-        width=300
-
-    )
+   st.image(
+    "pages/dc_3_knoten.jpeg",
+    caption="Dreiknoten-Netz für die Beispielrechnung",
+    use_container_width=True
+)
 
     st.latex(r"P_i = +4 \ \mathrm{MW}")
     st.latex(r"P_j = +4 \ \mathrm{MW}")
