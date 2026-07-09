@@ -290,13 +290,15 @@ def main() -> None:
             index=0,
             help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         )
+        current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         smard_day = st.date_input(
             "SMARD-Datum",
-            key="smard_day",
+            value = current_date,
             min_value=date(2018, 10, 1),
             max_value=date.today() - timedelta(days=2),
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
+        st.session_state["smard_day"] = smard_day
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
         #region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
         region = "DE"
