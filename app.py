@@ -23,7 +23,7 @@ from visualization import build_balance_chart, build_line_utilization_chart, bui
 from KPI_code import calculate_feasibility_kpi
 
 BASE_DIR = Path(__file__).resolve().parent
-NETWORK_FILE = BASE_DIR / "real_germany_8n_260630_edited.nc"
+NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
 APP_VERSION = "modular-smard-api-dc-safe-1"
 
 
@@ -290,40 +290,31 @@ def main() -> None:
             index=0,
             help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         )
-        default_day = date.today() - timedelta(days=2)
+        current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         smard_day = st.date_input(
             "SMARD-Datum",
-            value=default_day,
+            value = current_date,
             min_value=date(2018, 10, 1),
-            max_value=date.today(),
+            max_value=date.today() - timedelta(days=2),
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
+        st.session_state["smard_day"] = smard_day
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
-        region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
-
+        #region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
+        region = "DE"
+        
         st.header("Stellgrößen")
         wind_pct = st.slider("Wind [% der SMARD-Orientierung]", 0, 300, key="wind_pct", step=5)
         pv_pct = st.slider("PV [% der SMARD-Orientierung]", 0, 300, key="pv_pct", step=5)
-        konv_pct = st.slider(
-            "Restliche Erzeuger verfügbare Leistung [%]",
-            0,
-            250,
-            key="konv_pct",
-            step=5,
-            help="Skaliert die verfügbare regelbare Leistung aus .nc/Fallback. Nicht SMARD-gekoppelt.",
-        )
-        konv_min_pct = st.slider(
-            "Restliche Erzeuger Mindestbetrieb [% verfügbar]",
-            0,
-            80,
-            key="konv_min_pct",
-            step=5,
-            help="0 % bedeutet vollständig herunterfahrbar. Höhere Werte erzeugen bei viel EE eher Überschuss.",
-        )
-        bess_pct = st.slider("BESS Leistung/Energie [%]", 0, 300, key="bess_pct", step=5)
-        load_pct = st.slider("Last/Ziel [% der SMARD-Last]", 50, 200, key="load_pct", step=5)
+        #konv_pct = st.slider("Restliche Erzeuger verfügbare Leistung [%]", 0, 250, key="konv_pct", step=5, help="Skaliert die verfügbare regelbare Leistung aus .nc/Fallback. Nicht SMARD-gekoppelt.",)
+        konv_pct = 100.0
+        #konv_min_pct = st.slider("Restliche Erzeuger Mindestbetrieb [% verfügbar]", 0, 80, key="konv_min_pct", step=5, help="0 % bedeutet vollständig herunterfahrbar. Höhere Werte erzeugen bei viel EE eher Überschuss.",)
+        konv_min_pct = 0.0
+        bess_pct = st.slider("BESS Leistung/Energie [%]", 0, 500, key="bess_pct", step=5)
+        #load_pct = st.slider("Last/Ziel [% der SMARD-Last]", 50, 200, key="load_pct", step=5)
+        load_pct = st.session_state["load_pct"] 
         soc_pct = st.slider("BESS Start-SOC [%]", 0, 100, key="soc_pct", step=5)
-
+        st.info(str(load_pct))
         st.header("Netz- und EE-Maßnahmen")
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
         ee_curtail_pct = 100.0

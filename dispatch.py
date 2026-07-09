@@ -157,9 +157,9 @@ def prepare_dispatch_profiles(
         residual_after_bess = residual_before - b_power
         residual_after_bess_values.append(residual_after_bess)
 
-        # Flexible restliche Erzeuger erst nach BESS.
+        # Flexible restliche Erzeuger erst nach BESS und theoretisch unendlich
         flex_target = max(residual_after_bess, 0.0)
-        flex_konv = min(flex_target, konv_flex_max)
+        flex_konv = flex_target
         k_power = konv_min + flex_konv
         k_soll = konv_min + flex_target
         k_fehl = max(k_soll - konv_max, 0.0)

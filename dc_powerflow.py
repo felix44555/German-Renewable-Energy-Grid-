@@ -207,15 +207,15 @@ def _choose_reference_bus(
 ) -> int:
     """
     Wählt einen mathematischen Referenzbus innerhalb einer Netzinsel.
-
+    -> den mit der gröten Leistungsdifferenz (bezog oder einspeisung)
     Wichtig:
     - Das ist kein Slackbus.
     - Der Bus setzt nur theta = 0.
-    - Es wird keine Leistung auf diesen Bus gelegt.
+    - Es wird keine Leistung auf diesen Bus gelegt.(außer die sowieso vorhandene)
     """
     if not component:
         return 0
-
+    '''
     scores: list[tuple[float, int]] = []
 
     for idx in component:
@@ -233,7 +233,8 @@ def _choose_reference_bus(
         scores.append((score, idx))
 
     return max(scores)[1]
-
+    '''
+    return component[0];
 
 def _solve_dc_angles(
     bus_names: list[str],
