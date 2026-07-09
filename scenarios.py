@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 from typing import Any
 
 import pandas as pd
 
+default_day = date.today() - timedelta(days=2)
 
 SCENARIOS: dict[str, dict[str, Any]] = {
     "training": {
@@ -24,16 +27,16 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
             "hour": 12,
+            "smard_day": default_day,
         },
         "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
         "line_stress_factor": 1.00,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "unterdeckung": {
-        "name": "Unterdeckung: Restleistung reicht nicht",
+        "name": "Windiger Tag mit hohem Verbrauch",
         "task": (
-            "Wind/PV sind niedrig und die Last ist hoch. Die restlichen Erzeuger fahren bis zur verfügbaren "
-            "Leistung hoch; verbleibende Unterdeckung muss durch BESS, Lastsenkung oder höhere Verfügbarkeit gelöst werden."
+            "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
         ),
         "defaults": {
             "wind_pct": 100,
@@ -46,6 +49,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
             "hour": 12,
+            "smard_day": date(2026, 2, 2),
         },
         "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
         "line_stress_factor": 1.00,
@@ -68,6 +72,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
             "hour": 13,
+            "smard_day": date(2026, 3, 3),
         },
         "profile_factors": {"wind": 1.15, "pv": 1.25, "load": 0.90},
         "line_stress_factor": 1.10,
@@ -90,6 +95,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "line_capacity_pct": 70,
             "ee_curtail_pct": 0,
             "hour": 21,
+            "smard_day": date(2026, 4, 4),
         },
         "profile_factors": {"wind": 1.35, "pv": 0.95, "load": 1.00},
         "line_stress_factor": 1.55,

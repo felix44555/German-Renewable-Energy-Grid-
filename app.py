@@ -290,12 +290,11 @@ def main() -> None:
             index=0,
             help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         )
-        default_day = date.today() - timedelta(days=2)
         smard_day = st.date_input(
             "SMARD-Datum",
-            value=default_day,
+            key="smard_day",
             min_value=date(2018, 10, 1),
-            max_value=date.today(),
+            max_value=date.today() - timedelta(days=2),
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
