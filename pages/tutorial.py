@@ -1,232 +1,737 @@
 import streamlit as st
 
-st.set_page_config(page_title="About", layout="wide")
 
-st.title("About: Allgemeines zum Simulator")
-st.write("Auf dieser Seite findest du Hintergrundinformationen zum Stromnetzmodell,zu den verwendeten Daten und zur DC-Lastflussberechnung.")
-
-st.divider()
-
-# 1. Was ist diese Website?
-st.header("1. Was ist diese Website?")
-st.write(
-    "Diese Website ist ein interaktiver **Netzsimulator für Deutschland**. Sie nutzt reale Verbrauchs- und Erzeugungsdaten "
-    "(von der SMARD-Plattform der Bundesnetzagentur) und verbindet sie mit einem vereinfachten Modell des deutschen "
-    "Höchstspannungsnetzes. Du übernimmst die Rolle der Netzplanung und musst versuchen, dass das Stromnetz "
-    "effektiv zu verändern, um den Anteil der erneuerbaren Energieen im Energiemix zu erhöhen."
+st.set_page_config(
+    page_title="Tutorial",
+    page_icon="📘",
+    layout="wide",
 )
 
-# 2. Was ist das Übertragungsnetz?
-st.header("2. Was ist ein Übertragungsnetz?")
+
+# ============================================================
+# Tutorial-Fortschritt
+# ============================================================
+
+STEP_KEYS = [
+    "tutorial_step_1",
+    "tutorial_step_2",
+    "tutorial_step_3",
+    "tutorial_step_4",
+    "tutorial_step_5",
+    "tutorial_step_6",
+    "tutorial_step_7",
+]
+
+for key in STEP_KEYS:
+    st.session_state.setdefault(key, False)
+
+
+def tutorial_progress() -> tuple[int, int]:
+    completed = sum(bool(st.session_state.get(key, False)) for key in STEP_KEYS)
+    return completed, len(STEP_KEYS)
+
+
+# ============================================================
+# Kopfbereich
+# ============================================================
+
+st.title("📘 Tutorial: Das deutsche Stromnetz gestalten")
+
 st.write(
-    "Das Stromnetz besteht aus dem Übertragungsnetz und dem Verteilnetz. Das Übertragungsnetz ist dabei der Teil, "
-    "der große Mengen Energie über weite Strecken bei Höchstspannung (220 kV und 380 kV) transportiert. Auch Hochspannugns-"
-    "Gleichstromübertragung (HGÜ) zählt zum Übertragungsnetz, jedoch wird diese in dieser Simulation nicht seperat betrachtet. "
-    "Das Übertragungsnetz wird benötigt, da der Energiebedarf nicht immer an einem ort selber gedeckt werden kann."
+    "In diesem Tutorial lernst du Schritt für Schritt, wie du den Simulator "
+    "bedienst, Netzengpässe erkennst und den Anteil erneuerbarer Energien erhöhst."
 )
 
-# 3. Herausforderungen des Netzes
-st.header("3. Welche Herausforderungen gibt es aktuell?")
-with st.container():
-    st.markdown("""
-    Die Energiewende stellt das Netz vor große Herausforderungen:
-    * **Geografische Ungleichverteilung:** Die meiste Windenergie wird im Norden generiert, der großteil der Industrie (und der höchste Energiebedarf) befindet sich jedoch im Süden. Zudem befindet sich die meißte solare Energiegewinnung im Süden des Landes, und muss in Zeiten mit wenig Wind in den Norden transportiert werden.
-    * **Wetterabhängigkeit:** Wind und Sonne liefern nicht konstant Strom. Da oft nur einer der Erzeuger gleichzeitig ausfällt, besteht an solchen Tagen hoher transport bedarf.".
-    * **Netzengpässe (Bottlenecks):** Wenn zu viel Windstrom vom Norden in den Süden drängt, reichen die Kapazitäten des Übertragungsnetz oft nicht aus. In solchen fällen muss die Erzeugung abgeregelt werden und im Süden muss Energie auf andere, oft fossile Art gewonnen werden.
-    """)
-
-# 4. Ziel der Simulation (KPIs)
-st.header("4. Was ist das Ziel dieser Simulation?")
 st.info(
-    "Deine Aufgabe ist es, eine sogenannte **KPI (Key Performance Indicator)** zu optimieren. Das Netz ist am besten, wenn folgende Ziele erreicht werden:"
+    "Das Ziel ist nicht, einfach alle Slider auf den höchsten Wert zu stellen. "
+    "Gesucht wird eine technisch sinnvolle Lösung mit hohem EE-Anteil, "
+    "sicheren Leitungen und möglichst begrenztem Ausbau."
 )
-c1, c2, c3 = st.columns(3)
 
-with c1:
-    st.subheader(" Leitungen schützen")
-    st.write("Keine Leitung darf über 100 % ausgelastet sein, sonst drohen Stromausfälle.")
-with c2:
-    st.subheader(" Abregelung minimieren")
-    st.write("Verhindere, dass sauberer Wind- und Solarstrom weggeworfen (abgeregelt) werden muss, weil das Netz voll ist.")
-with c3:
-    st.subheader(" Nicht unnötig viel Ausbau")
-    st.write("Versuche dein Netz so effizient wie möglich zu bauen. Wenn du zu viel Kapazitäten hinzufügst, die garnicht genutzt werden, sinkt die Effizienz deines Netztes.")
+completed, total = tutorial_progress()
 
-# 5. Wie funktioniert die Lastflussrechnung?
-st.header("5. Wie funktioniert die Lastflussrechnung?")
+st.subheader("Dein Fortschritt")
+st.progress(completed / total)
+st.caption(f"{completed} von {total} Schritten abgeschlossen")
 
-st.markdown("### DC-Lastflussmodell")
+navigation_col1, navigation_col2, navigation_col3 = st.columns(3)
 
-st.markdown("Im DC-Lastfluss gelten die vereinfachenden Annahmen:")
+with navigation_col1:
+    st.page_link(
+        "app.py",
+        label="Simulator öffnen",
+        icon="🎮",
+    )
 
-st.markdown("**1. Spannungsbeträge sind näherungsweise konstant:**")
-st.latex(r"|V| \approx 1")
+with navigation_col2:
+    st.page_link(
+        "pages/1_About.py",
+        label="Modellgrundlagen",
+        icon="ℹ️",
+    )
 
-st.markdown("**2. Leitungswiderstände werden vernachlässigt:**")
-st.latex(r"R \ll X")
-
-st.markdown("**3. Winkeldifferenzen sind klein:**")
-st.latex(r"\sin(\theta_a - \theta_b) \approx \theta_a - \theta_b")
-
-st.markdown("**4. Es wird nur Wirkleistung betrachtet.**")
-
-st.divider()
-
-st.markdown("Für eine Leitung zwischen zwei Knoten $a$ und $b$ gilt:")
-
-st.latex(r"P_{ab} = b_{ab}(\theta_a - \theta_b)")
-
-st.markdown("mit")
-
-st.latex(r"b_{ab} = \frac{1}{x_{ab}}")
-
-st.markdown("Damit ergibt sich äquivalent:")
-
-st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
+with navigation_col3:
+    if st.button("Fortschritt zurücksetzen", use_container_width=True):
+        for key in STEP_KEYS:
+            st.session_state[key] = False
+        st.rerun()
 
 st.divider()
 
-st.markdown("Die Knotengleichung für einen Knoten $m$ lautet allgemein:")
 
-st.latex(r"P_m = \sum_{n \in N(m)} b_{mn}(\theta_m - \theta_n)")
+# ============================================================
+# Tutorial-Ablauf
+# ============================================================
+
+st.header("Schritt 1: Szenario und Daten auswählen")
 
 st.markdown(
-    "Dabei ist $N(m)$ die Menge der Nachbarknoten von $m$."
+    """
+    Öffne den Simulator und betrachte zunächst die Seitenleiste.
+
+    1. Wähle unter **Aufgabe** ein Szenario aus.
+    2. Klicke auf **Szenario-Startwerte laden**.
+    3. Wähle als Zeitreihe zunächst **SMARD-API**.
+    4. Wähle ein Datum, für das vollständige Daten verfügbar sind.
+    """
 )
 
-st.divider()
-
-with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
-
-    st.markdown("### 1. Eingaben")
-
+with st.expander("Was bedeuten diese Einstellungen?", expanded=True):
     st.markdown(
-        "Wir betrachten ein kleines Netz mit drei Knoten $i$, $j$ und $k$. "
-        "Die Knoten $i$ und $j$ speisen jeweils Leistung ein, während Knoten $k$ Leistung aufnimmt."
-    )
+        """
+        **Aufgabe**
 
-    st.image(
-    "pages/dc_3_knoten.jpeg",
-    caption="Dreiknoten-Netz für die Beispielrechnung",
-    use_container_width=True
-    )
+        Bestimmt die Ausgangssituation und die Bedingungen, die für eine
+        erfolgreiche Lösung erfüllt werden müssen.
 
-    st.latex(r"P_i = +4 \ \mathrm{MW}")
-    st.latex(r"P_j = +4 \ \mathrm{MW}")
-    st.latex(r"P_k = -8 \ \mathrm{MW}")
+        **Szenario-Startwerte laden**
 
-    st.markdown("Das Netz ist ausgeglichen, weil gilt:")
+        Setzt alle Stellgrößen auf die zum Szenario gehörenden Ausgangswerte zurück.
 
-    st.latex(r"P_i + P_j + P_k = 4 + 4 - 8 = 0")
+        **SMARD-API**
 
-    st.markdown("Die Leitungsreaktanzen sind:")
+        Verwendet reale Zeitreihen für Netzlast, Windenergie und Photovoltaik.
 
-    st.latex(r"x_{ij} = 8")
-    st.latex(r"x_{ik} = 14")
-    st.latex(r"x_{jk} = 10")
+        **Synthetisch**
 
-    st.markdown("Daraus ergeben sich die Leitwertfaktoren:")
+        Verwendet künstlich erzeugte Tagesprofile. Diese Option eignet sich als
+        Ersatz, wenn die SMARD-Daten nicht geladen werden können.
 
-    st.latex(r"b_{ij} = \frac{1}{8}")
-    st.latex(r"b_{ik} = \frac{1}{14}")
-    st.latex(r"b_{jk} = \frac{1}{10}")
+        **SMARD-Datum**
 
-    st.divider()
-
-    st.markdown("### 2. Reduzierte Gleichung")
-
-    st.markdown(
-        "Damit die Winkel eindeutig berechnet werden können, wird ein Knoten als Referenzknoten gewählt. "
-        "Hier setzen wir:"
-    )
-
-    st.latex(r"\theta_k = 0")
-
-    st.markdown("Die DC-Lastflussgleichung wird in Matrixform geschrieben als:")
-
-    st.latex(r"P = B' \theta")
-
-    st.markdown("Da Knoten $k$ der Referenzknoten ist, bleiben nur die Winkel $\\theta_i$ und $\\theta_j$ als Unbekannte übrig.")
-
-    st.latex(
-        r"""
-        \begin{bmatrix}
-        \frac{11}{56} & -\frac{1}{8} \\
-        -\frac{1}{8} & \frac{9}{40}
-        \end{bmatrix}
-        \begin{bmatrix}
-        \theta_i \\
-        \theta_j
-        \end{bmatrix}
-        =
-        \begin{bmatrix}
-        4 \\
-        4
-        \end{bmatrix}
+        Bestimmt, welcher Tag simuliert wird. Wind, Sonne und Stromverbrauch
+        können sich von Tag zu Tag stark unterscheiden.
         """
     )
 
-    st.markdown("Durch Lösen dieses linearen Gleichungssystems erhält man:")
-
-    st.latex(r"\theta_i = 49")
-    st.latex(r"\theta_j = 45")
-    st.latex(r"\theta_k = 0")
-
-    st.divider()
-
-    st.markdown("### 3. Ergebnisse")
-
-    st.markdown("Die Leistungsflüsse auf den Leitungen ergeben sich aus:")
-
-    st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
-
-    st.markdown("**Leitung von i nach k:**")
-
-    st.latex(r"P_{ik} = \frac{\theta_i - \theta_k}{x_{ik}} = \frac{49 - 0}{14} = 3{,}5 \ \mathrm{MW}")
-
-    st.markdown("**Leitung von j nach k:**")
-
-    st.latex(r"P_{jk} = \frac{\theta_j - \theta_k}{x_{jk}} = \frac{45 - 0}{10} = 4{,}5 \ \mathrm{MW}")
-
-    st.markdown("**Leitung von i nach j:**")
-
-    st.latex(r"P_{ij} = \frac{\theta_i - \theta_j}{x_{ij}} = \frac{49 - 45}{8} = 0{,}5 \ \mathrm{MW}")
-
-    st.markdown("Damit ergibt sich die Knotenkontrolle:")
-
-    st.latex(r"\text{Knoten } i: \quad P_{ik} + P_{ij} = 3{,}5 + 0{,}5 = 4 \ \mathrm{MW}")
-
-    st.latex(r"\text{Knoten } j: \quad P_{jk} - P_{ij} = 4{,}5 - 0{,}5 = 4 \ \mathrm{MW}")
-
-    st.latex(r"\text{Knoten } k: \quad P_{ik} + P_{jk} = 3{,}5 + 4{,}5 = 8 \ \mathrm{MW}")
-
-    st.success(
-        "Interpretation: Der Haupttransport erfolgt zu Knoten k. Zusätzlich fließt ein kleiner Ausgleichsstrom "
-        "von Knoten i nach Knoten j."
-    )
-
-
-
-st.divider()
-
-st.divider()
-
-st.success(
-    "Du kennst jetzt die wichtigsten Grundlagen des verwendeten Netzmodells."
+st.checkbox(
+    "Ich habe ein Szenario und eine Datenquelle ausgewählt.",
+    key="tutorial_step_1",
 )
 
-col1, col2 = st.columns(2)
+st.divider()
 
-with col1:
-    st.page_link(
-        "pages/2_Tutorial.py",
-        label="Zum interaktiven Tutorial",
-        icon="📘",
+
+# ============================================================
+
+st.header("Schritt 2: Den Ausgangszustand untersuchen")
+
+st.markdown(
+    """
+    Verändere zunächst noch keinen Slider. Betrachte die fünf Kennzahlen im
+    Bereich **24h Engineering-Feasibility-KPI**.
+    """
+)
+
+metric_col1, metric_col2 = st.columns(2)
+
+with metric_col1:
+    st.markdown(
+        """
+        ### 24h-KPI
+
+        Die Gesamtbewertung deiner Lösung.
+
+        Ein hoher Wert bedeutet grundsätzlich:
+
+        - hoher Anteil erneuerbarer Energien,
+        - möglichst wenige Netzengpässe,
+        - kein unnötig großer Ausbau.
+        """
     )
 
-with col2:
-    st.page_link(
-        "app.py",
-        label="Direkt zum Simulator",
-        icon="🎮",
+    st.markdown(
+        """
+        ### 24h EE-Anteil [%]
+
+        Zeigt, welcher Anteil des Tagesverbrauchs durch Wind, PV und nutzbare
+        Batterieentladung gedeckt wird.
+        """
     )
+
+    st.markdown(
+        """
+        ### Max. Leitung 24h [%]
+
+        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt.
+
+        - unter 90 %: Reserve vorhanden
+        - 90 bis 100 %: Leitung nahe an der Grenze
+        - über 100 %: Leitung im Modell überlastet
+        """
+    )
+
+with metric_col2:
+    st.markdown(
+        """
+        ### Stunden mit Überlast
+
+        Anzahl der Stunden, in denen mindestens eine Leitung über 100 %
+        ausgelastet ist.
+
+        Ein Zielwert von **0 Stunden** bedeutet, dass während des gesamten Tages
+        keine modellierte Leitungsgrenze überschritten wird.
+        """
+    )
+
+    st.markdown(
+        """
+        ### Ausbau-Faktor
+
+        Misst den zusätzlichen Ausbau gegenüber dem Referenzzustand.
+
+        Bei 100 % entsteht für die jeweilige Stellgröße kein zusätzlicher Ausbau.
+
+        Beispiel:
+
+        - Wind bei 150 % ergibt einen zusätzlichen Faktor von 0,5.
+        - Wind und PV bei jeweils 150 % ergeben gemeinsam 1,0.
+        """
+    )
+
+st.warning(
+    "Notiere dir den ursprünglichen 24h-KPI, den EE-Anteil und die maximale "
+    "Leitungsauslastung. Diese Werte brauchst du später zum Vergleichen."
+)
+
+st.checkbox(
+    "Ich habe die Ausgangswerte betrachtet und notiert.",
+    key="tutorial_step_2",
+)
+
+st.divider()
+
+
+# ============================================================
+
+st.header("Schritt 3: Eine einzelne Stunde untersuchen")
+
+st.markdown(
+    """
+    Nutze den Slider **Stunde des Tages**, um verschiedene Stunden zwischen
+    0 und 23 Uhr auszuwählen.
+
+    Untersuche mindestens:
+
+    - eine Nachtstunde,
+    - eine Mittagsstunde,
+    - eine Abendstunde.
+    """
+)
+
+st.subheader("Stunde des Tages")
+
+st.write(
+    "Der Stundenslider verändert nicht den simulierten Tag. Er wählt lediglich "
+    "die Stunde aus, die auf der Netzkarte, im Leitungsdiagramm und in den "
+    "Live-Kennzahlen genauer dargestellt wird."
+)
+
+st.markdown(
+    """
+    Beim Verschieben des Reglers solltest du beobachten:
+
+    1. Wie verändert sich die Photovoltaikerzeugung?
+    2. Wie verändert sich die Last?
+    3. Welche Leitung ist am stärksten ausgelastet?
+    4. Lädt oder entlädt der Batteriespeicher?
+    5. Bleibt die Netzbilanz nahe bei 0 GW?
+    """
+)
+
+st.checkbox(
+    "Ich habe mindestens drei unterschiedliche Stunden untersucht.",
+    key="tutorial_step_3",
+)
+
+st.divider()
+
+
+# ============================================================
+
+st.header("Schritt 4: Wind- und PV-Ausbau testen")
+
+wind_tab, pv_tab = st.tabs(["Wind", "Photovoltaik"])
+
+with wind_tab:
+    st.subheader("Wind [% der SMARD-Orientierung]")
+
+    st.write(
+        "Dieser Slider skaliert die gesamte Windstromerzeugung des ausgewählten "
+        "Tages. Wind an Land und Wind auf See werden gemeinsam verändert."
+    )
+
+    st.markdown(
+        """
+        - **0 %:** keine Windstromerzeugung
+        - **100 %:** ursprüngliche Windstromerzeugung
+        - **150 %:** 50 % mehr Windstrom
+        - **200 %:** doppelte Windstromerzeugung
+        - **300 %:** dreifache Windstromerzeugung
+        """
+    )
+
+    st.markdown(
+        """
+        **Experiment**
+
+        1. Notiere den aktuellen KPI.
+        2. Erhöhe Wind um 25 oder 50 Prozentpunkte.
+        3. Betrachte den neuen EE-Anteil.
+        4. Prüfe die maximale Leitungsauslastung.
+        5. Untersuche auf der Netzkarte, welche Leitungen stärker belastet werden.
+        """
+    )
+
+    st.info(
+        "Mehr Windenergie erhöht häufig den EE-Anteil. Gleichzeitig muss die "
+        "zusätzliche Energie von den windreichen Regionen zu den Verbrauchern "
+        "transportiert werden."
+    )
+
+with pv_tab:
+    st.subheader("PV [% der SMARD-Orientierung]")
+
+    st.write(
+        "Dieser Slider skaliert die Photovoltaikerzeugung des ausgewählten Tages."
+    )
+
+    st.markdown(
+        """
+        - **0 %:** keine Photovoltaikerzeugung
+        - **100 %:** ursprüngliche Photovoltaikerzeugung
+        - **150 %:** 50 % mehr Photovoltaik
+        - **200 %:** doppelte Photovoltaikerzeugung
+        - **300 %:** dreifache Photovoltaikerzeugung
+        """
+    )
+
+    st.markdown(
+        """
+        **Experiment**
+
+        1. Stelle Wind zunächst wieder auf den Ausgangswert.
+        2. Erhöhe PV um 25 oder 50 Prozentpunkte.
+        3. Betrachte besonders die Mittagsstunden.
+        4. Prüfe, ob der Batteriespeicher lädt.
+        5. Achte auf Überschüsse oder Abregelung.
+        """
+    )
+
+    st.info(
+        "PV erzeugt hauptsächlich tagsüber Strom. Ein sehr hoher PV-Ausbau kann "
+        "deshalb mittags Überschüsse erzeugen, obwohl nachts weiterhin zusätzliche "
+        "Erzeugung benötigt wird."
+    )
+
+st.checkbox(
+    "Ich habe Wind und PV einzeln verändert und die Auswirkungen verglichen.",
+    key="tutorial_step_4",
+)
+
+st.divider()
+
+
+# ============================================================
+
+st.header("Schritt 5: Batteriespeicher einsetzen")
+
+bess_col1, bess_col2 = st.columns(2)
+
+with bess_col1:
+    st.subheader("BESS Leistung/Energie [%]")
+
+    st.write(
+        "BESS bedeutet Battery Energy Storage System. Der Slider skaliert im "
+        "Simulator gleichzeitig die Lade- und Entladeleistung sowie die "
+        "verfügbare Speicherkapazität."
+    )
+
+    st.markdown(
+        """
+        - **0 %:** kein Batteriespeicher
+        - **100 %:** Referenzgröße
+        - **200 %:** doppelte Leistung und Speicherkapazität
+        - **500 %:** fünffache Leistung und Speicherkapazität
+        """
+    )
+
+with bess_col2:
+    st.subheader("BESS Start-SOC [%]")
+
+    st.write(
+        "SOC bedeutet State of Charge und beschreibt den Ladezustand des "
+        "Speichers zu Beginn des Tages."
+    )
+
+    st.markdown(
+        """
+        - **0 %:** Speicher vollständig leer
+        - **50 %:** Speicher zur Hälfte geladen
+        - **100 %:** Speicher vollständig geladen
+        """
+    )
+
+st.markdown(
+    """
+    **Experiment**
+
+    1. Erzeuge durch einen höheren Wind- oder PV-Wert zeitweise einen Überschuss.
+    2. Vergleiche die Bilanz vor und nach BESS.
+    3. Erhöhe anschließend die BESS-Größe.
+    4. Prüfe, ob mehr Überschuss aufgenommen werden kann.
+    5. Beobachte den SOC im Tagesverlauf.
+    """
+)
+
+st.warning(
+    "Ein großer Speicher kann die Bilanz verbessern, erhöht aber auch den "
+    "Ausbau-Faktor. Mehr Speicher ist daher nicht automatisch die beste Lösung."
+)
+
+st.checkbox(
+    "Ich habe BESS-Größe und Start-SOC untersucht.",
+    key="tutorial_step_5",
+)
+
+st.divider()
+
+
+# ============================================================
+
+st.header("Schritt 6: Einen Netzengpass beheben")
+
+st.subheader("Leitungskapazität / Netzausbau [%]")
+
+st.write(
+    "Dieser Slider skaliert die Kapazität aller modellierten Leitungen. "
+    "Er stellt einen vereinfachten Ausbau des gesamten Übertragungsnetzes dar."
+)
+
+st.markdown(
+    """
+    - **50 %:** halbe Leitungskapazität
+    - **100 %:** ursprüngliche Leitungskapazität
+    - **125 %:** 25 % mehr Leitungskapazität
+    - **150 %:** 50 % mehr Leitungskapazität
+    - **200 %:** doppelte Leitungskapazität
+    """
+)
+
+st.markdown(
+    """
+    **Experiment**
+
+    1. Erzeuge zunächst durch mehr Wind oder PV eine Leitungsüberlastung.
+    2. Suche im Balkendiagramm die am stärksten ausgelastete Leitung.
+    3. Finde diese Leitung anschließend auf der Netzkarte.
+    4. Erhöhe den Netzausbau in kleinen Schritten.
+    5. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
+    """
+)
+
+st.info(
+    "Verändere den Netzausbau möglichst in kleinen Schritten. Ein unnötig hoher "
+    "Ausbau kann den KPI trotz sicherer Leitungen verschlechtern."
+)
+
+st.caption(
+    "In der Realität würden einzelne Leitungen gezielt ausgebaut. Der globale "
+    "Slider ist eine didaktische Vereinfachung."
+)
+
+st.checkbox(
+    "Ich habe einen Netzengpass identifiziert und durch begrenzten Ausbau reduziert.",
+    key="tutorial_step_6",
+)
+
+st.divider()
+
+
+# ============================================================
+
+st.header("Schritt 7: Eine eigene Lösung optimieren")
+
+st.markdown(
+    """
+    Versuche nun, das ausgewählte Szenario vollständig zu lösen.
+
+    Gehe dabei iterativ vor:
+
+    1. Erhöhe Wind oder PV nur in kleinen Schritten.
+    2. Prüfe nach jeder Änderung den 24h-EE-Anteil.
+    3. Kontrolliere die maximale Leitungsauslastung.
+    4. Nutze Speicher für zeitliche Überschüsse.
+    5. Baue das Netz nur so weit aus wie erforderlich.
+    6. Vergleiche nach jeder Änderung den KPI.
+    """
+)
+
+goal_col1, goal_col2, goal_col3 = st.columns(3)
+
+with goal_col1:
+    st.metric(
+        label="Ziel 1",
+        value="Hoher EE-Anteil",
+        help="Wind, PV und Speicher sollen möglichst viel Last decken.",
+    )
+
+with goal_col2:
+    st.metric(
+        label="Ziel 2",
+        value="Keine Überlastung",
+        help="Leitungen sollen während des gesamten Tages unter 100 % bleiben.",
+    )
+
+with goal_col3:
+    st.metric(
+        label="Ziel 3",
+        value="Begrenzter Ausbau",
+        help="Die Ziele sollen ohne unnötig große Zusatzkapazitäten erreicht werden.",
+    )
+
+st.checkbox(
+    "Ich habe eine eigene Lösung entwickelt und mit dem Ausgangszustand verglichen.",
+    key="tutorial_step_7",
+)
+
+st.divider()
+
+
+# ============================================================
+# Diagrammreferenz
+# ============================================================
+
+st.header("Referenz: Was zeigen die Diagramme?")
+
+map_tab, line_tab, balance_tab, dispatch_tab = st.tabs(
+    [
+        "Netzkarte",
+        "Leitungsauslastung",
+        "Netzbilanz",
+        "Erzeugungsmix",
+    ]
+)
+
+with map_tab:
+    st.subheader("Netzkarte")
+
+    st.write(
+        "Die Netzkarte zeigt Erzeuger, Verbraucher, Batteriespeicher und "
+        "Leitungen für die ausgewählte Stunde."
+    )
+
+    st.markdown(
+        """
+        **Leitungsfarben**
+
+        - 🟢 Grün: weniger als 90 % ausgelastet
+        - 🟠 Orange: mindestens 90 %, aber nicht über 100 %
+        - 🔴 Rot: über 100 % ausgelastet
+        """
+    )
+
+    st.markdown(
+        """
+        **Symbole**
+
+        - Dreieck: Wind
+        - Quadrat: Photovoltaik
+        - Raute: Batteriespeicher
+        - Kreis: restliche regelbare Erzeugung
+        - Stern: Verbrauchercluster
+        """
+    )
+
+    st.write(
+        "Die Größe der Symbole hängt von der aktuellen Erzeugung oder dem "
+        "aktuellen Verbrauch ab."
+    )
+
+    st.info(
+        "Bewege den Mauszeiger über eine Leitung, um Kapazität, Leistungsfluss "
+        "und prozentuale Auslastung anzuzeigen."
+    )
+
+with line_tab:
+    st.subheader("Leitungsauslastung")
+
+    st.write(
+        "Das Balkendiagramm zeigt die Auslastung aller Leitungen in der "
+        "ausgewählten Stunde."
+    )
+
+    st.markdown(
+        """
+        - Die Balken sind nach Auslastung sortiert.
+        - Die rote gestrichelte Linie markiert 100 %.
+        - Der höchste Balken zeigt den aktuell größten Netzengpass.
+        """
+    )
+
+    st.warning(
+        "Ein Wert über 100 % bedeutet, dass der berechnete Leistungsfluss "
+        "größer als die im Modell verfügbare Leitungskapazität ist."
+    )
+
+with balance_tab:
+    st.subheader("Ziellücke und Netzbilanz")
+
+    st.markdown(
+        """
+        **Balken: Bilanz vor BESS**
+
+        Zeigen die Differenz zwischen Erzeugung und Verbrauch, bevor der
+        Batteriespeicher eingesetzt wird.
+
+        **Linie: Bilanz nach BESS**
+
+        Zeigt die verbleibende Differenz nach Laden oder Entladen des Speichers.
+        """
+    )
+
+    st.markdown(
+        """
+        - Positiver Wert: Stromüberschuss
+        - Negativer Wert: Stromunterdeckung
+        - 0 GW: Erzeugung und Verbrauch sind ausgeglichen
+        """
+    )
+
+    st.write(
+        "Die vertikale rote Linie markiert die über den Stundenslider "
+        "ausgewählte Stunde."
+    )
+
+with dispatch_tab:
+    st.subheader("Dispatch und Erzeugungsmix")
+
+    st.write(
+        "Das Diagramm zeigt für jede Stunde, durch welche Technologien der "
+        "Stromverbrauch gedeckt wird."
+    )
+
+    st.markdown(
+        """
+        **Positive Balken**
+
+        - Wind
+        - Photovoltaik
+        - restliche regelbare Erzeuger
+        - BESS-Entladung
+
+        **Negative Balken**
+
+        - BESS-Ladung
+        - Abregelung erneuerbarer Energie
+
+        **Schwarze Linie**
+
+        Stromverbrauch beziehungsweise Ziel-Last.
+
+        **Gepunktete graue Linie**
+
+        Rechnerisch benötigte restliche Erzeugung vor Berücksichtigung der Limits.
+        """
+    )
+
+
+# ============================================================
+# Weitere Kennzahlen
+# ============================================================
+
+st.header("Referenz: Weitere Kennzahlen")
+
+with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
+    st.markdown(
+        """
+        **Last/Ziel [GW]**  
+        Stromverbrauch in der ausgewählten Stunde.
+
+        **Wind [GW] und PV [GW]**  
+        Aktuelle erneuerbare Erzeugungsleistung.
+
+        **Restl. Erz. [GW]**  
+        Aktuell eingesetzte regelbare restliche Erzeugung.
+
+        **BESS [GW]**  
+        Positiv bedeutet Entladung, negativ bedeutet Ladung.
+
+        **Bilanz [GW]**  
+        Verbleibende Differenz zwischen Erzeugung und Verbrauch.
+
+        **Ziellücke nach EE**  
+        Last abzüglich Wind- und PV-Erzeugung.
+
+        **Restl. Soll [GW]**  
+        Rechnerisch benötigte restliche Erzeugung.
+
+        **Restl. verfügbar [GW]**  
+        Maximal verfügbare Leistung der restlichen Erzeuger.
+
+        **Ziellücke vor BESS**  
+        Verbleibende Differenz vor dem Einsatz des Batteriespeichers.
+
+        **SOC [%]**  
+        Aktueller Ladezustand des Batteriespeichers.
+
+        **Konventionelle Fehlleistung**  
+        Leistung, die zusätzlich benötigt würde, aber nicht verfügbar ist.
+
+        **Mindestlauf-Überschuss**  
+        Überschuss, der durch einen angenommenen Mindestbetrieb entstehen würde.
+
+        **Abregelung**  
+        Erneuerbare Erzeugung, die nicht verwendet werden kann.
+
+        **Status**  
+        Textliche Einordnung der aktuellen Versorgungssituation.
+        """
+    )
+
+
+# ============================================================
+# Abschluss
+# ============================================================
+
+st.divider()
+
+completed, total = tutorial_progress()
+
+if completed == total:
+    st.success(
+        "🎉 Tutorial abgeschlossen! Du kannst jetzt ein Szenario selbstständig "
+        "analysieren und optimieren."
+    )
+else:
+    st.info(
+        f"Du hast {completed} von {total} Schritten abgeschlossen. "
+        "Bearbeite die verbleibenden Aufgaben, bevor du mit der freien "
+        "Optimierung beginnst."
+    )
+
+st.page_link(
+    "app.py",
+    label="Zurück zum Simulator",
+    icon="🎮",
+)
