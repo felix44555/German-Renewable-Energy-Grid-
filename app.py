@@ -248,7 +248,7 @@ def main() -> None:
     
         st.info("👋 Neu im Simulator? Lerne die Grundlagen der Netzbalance in unserem Tutorial.")
     
-        st.page_link("pages/tutorial.py", label="Zum Tutorial")
+        st.page_link("pages/1_tutorial.py", label="Zum Tutorial")
     
         st.divider()
 
