@@ -355,16 +355,14 @@ st.markdown(
     **Experiment**
 
     1. Erzeuge zunächst durch mehr Wind oder PV eine Leitungsüberlastung.
-    2. Suche im Balkendiagramm die am stärksten ausgelastete Leitung.
-    3. Finde diese Leitung anschließend auf der Netzkarte.
-    4. Erhöhe den Netzausbau in kleinen Schritten.
-    5. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
+    2. Erhöhe den Netzausbau in kleinen Schritten.
+    3. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
     """
 )
 
 st.info(
     "Verändere den Netzausbau möglichst in kleinen Schritten. Ein unnötig hoher "
-    "Ausbau kann den KPI trotz sicherer Leitungen verschlechtern."
+    "Ausbau kann den Grid Performance Score trotz sicherer Leitungen verschlechtern."
 )
 
 st.caption(
@@ -372,10 +370,7 @@ st.caption(
     "Slider ist eine didaktische Vereinfachung."
 )
 
-st.checkbox(
-    "Ich habe einen Netzengpass identifiziert und durch begrenzten Ausbau reduziert.",
-    key="tutorial_step_6",
-)
+
 
 st.divider()
 
