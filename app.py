@@ -259,7 +259,7 @@ def main() -> None:
         st.write(f"- {msg}")
 
     
-st.subheader("24h Grid Performance Score")
+    st.subheader("24h Grid Performance Score")
 
     kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
