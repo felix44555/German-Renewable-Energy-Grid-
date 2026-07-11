@@ -103,12 +103,12 @@ with metric_col1:
         ### Grid Performance Score
 
         
-        Der Grid Performance Score ist eine errechnete Gesamtbewertung deiner Lösung.
+        Ist eine errechnete Gesamtbewertung deiner Lösung.
 
         Ein hoher Wert bedeutet grundsätzlich:
 
         - hoher Anteil erneuerbarer Energien,
-        - möglichst wenige Netzengpässe,
+        - keine Netzüberlastung,
         - wenig Abschaltung von erneuerbaren Erzeugern. (also kein unnötig großer Ausbau)
         """
     )
@@ -145,15 +145,6 @@ with metric_col2:
 
    
 
-st.warning(
-    "Notiere dir den ursprünglichen 24h-KPI, den EE-Anteil und die maximale "
-    "Leitungsauslastung. Diese Werte brauchst du später zum Vergleichen."
-)
-
-st.checkbox(
-    "Ich habe die Ausgangswerte betrachtet und notiert.",
-    key="tutorial_step_2",
-)
 
 st.divider()
 
