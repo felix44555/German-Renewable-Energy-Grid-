@@ -65,7 +65,7 @@ with navigation_col1:
 
 with navigation_col2:
     st.page_link(
-        "pages/2_about.py",
+        "pages/2_About.py",
         label="Modellgrundlagen",
         icon="📘",
     )
