@@ -313,7 +313,7 @@ def main() -> None:
 
     #st.subheader("Bilanz und Erzeugungsmix")
     #st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
-    #st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
+    st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
     with st.expander("Weitere Kennzahlen"):
         st.subheader("Ausführlich24h Engineering-Feasibility-KPI") 
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
