@@ -34,7 +34,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "Wind": {
-        "name": "Windiger Tag mit hohem Verbrauch",
+        "name": "Sehr Windiger Tag mit hohem Verbrauch",
         "task": (
             "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
         ),
@@ -44,7 +44,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "konv_pct": 100,
             "konv_min_pct": 0,
             "bess_pct": 100,
-            "load_pct": 135,
+            "load_pct": 140,
             "soc_pct": 50,
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
@@ -56,49 +56,47 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "Sonne": {
-        "name": "Überdeckung: EE hoch, Rest runterfahren",
+        "name": "Sehr Sonninger Tag mit hohem Verbrauch",
         "task": (
-            "Hohe Wind- und PV-Leistung trifft auf geringe Last. Fahre restliche Erzeuger herunter, lade BESS "
-            "oder regle EE ab, ohne zu viel Curtailment zu erzeugen."
+            "Die Sonne scheint an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Klimageräten und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
         ),
         "defaults": {
-            "wind_pct": 145,
-            "pv_pct": 160,
+            "wind_pct": 100,
+            "pv_pct": 100,
             "konv_pct": 100,
-            "konv_min_pct": 15,
-            "bess_pct": 120,
-            "load_pct": 85,
-            "soc_pct": 30,
+            "konv_min_pct": 0,
+            "bess_pct": 100,
+            "load_pct": 120,
+            "soc_pct": 50,
             "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
-            "hour": 13,
-            "smard_day": date(2026, 3, 3),
+            "hour": 12,
+            "smard_day": date(2025, 6, 20),
         },
-        "profile_factors": {"wind": 1.15, "pv": 1.25, "load": 0.90},
-        "line_stress_factor": 1.10,
-        "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 8.0, "max_line_util_pct": 100.0},
+        "profile_factors": {"wind": 1.0, "pv": 2.0, "load": 1.0},
+        "line_stress_factor": 1,
+        "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "WindSonne": {
-        "name": "Leitungsüberlast: Nord-Süd-Transport",
+        "name": "Wind- und Sonninger Tag mit viel Verbrauch",
         "task": (
-            "Hoher Windanteil erzeugt räumliche Überschüsse. Löse Bilanz und Leitungsauslastung über "
-            "Netzausbau, BESS, Abregelung oder veränderte verfügbare Restleistung."
+            "Die Sonne scheint an diesem Tag stark während gleichzeitig der Wind stark weht. Die Last dem aktuell erwartbaren verbrauch."
         ),
         "defaults": {
-            "wind_pct": 170,
+            "wind_pct": 100,
             "pv_pct": 100,
-            "konv_pct": 90,
-            "konv_min_pct": 5,
+            "konv_pct": 100,
+            "konv_min_pct": 0,
             "bess_pct": 100,
             "load_pct": 100,
             "soc_pct": 50,
-            "line_capacity_pct": 70,
+            "line_capacity_pct": 100,
             "ee_curtail_pct": 0,
-            "hour": 21,
-            "smard_day": date(2026, 4, 4),
+            "hour": 12,
+            "smard_day": date(2025, 4, 15),
         },
-        "profile_factors": {"wind": 1.35, "pv": 0.95, "load": 1.00},
-        "line_stress_factor": 1.55,
+        "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
+        "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
 }
