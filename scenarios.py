@@ -95,7 +95,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "hour": 12,
             "smard_day": date(2025, 4, 15),
         },
-        "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
+        "profile_factors": {"wind": 1.1, "pv": 1.1, "load": 1.00},
         "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
