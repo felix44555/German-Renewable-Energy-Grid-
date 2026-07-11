@@ -259,10 +259,10 @@ def main() -> None:
         st.write(f"- {msg}")
 
     
-    st.subheader("24h Engineering-Feasibility-KPI")
-    
+st.subheader("24h Grid Performance Score")
+
     kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
-    kpi1.metric("24h-KPI", f"{kpi_24h['kpi_24h']:.2f}")
+    kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
     kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
@@ -272,13 +272,13 @@ def main() -> None:
     )
     
     if kpi_24h["max_line_load_24h"] > 100.0:
-        st.warning("24h-KPI stark reduziert, weil im Tagesverlauf mindestens eine Leitung über 100 % ausgelastet ist.")
+        st.warning("Der Grid Performance Score wurde stark reduziert, weil im Tagesverlauf mindestens eine Leitung über 100 % ausgelastet ist.")  
     elif kpi_24h["kpi_24h"] >= 70:
-        st.success("Hoher 24h-KPI: hoher EE-Anteil bei moderatem Ausbau und ohne Leitungsüberlast.")
+        st.success("Hoher Grid Performance Score: hoher EE-Anteil bei moderatem Ausbau und ohne Leitungsüberlast.")
     elif kpi_24h["kpi_24h"] >= 40:
-        st.info("Mittlerer 24h-KPI: technisch brauchbar, aber Ausbau, EE-Anteil oder Netzbelastung sind nicht optimal.")
+        st.info("Mittlerer Grid Performance Score: technisch brauchbar, aber Ausbau, EE-Anteil oder Netzbelastung sind nicht optimal.")
     else:
-        st.warning("Niedriger 24h-KPI: geringe technische Güte durch niedrigen EE-Anteil, hohen Ausbau oder Netzüberlast.")
+        st.warning("Niedriger Grid Performance Score: geringe technische Güte durch niedrigen EE-Anteil, hohen Ausbau oder Netzüberlast.")
     with st.expander("Modellannahmen"):
         st.write(
             "- Zielgröße ist die SMARD-Netzlast.\n"
