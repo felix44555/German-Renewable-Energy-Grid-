@@ -8,28 +8,6 @@ st.set_page_config(
 )
 
 
-# ============================================================
-# Tutorial-Fortschritt
-# ============================================================
-
-STEP_KEYS = [
-    "tutorial_step_1",
-    "tutorial_step_2",
-    "tutorial_step_3",
-    "tutorial_step_4",
-    "tutorial_step_5",
-    "tutorial_step_6",
-    "tutorial_step_7",
-]
-
-for key in STEP_KEYS:
-    st.session_state.setdefault(key, False)
-
-
-def tutorial_progress() -> tuple[int, int]:
-    completed = sum(bool(st.session_state.get(key, False)) for key in STEP_KEYS)
-    return completed, len(STEP_KEYS)
-
 
 # ============================================================
 # Kopfbereich
@@ -48,13 +26,8 @@ st.info(
     "sicheren Leitungen und möglichst begrenztem Ausbau."
 )
 
-completed, total = tutorial_progress()
 
-st.subheader("Dein Fortschritt")
-st.progress(completed / total)
-st.caption(f"{completed} von {total} Schritten abgeschlossen")
-
-navigation_col1, navigation_col2, navigation_col3 = st.columns(3)
+navigation_col1, navigation_col2, navigation_col3 = st.columns(2)
 
 with navigation_col1:
     st.page_link(
@@ -70,13 +43,7 @@ with navigation_col2:
         icon="📘",
     )
 
-with navigation_col3:
-    if st.button("Fortschritt zurücksetzen", use_container_width=True):
-        for key in STEP_KEYS:
-            st.session_state[key] = False
-        st.rerun()
 
-st.divider()
 
 
 # ============================================================
@@ -89,10 +56,9 @@ st.markdown(
     """
     Öffne den Simulator und betrachte zunächst die Seitenleiste.
 
-    1. Wähle unter **Aufgabe** ein Szenario aus.
+    1. Wähle unter **Aufgabe** ein Szenario oder den Sandboxmodus aus.
     2. Klicke auf **Szenario-Startwerte laden**.
-    3. Wähle als Zeitreihe zunächst **SMARD-API**.
-    4. Wähle ein Datum, für das vollständige Daten verfügbar sind.
+    3. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest.
     """
 )
 
@@ -102,20 +68,12 @@ with st.expander("Was bedeuten diese Einstellungen?", expanded=True):
         **Aufgabe**
 
         Bestimmt die Ausgangssituation und die Bedingungen, die für eine
-        erfolgreiche Lösung erfüllt werden müssen.
+        erfolgreiche Lösung erfüllt werden müssen. Hier kannst du auch in den Sandboxmodus wechseln.
 
         **Szenario-Startwerte laden**
 
         Setzt alle Stellgrößen auf die zum Szenario gehörenden Ausgangswerte zurück.
 
-        **SMARD-API**
-
-        Verwendet reale Zeitreihen für Netzlast, Windenergie und Photovoltaik.
-
-        **Synthetisch**
-
-        Verwendet künstlich erzeugte Tagesprofile. Diese Option eignet sich als
-        Ersatz, wenn die SMARD-Daten nicht geladen werden können.
 
         **SMARD-Datum**
 
@@ -124,12 +82,6 @@ with st.expander("Was bedeuten diese Einstellungen?", expanded=True):
         """
     )
 
-st.checkbox(
-    "Ich habe ein Szenario und eine Datenquelle ausgewählt.",
-    key="tutorial_step_1",
-)
-
-st.divider()
 
 
 # ============================================================
