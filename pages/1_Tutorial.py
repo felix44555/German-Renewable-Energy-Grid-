@@ -102,13 +102,14 @@ with metric_col1:
         """
         ### Grid Performance Score
 
-        Die Gesamtbewertung deiner Lösung.
+        
+        Der Grid Performance Score ist eine errechnete Gesamtbewertung deiner Lösung.
 
         Ein hoher Wert bedeutet grundsätzlich:
 
         - hoher Anteil erneuerbarer Energien,
         - möglichst wenige Netzengpässe,
-        - kein unnötig großer Ausbau.
+        - wenig Abschaltung von erneuerbaren Erzeugern. (also kein unnötig großer Ausbau)
         """
     )
 
@@ -125,11 +126,7 @@ with metric_col1:
         """
         ### Max. Leitung 24h [%]
 
-        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt.
-
-        - unter 90 %: Reserve vorhanden
-        - 90 bis 100 %: Leitung nahe an der Grenze
-        - über 100 %: Leitung im Modell überlastet
+        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 /% auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
         """
     )
 
@@ -146,20 +143,7 @@ with metric_col2:
         """
     )
 
-    st.markdown(
-        """
-        ### Ausbau-Faktor
-
-        Misst den zusätzlichen Ausbau gegenüber dem Referenzzustand.
-
-        Bei 100 % entsteht für die jeweilige Stellgröße kein zusätzlicher Ausbau.
-
-        Beispiel:
-
-        - Wind bei 150 % ergibt einen zusätzlichen Faktor von 0,5.
-        - Wind und PV bei jeweils 150 % ergeben gemeinsam 1,0.
-        """
-    )
+   
 
 st.warning(
     "Notiere dir den ursprünglichen 24h-KPI, den EE-Anteil und die maximale "
