@@ -137,7 +137,7 @@ def main() -> None:
         smard_day = st.date_input(
             "SMARD-Datum",
             value = current_date,
-            min_value=date(2014, 1, 1),
+            min_value=date(2015, 1, 1),
             max_value=date.today() - timedelta(days=2),
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
