@@ -40,7 +40,7 @@ with navigation_col2:
     st.page_link(
         "pages/2_About.py",
         label="Modellgrundlagen",
-        icon="📘",
+        icon="📖",
     )
 
 
@@ -58,7 +58,7 @@ st.markdown(
 
     1. Wähle unter **Aufgabe** ein Szenario oder den Sandboxmodus aus.
     2. Klicke auf **Szenario-Startwerte laden**.
-    3. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest.
+    3. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest. In den Szenarios ist das Datum vorgegeben.
     """
 )
 
@@ -91,7 +91,7 @@ st.header("Schritt 2: Den Ausgangszustand untersuchen")
 st.markdown(
     """
     Verändere zunächst noch keinen Slider. Betrachte die fünf Kennzahlen im
-    Bereich **24h Engineering-Feasibility-KPI**.
+    Bereich **24h Grid Performance Score**.
     """
 )
 
@@ -100,7 +100,7 @@ metric_col1, metric_col2 = st.columns(2)
 with metric_col1:
     st.markdown(
         """
-        ### 24h-KPI
+        ### Grid Performance Score
 
         Die Gesamtbewertung deiner Lösung.
 
