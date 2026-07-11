@@ -219,7 +219,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.page_link(
-        "pages/1_tutorial.py",
+        "pages/1_Tutorial.py",
         label="Zum interaktiven Tutorial",
         icon="📘",
     )
