@@ -20,7 +20,7 @@ from grid_io import (
 from scenarios import SCENARIOS, apply_scenario_to_profiles, evaluate_scenario
 from smard_api import load_smard_api_profile
 from visualization import build_balance_chart, build_line_utilization_chart, build_map, build_stack
-from KPI_code import calculate_feasibility_kpi
+from KPI_code import _calculate_24h_kpi,_calculate_current_kpi
 
 BASE_DIR = Path(__file__).resolve().parent
 NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
@@ -35,63 +35,6 @@ def _format_gap(value: float) -> str:
         return f"Überdeckung {abs(value):.2f} GW"
     return "ausgeglichen"
 
-def _calculate_current_kpi(
-    hour_row: pd.Series,
-    line_status: pd.DataFrame,
-    wind_pct: float,
-    pv_pct: float,
-    bess_pct: float,
-    line_capacity_pct: float,
-) -> dict[str, float]:
-    """
-    Berechnet den Engineering-Feasibility-KPI für die aktuell gewählte Stunde.
-
-    Annahmen:
-    - EE-Anteil = (Wind + PV) / Last, auf 0...100 % begrenzt.
-    - Ausbauwerte werden als Zusatz gegenüber 100 % Referenz interpretiert.
-      Beispiel: 150 % Wind-Slider => wind_added = 0.5.
-    - max_line_load kommt aus dem DC-Lastfluss.
-    """
-    load_gw = max(float(hour_row.get("Last_GW", 0.0)), 1e-9)
-    wind_gw = max(float(hour_row.get("Wind_GW", 0.0)), 0.0)
-    pv_gw = max(float(hour_row.get("PV_GW", 0.0)), 0.0)
-    bess_gw = max(float(hour_row.get("BESS_GW", 0.0)), 0.0)
-
-    re_share_pct = 100.0 * (wind_gw + pv_gw + bess_gw) / load_gw
-    re_share_pct = max(0.0, min(re_share_pct, 100.0))
-
-    if line_status.empty or "Auslastung_pct" not in line_status.columns:
-        max_line_load = 0.0
-    else:
-        max_line_load = float(
-            pd.to_numeric(line_status["Auslastung_pct"], errors="coerce")
-            .fillna(0.0)
-            .max()
-        )
-
-    grid_added = max(float(line_capacity_pct) / 100.0 - 1.0, 0.0)
-    bat_added = max(float(bess_pct) / 100.0 - 1.0, 0.0)
-    pv_added = max(float(pv_pct) / 100.0 - 1.0, 0.0)
-    wind_added = max(float(wind_pct) / 100.0 - 1.0, 0.0)
-
-    kpi = calculate_feasibility_kpi(
-        re_share_pct=re_share_pct,
-        grid_added=grid_added,
-        bat_added=bat_added,
-        pv_added=pv_added,
-        wind_added=wind_added,
-        max_line_load=max_line_load,
-    )
-
-    return {
-        "kpi": float(kpi),
-        "re_share_pct": float(re_share_pct),
-        "max_line_load": float(max_line_load),
-        "grid_added": float(grid_added),
-        "bat_added": float(bat_added),
-        "pv_added": float(pv_added),
-        "wind_added": float(wind_added),
-    }
 
 def _clean_for_display(df: pd.DataFrame) -> pd.DataFrame:
     """Streamlit/Arrow kann DataFrame.attrs mit DataFrame-Inhalt nicht serialisieren."""
@@ -99,107 +42,7 @@ def _clean_for_display(df: pd.DataFrame) -> pd.DataFrame:
     out.attrs = {}
     return out
 
-def _calculate_24h_kpi(
-    df: pd.DataFrame,
-    generators: pd.DataFrame,
-    consumers: pd.DataFrame,
-    lines: pd.DataFrame,
-    wind_pct: float,
-    pv_pct: float,
-    bess_pct: float,
-    line_capacity_pct: float,
-    line_stress_factor: float,
-) -> dict[str, float | pd.DataFrame]:
-    """
-    Berechnet eine Tages-KPI-Zahl über alle 24 Stunden.
 
-    Definition:
-    - re_share_pct_24h = Summe(Wind + PV) / Summe(Last) über 24h
-    - max_line_load_24h = höchste Leitungsauslastung aus allen 24 DC-Lastflussrechnungen
-    - Ausbauwerte = Zusatz gegenüber 100 % Sliderwert
-    """
-
-    total_load_gwh = float(pd.to_numeric(df["Last_GW"], errors="coerce").fillna(0.0).sum())
-    #Greift auf Spalte "LastGW" zu ersetzt alle ungültigen Datentypen durch NAN, ersetzt alle NAN durch 0.0'''
-    total_re_gwh = float(
-        (
-            pd.to_numeric(df["Wind_GW"], errors="coerce").fillna(0.0)
-            + pd.to_numeric(df["PV_GW"], errors="coerce").fillna(0.0)
-            +pd.to_numeric(df["BESS_GW"], errors="coerce").fillna(0.0)
-        ).sum()
-    )
-
-    re_share_pct_24h = 100.0 * total_re_gwh / max(total_load_gwh, 1e-9)
-    #max() um Division durch 0 zu vermeiden'''
-    re_share_pct_24h = max(0.0, min(re_share_pct_24h, 100.0))
-    #sorgt dafür das Wert zwischen 0 und 100 ist'''
-
-    hourly_rows: list[dict[str, float]] = []
-    max_line_load_24h = 0.0
-    overloaded_hours = 0
-
-    for _, row in df.iterrows():
-        line_status_h = compute_dc_line_status(
-            generators=generators,
-            consumers=consumers,
-            lines=lines,
-            hour_row=row,
-            line_capacity_pct=line_capacity_pct,
-            line_stress_factor=line_stress_factor,
-        )
-
-        if line_status_h.empty or "Auslastung_pct" not in line_status_h.columns:
-            max_line_h = 0.0
-            overloaded_count_h = 0
-        else:
-            util = pd.to_numeric(line_status_h["Auslastung_pct"], errors="coerce").fillna(0.0)
-            max_line_h = float(util.max())
-            overloaded_count_h = int((util > 100.0).sum())
-
-        if max_line_h > 100.0:
-            overloaded_hours += 1
-
-        max_line_load_24h = max(max_line_load_24h, max_line_h)
-
-        hourly_rows.append(
-            {
-                "Stunde": int(row.get("Stunde", 0)),
-                "Last_GW": float(row.get("Last_GW", 0.0)),
-                "Wind_GW": float(row.get("Wind_GW", 0.0)),
-                "PV_GW": float(row.get("PV_GW", 0.0)),
-                "Netzbilanz_GW": float(row.get("Netzbilanz_GW", 0.0)),
-                "Max_Leitung_pct": max_line_h,
-                "Ueberlastete_Leitungen": overloaded_count_h,
-            }
-        )
-
-    grid_added = max(float(line_capacity_pct) / 100.0 - 1.0, 0.0)
-    bat_added = max(float(bess_pct) / 100.0 - 1.0, 0.0)
-    pv_added = max(float(pv_pct) / 100.0 - 1.0, 0.0)
-    wind_added = max(float(wind_pct) / 100.0 - 1.0, 0.0)
-
-    kpi_24h = calculate_feasibility_kpi(
-        re_share_pct=re_share_pct_24h,
-        grid_added=grid_added,
-        bat_added=bat_added,
-        pv_added=pv_added,
-        wind_added=wind_added,
-        max_line_load=max_line_load_24h,
-    )
-
-    return {
-        "kpi_24h": float(kpi_24h),
-        "re_share_pct_24h": float(re_share_pct_24h),
-        "max_line_load_24h": float(max_line_load_24h),
-        "overloaded_hours": int(overloaded_hours),
-        "total_load_gwh": float(total_load_gwh),
-        "total_re_gwh": float(total_re_gwh),
-        "grid_added": float(grid_added),
-        "bat_added": float(bat_added),
-        "pv_added": float(pv_added),
-        "wind_added": float(wind_added),
-        "hourly_kpi_table": pd.DataFrame(hourly_rows),
-    }
 
 @st.cache_resource(show_spinner=False)
 def _cached_network(path_str: str, mtime_ns: int):
