@@ -27,7 +27,7 @@ st.info(
 )
 
 
-navigation_col1, navigation_col2, navigation_col3 = st.columns(2)
+navigation_col1, navigation_col2 = st.columns(2)
 
 with navigation_col1:
     st.page_link(
