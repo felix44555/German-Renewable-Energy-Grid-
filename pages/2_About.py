@@ -38,7 +38,9 @@ with st.container():
 # 4. Ziel der Simulation (KPIs)
 st.header("4. Was ist das Ziel dieser Simulation?")
 st.info(
-    "Deine Aufgabe ist es, eine sogenannte **KPI (Key Performance Indicator)** zu optimieren. Das Netz ist am besten, wenn folgende Ziele erreicht werden:"
+    "Deine Aufgabe ist es, den **Grid Performance Score** zu optimieren. "
+    "Er bewertet, wie gut dein Stromnetz erneuerbare Energien nutzt, "
+    "Leitungsüberlastungen vermeidet und den zusätzlichen Ausbau begrenzt."
 )
 c1, c2, c3 = st.columns(3)
 
