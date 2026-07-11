@@ -40,7 +40,7 @@ with navigation_col2:
     st.page_link(
         "pages/2_About.py",
         label="Modellgrundlagen",
-        icon="📘",
+        icon="📖",
     )
 
 
@@ -58,7 +58,7 @@ st.markdown(
 
     1. Wähle unter **Aufgabe** ein Szenario oder den Sandboxmodus aus.
     2. Klicke auf **Szenario-Startwerte laden**.
-    3. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest.
+    3. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest. In den Szenarios ist das Datum vorgegeben.
     """
 )
 
@@ -91,7 +91,7 @@ st.header("Schritt 2: Den Ausgangszustand untersuchen")
 st.markdown(
     """
     Verändere zunächst noch keinen Slider. Betrachte die fünf Kennzahlen im
-    Bereich **24h Engineering-Feasibility-KPI**.
+    Bereich **24h Grid Performance Score**.
     """
 )
 
@@ -100,15 +100,16 @@ metric_col1, metric_col2 = st.columns(2)
 with metric_col1:
     st.markdown(
         """
-        ### 24h-KPI
+        ### Grid Performance Score
 
-        Die Gesamtbewertung deiner Lösung.
+        
+        Ist eine errechnete Gesamtbewertung deiner Lösung.
 
         Ein hoher Wert bedeutet grundsätzlich:
 
         - hoher Anteil erneuerbarer Energien,
-        - möglichst wenige Netzengpässe,
-        - kein unnötig großer Ausbau.
+        - keine Netzüberlastung,
+        - wenig Abschaltung von erneuerbaren Erzeugern. (also kein unnötig großer Ausbau)
         """
     )
 
@@ -125,11 +126,7 @@ with metric_col1:
         """
         ### Max. Leitung 24h [%]
 
-        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt.
-
-        - unter 90 %: Reserve vorhanden
-        - 90 bis 100 %: Leitung nahe an der Grenze
-        - über 100 %: Leitung im Modell überlastet
+        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
         """
     )
 
@@ -146,30 +143,8 @@ with metric_col2:
         """
     )
 
-    st.markdown(
-        """
-        ### Ausbau-Faktor
+   
 
-        Misst den zusätzlichen Ausbau gegenüber dem Referenzzustand.
-
-        Bei 100 % entsteht für die jeweilige Stellgröße kein zusätzlicher Ausbau.
-
-        Beispiel:
-
-        - Wind bei 150 % ergibt einen zusätzlichen Faktor von 0,5.
-        - Wind und PV bei jeweils 150 % ergeben gemeinsam 1,0.
-        """
-    )
-
-st.warning(
-    "Notiere dir den ursprünglichen 24h-KPI, den EE-Anteil und die maximale "
-    "Leitungsauslastung. Diese Werte brauchst du später zum Vergleichen."
-)
-
-st.checkbox(
-    "Ich habe die Ausgangswerte betrachtet und notiert.",
-    key="tutorial_step_2",
-)
 
 st.divider()
 
