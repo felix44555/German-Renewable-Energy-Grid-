@@ -33,7 +33,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "line_stress_factor": 1.00,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
-    "unterdeckung": {
+    "Wind": {
         "name": "Windiger Tag mit hohem Verbrauch",
         "task": (
             "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
@@ -51,11 +51,11 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "hour": 12,
             "smard_day": date(2026, 2, 2),
         },
-        "profile_factors": {"wind": 1.00, "pv": 1.00, "load": 1.00},
+        "profile_factors": {"wind": 2.00, "pv": 1.00, "load": 1.00},
         "line_stress_factor": 1.00,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
-    "ueberschuss": {
+    "Sonne": {
         "name": "Überdeckung: EE hoch, Rest runterfahren",
         "task": (
             "Hohe Wind- und PV-Leistung trifft auf geringe Last. Fahre restliche Erzeuger herunter, lade BESS "
@@ -78,7 +78,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "line_stress_factor": 1.10,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 8.0, "max_line_util_pct": 100.0},
     },
-    "leitungsueberlast": {
+    "WindSonne": {
         "name": "Leitungsüberlast: Nord-Süd-Transport",
         "task": (
             "Hoher Windanteil erzeugt räumliche Überschüsse. Löse Bilanz und Leitungsauslastung über "
