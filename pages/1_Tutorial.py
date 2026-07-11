@@ -322,13 +322,9 @@ st.markdown(
 
 st.warning(
     "Ein großer Speicher kann die Bilanz verbessern, erhöht aber auch den "
-    "Ausbau-Faktor. Mehr Speicher ist daher nicht automatisch die beste Lösung."
+    "die Kosten eines Systems. Mehr Speicher ist daher nicht automatisch die beste Lösung."
 )
 
-st.checkbox(
-    "Ich habe BESS-Größe und Start-SOC untersucht.",
-    key="tutorial_step_5",
-)
 
 st.divider()
 
