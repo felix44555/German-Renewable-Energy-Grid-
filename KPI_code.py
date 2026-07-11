@@ -1,6 +1,5 @@
 import pandas as pd
 
-from dc_powerflow import compute_dc_line_status
 
 def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, tuning_factor=0.05):
     """
@@ -90,6 +89,8 @@ def _calculate_24h_kpi(
     bess_pct: float,
     line_capacity_pct: float,
     line_stress_factor: float,
+    line_status: dict[int, pd.DataFrame],
+    
 ) -> dict[str, float | pd.DataFrame]:
     """
     Berechnet eine Tages-KPI-Zahl über alle 24 Stunden.
@@ -119,16 +120,8 @@ def _calculate_24h_kpi(
     max_line_load_24h = 0.0
     overloaded_hours = 0
 
-    for _, row in df.iterrows():
-        line_status_h = compute_dc_line_status(
-            generators=generators,
-            consumers=consumers,
-            lines=lines,
-            hour_row=row,
-            line_capacity_pct=line_capacity_pct,
-            line_stress_factor=line_stress_factor,
-        )
-
+    for stunde_idx, row in df.iterrows():
+        line_status_h = line_status[stunde_idx]
         if line_status_h.empty or "Auslastung_pct" not in line_status_h.columns:
             max_line_h = 0.0
             overloaded_count_h = 0

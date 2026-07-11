@@ -201,17 +201,6 @@ def main() -> None:
         ee_curtail_pct=ee_curtail_pct,
         konv_min_pct=konv_min_pct,
     )
-    kpi_24h = _calculate_24h_kpi(
-        df=df,
-        generators=generators,
-        consumers=consumers,
-        lines=lines,
-        wind_pct=wind_pct,
-        pv_pct=pv_pct,
-        bess_pct=bess_pct,
-        line_capacity_pct=line_capacity_pct,
-        line_stress_factor=float(SCENARIOS[scenario_key].get("line_stress_factor", 1.0)),
-    )
 
     st.subheader("Zeitslider")
     hour = st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
@@ -234,6 +223,30 @@ def main() -> None:
         pv_pct=pv_pct,
         bess_pct=bess_pct,
         line_capacity_pct=line_capacity_pct,
+    )
+    
+    line_status_24h = {}
+    # 2. Wir berechnen den Lastfluss für JEDE Stunde des Tages
+    for stunde_idx, row in df.iterrows():
+        line_status_24h[stunde_idx] = compute_dc_line_status(
+            generators=generators,
+            consumers=consumers,
+            lines=lines,
+            hour_row=row, # <-- Hier übergeben wir die jeweilige Stunde aus der Schleife
+            line_capacity_pct=line_capacity_pct,
+            line_stress_factor=float(SCENARIOS[scenario_key].get("line_stress_factor", 1.0)),
+        )
+    kpi_24h = _calculate_24h_kpi(
+        df=df,
+        generators=generators,
+        consumers=consumers,
+        lines=lines,
+        wind_pct=wind_pct,
+        pv_pct=pv_pct,
+        bess_pct=bess_pct,
+        line_capacity_pct=line_capacity_pct,
+        line_stress_factor=float(SCENARIOS[scenario_key].get("line_stress_factor", 1.0)),
+        line_status=line_status_24h,  
     )
 
     st.subheader("Szenario-Bewertung")
