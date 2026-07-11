@@ -126,7 +126,7 @@ with metric_col1:
         """
         ### Max. Leitung 24h [%]
 
-        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 /% auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
+        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
         """
     )
 
