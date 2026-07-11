@@ -1,9 +1,9 @@
 import streamlit as st
 
-st.set_page_config(page_title="Tutorial", layout="wide")
+st.set_page_config(page_title="About", layout="wide")
 
-st.title("Tutorial: Allgemeines zum Simulator")
-st.write("Willkommen im Tutorial! Bevor du in den Simulator startest, klären wir die wichtigsten Grundlagen.")
+st.title("About: Allgemeines zum Simulator")
+st.write("Auf dieser Seite findest du Hintergrundinformationen zum Stromnetzmodell,zu den verwendeten Daten und zur DC-Lastflussberechnung.")
 
 st.divider()
 
@@ -209,6 +209,24 @@ with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
 
 st.divider()
 
-# --- Return Button ---
-st.success("Grundlagen verstanden? Dann bist du bereit für den Sandbox-Modus!")
-st.page_link("app.py", label="Zurück zum Simulator", icon="🎮")
+st.divider()
+
+st.success(
+    "Du kennst jetzt die wichtigsten Grundlagen des verwendeten Netzmodells."
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.page_link(
+        "pages/2_Tutorial.py",
+        label="Zum interaktiven Tutorial",
+        icon="📘",
+    )
+
+with col2:
+    st.page_link(
+        "app.py",
+        label="Direkt zum Simulator",
+        icon="🎮",
+    )
