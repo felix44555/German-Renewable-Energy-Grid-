@@ -193,7 +193,7 @@ st.header("Schritt 4: Wind- und PV-Ausbau testen")
 wind_tab, pv_tab = st.tabs(["Wind", "Photovoltaik"])
 
 with wind_tab:
-    st.subheader("Wind [% der SMARD-Orientierung]")
+    st.subheader("Wind [%]")
 
     st.write(
         "Dieser Slider skaliert die gesamte Windstromerzeugung des ausgewählten "
@@ -203,7 +203,7 @@ with wind_tab:
     st.markdown(
         """
         - **0 %:** keine Windstromerzeugung
-        - **100 %:** ursprüngliche Windstromerzeugung
+        - **100 %:** reale Windstromerzeugung
         - **150 %:** 50 % mehr Windstrom
         - **200 %:** doppelte Windstromerzeugung
         - **300 %:** dreifache Windstromerzeugung
@@ -218,7 +218,7 @@ with wind_tab:
         2. Erhöhe Wind um 25 oder 50 Prozentpunkte.
         3. Betrachte den neuen EE-Anteil.
         4. Prüfe die maximale Leitungsauslastung.
-        5. Untersuche auf der Netzkarte, welche Leitungen stärker belastet werden.
+        5. Untersuche ob der Grid Performance Score gestiegen oder gesunken ist.
         """
     )
 
@@ -229,7 +229,7 @@ with wind_tab:
     )
 
 with pv_tab:
-    st.subheader("PV [% der SMARD-Orientierung]")
+    st.subheader("PV [%]")
 
     st.write(
         "Dieser Slider skaliert die Photovoltaikerzeugung des ausgewählten Tages."
@@ -238,7 +238,7 @@ with pv_tab:
     st.markdown(
         """
         - **0 %:** keine Photovoltaikerzeugung
-        - **100 %:** ursprüngliche Photovoltaikerzeugung
+        - **100 %:** reale Photovoltaikerzeugung
         - **150 %:** 50 % mehr Photovoltaik
         - **200 %:** doppelte Photovoltaikerzeugung
         - **300 %:** dreifache Photovoltaikerzeugung
@@ -263,10 +263,7 @@ with pv_tab:
         "Erzeugung benötigt wird."
     )
 
-st.checkbox(
-    "Ich habe Wind und PV einzeln verändert und die Auswirkungen verglichen.",
-    key="tutorial_step_4",
-)
+
 
 st.divider()
 
