@@ -158,7 +158,7 @@ st.markdown(
     Nutze den Slider **Stunde des Tages**, um verschiedene Stunden zwischen
     0 und 23 Uhr auszuwählen.
 
-    Untersuche mindestens:
+    Untersuche stichprobenartig:
 
     - eine Nachtstunde,
     - eine Mittagsstunde,
@@ -178,20 +178,12 @@ st.markdown(
     """
     Beim Verschieben des Reglers solltest du beobachten:
 
-    1. Wie verändert sich die Photovoltaikerzeugung?
-    2. Wie verändert sich die Last?
-    3. Welche Leitung ist am stärksten ausgelastet?
+    1. Wie hoch ist der Anteil der Photovoltaikerzeugung?
+    2. Wie hoch ist der Anteil der Winderzeugung?
+    3. Wie hoch ist die maximale Leitungsauslastung?
     4. Lädt oder entlädt der Batteriespeicher?
-    5. Bleibt die Netzbilanz nahe bei 0 GW?
     """
 )
-
-st.checkbox(
-    "Ich habe mindestens drei unterschiedliche Stunden untersucht.",
-    key="tutorial_step_3",
-)
-
-st.divider()
 
 
 # ============================================================
