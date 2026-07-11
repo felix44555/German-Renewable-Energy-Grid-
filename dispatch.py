@@ -129,7 +129,7 @@ def prepare_dispatch_profiles(
         ee = wind + pv
 
         # Konv_min ist Mindestbetrieb. Flexible konventionelle Leistung wird erst nach BESS genutzt.
-        residual_before = load - ee - konv_min
+        residual_before = load - ee
         residual_before_bess.append(residual_before)
         balance_before_bess.append(-residual_before)
 
