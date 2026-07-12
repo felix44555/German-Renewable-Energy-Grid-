@@ -320,7 +320,7 @@ st.markdown(
     """
 )
 
-st.warning(
+st.info(
     "Ein großer Speicher kann die Bilanz verbessern, erhöht aber auch den "
     "die Kosten eines Systems. Mehr Speicher ist daher nicht automatisch die beste Lösung."
 )
@@ -344,8 +344,6 @@ st.markdown(
     """
     - **50 %:** halbe Leitungskapazität
     - **100 %:** ursprüngliche Leitungskapazität
-    - **125 %:** 25 % mehr Leitungskapazität
-    - **150 %:** 50 % mehr Leitungskapazität
     - **200 %:** doppelte Leitungskapazität
     """
 )
@@ -357,6 +355,7 @@ st.markdown(
     1. Erzeuge zunächst durch mehr Wind oder PV eine Leitungsüberlastung.
     2. Erhöhe den Netzausbau in kleinen Schritten.
     3. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
+    4. Prüfe ob der Grid Performance Score gestiegen oder gefallen ist.
     """
 )
 
@@ -390,7 +389,7 @@ st.markdown(
     3. Kontrolliere die maximale Leitungsauslastung.
     4. Nutze Speicher für zeitliche Überschüsse.
     5. Baue das Netz nur so weit aus wie erforderlich.
-    6. Vergleiche nach jeder Änderung den KPI.
+    6. Vergleiche nach jeder Änderung den Grid Performance Score.
     """
 )
 
@@ -413,14 +412,10 @@ with goal_col2:
 with goal_col3:
     st.metric(
         label="Ziel 3",
-        value="Begrenzter Ausbau",
-        help="Die Ziele sollen ohne unnötig große Zusatzkapazitäten erreicht werden.",
+        value="Wenig Überproduktion",
+        help="Es sollte möglichst effizient ausgebaut werden, also möglichst wenig Erneuerbare Überproduktion welche zu Abregelung führt.",
     )
 
-st.checkbox(
-    "Ich habe eine eigene Lösung entwickelt und mit dem Ausgangszustand verglichen.",
-    key="tutorial_step_7",
-)
 
 st.divider()
 
@@ -429,7 +424,7 @@ st.divider()
 # Diagrammreferenz
 # ============================================================
 
-st.header("Referenz: Was zeigen die Diagramme?")
+st.header("Was zeigen die Diagramme?")
 
 map_tab, line_tab, balance_tab, dispatch_tab = st.tabs(
     [
@@ -567,7 +562,7 @@ with dispatch_tab:
 # Weitere Kennzahlen
 # ============================================================
 
-st.header("Referenz: Weitere Kennzahlen")
+st.header("Weitere Kennzahlen")
 
 with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
     st.markdown(
@@ -623,19 +618,7 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
 
 st.divider()
 
-completed, total = tutorial_progress()
 
-if completed == total:
-    st.success(
-        "🎉 Tutorial abgeschlossen! Du kannst jetzt ein Szenario selbstständig "
-        "analysieren und optimieren."
-    )
-else:
-    st.info(
-        f"Du hast {completed} von {total} Schritten abgeschlossen. "
-        "Bearbeite die verbleibenden Aufgaben, bevor du mit der freien "
-        "Optimierung beginnst."
-    )
 
 st.page_link(
     "app.py",
