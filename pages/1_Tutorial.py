@@ -426,11 +426,10 @@ st.divider()
 
 st.header("Was zeigen die Diagramme?")
 
-map_tab, line_tab, balance_tab, dispatch_tab = st.tabs(
+map_tab, line_tab, dispatch_tab = st.tabs(
     [
         "Netzkarte",
         "Leitungsauslastung",
-        "Netzbilanz",
         "Erzeugungsmix",
     ]
 )
@@ -491,39 +490,11 @@ with line_tab:
         """
     )
 
-    st.warning(
+    st.info(
         "Ein Wert über 100 % bedeutet, dass der berechnete Leistungsfluss "
         "größer als die im Modell verfügbare Leitungskapazität ist."
     )
 
-with balance_tab:
-    st.subheader("Ziellücke und Netzbilanz")
-
-    st.markdown(
-        """
-        **Balken: Bilanz vor BESS**
-
-        Zeigen die Differenz zwischen Erzeugung und Verbrauch, bevor der
-        Batteriespeicher eingesetzt wird.
-
-        **Linie: Bilanz nach BESS**
-
-        Zeigt die verbleibende Differenz nach Laden oder Entladen des Speichers.
-        """
-    )
-
-    st.markdown(
-        """
-        - Positiver Wert: Stromüberschuss
-        - Negativer Wert: Stromunterdeckung
-        - 0 GW: Erzeugung und Verbrauch sind ausgeglichen
-        """
-    )
-
-    st.write(
-        "Die vertikale rote Linie markiert die über den Stundenslider "
-        "ausgewählte Stunde."
-    )
 
 with dispatch_tab:
     st.subheader("Dispatch und Erzeugungsmix")
@@ -579,14 +550,8 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
         **BESS [GW]**  
         Positiv bedeutet Entladung, negativ bedeutet Ladung.
 
-        **Bilanz [GW]**  
-        Verbleibende Differenz zwischen Erzeugung und Verbrauch.
-
         **Ziellücke nach EE**  
         Last abzüglich Wind- und PV-Erzeugung.
-
-        **Restl. Soll [GW]**  
-        Rechnerisch benötigte restliche Erzeugung.
 
         **Restl. verfügbar [GW]**  
         Maximal verfügbare Leistung der restlichen Erzeuger.
@@ -597,17 +562,9 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
         **SOC [%]**  
         Aktueller Ladezustand des Batteriespeichers.
 
-        **Konventionelle Fehlleistung**  
-        Leistung, die zusätzlich benötigt würde, aber nicht verfügbar ist.
-
-        **Mindestlauf-Überschuss**  
-        Überschuss, der durch einen angenommenen Mindestbetrieb entstehen würde.
-
         **Abregelung**  
         Erneuerbare Erzeugung, die nicht verwendet werden kann.
 
-        **Status**  
-        Textliche Einordnung der aktuellen Versorgungssituation.
         """
     )
 
