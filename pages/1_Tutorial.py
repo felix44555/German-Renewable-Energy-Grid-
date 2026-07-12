@@ -405,14 +405,14 @@ with goal_col1:
 with goal_col2:
     st.metric(
         label="Ziel 2",
-        value="Keine Überlastung",
-        help="Leitungen sollen während des gesamten Tages unter 100 % bleiben.",
+        value="Sicherheit",
+        help="Keine Überlastung: Leitungen sollen während des gesamten Tages unter 100 % bleiben.",
     )
 
 with goal_col3:
     st.metric(
         label="Ziel 3",
-        value="Wenig Überproduktion",
+        value="Effizienz",
         help="Es sollte möglichst effizient ausgebaut werden, also möglichst wenig Erneuerbare Überproduktion welche zu Abregelung führt.",
     )
 
