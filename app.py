@@ -6,6 +6,7 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+import copy
 
 from dc_powerflow import compute_dc_line_status, find_max_line_utilization_24h
 from dispatch import generate_synthetic_profiles, prepare_dispatch_profiles
@@ -265,8 +266,8 @@ def main() -> None:
         hour=find_max_line_utilization_24h(line_status_24h)
         st.session_state.setdefault("hour", hour)
         
-        start_kpi_hour = kpi_hour
-        start_kpi_24h = kpi_24h
+        start_kpi_hour = copy.deepcopy(kpi_hour)
+        start_kpi_24h = copy.deepcopy(kpi_24h)
         
         st.session_state.setdefault("data_just_loaded", False)
         
