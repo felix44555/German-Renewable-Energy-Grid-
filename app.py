@@ -307,8 +307,8 @@ def main() -> None:
             ),
             width="stretch",
         )
-    #st.subheader("Zeitslider")
-    st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
+        #st.subheader("Zeitslider")
+        st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
     with c_right:
         st.subheader("Leitungsauslastung")
         st.plotly_chart(build_line_utilization_chart(line_status), width="stretch")
