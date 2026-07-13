@@ -136,11 +136,8 @@ def main() -> None:
         current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         is_locked = scenario.get("date_locked", True)
         
-        if is_locked:
-            target_date = scenario.get("smard_day", date.today() - timedelta(days=2))
-            st.session_state["smard_day"] = target_date
-        else:
-            smard_day = st.session_state.get("smard_day", date.today() - timedelta(days=2))
+        
+        st.session_state["smard_day"] = current_date
         
         smard_day = st.date_input(
             "SMARD-Datum",
