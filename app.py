@@ -264,13 +264,15 @@ def main() -> None:
     
     if st.session_state.get("data_just_loaded", False):
         hour=find_max_line_utilization_24h(line_status_24h)
-        st.session_state.setdefault("hour", hour)
+        st.session_state("hour", hour)
         
-        start_kpi_hour = copy.deepcopy(kpi_hour)
-        start_kpi_24h = copy.deepcopy(kpi_24h)
+        st.session_state["start_kpi_hour"] = copy.deepcopy(kpi_hour)
+        st.session_state["start_kpi_24h"] = copy.deepcopy(kpi_24h)
         
-        st.session_state.setdefault("data_just_loaded", False)
-        
+        st.session_state("data_just_loaded", False)
+     
+    start_kpi_hour = st.session_state.get("start_kpi_hour", 0)
+    start_kpi_24h = st.session_state.get("start_kpi_24h", 0)
     #st.subheader("Szenario-Bewertung") #old dsplay
 
     #for msg in scenario_eval.get("messages", []): #old display
@@ -282,9 +284,9 @@ def main() -> None:
         st.success("Szenario bewältigt.")
     else:
         st.warning("Szenario noch nicht bewältigt.")
-        
-    kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
-    #kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
+    
+    kpi0, kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(6)
+    kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
