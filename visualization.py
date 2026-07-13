@@ -93,12 +93,15 @@ def build_map(
             flow_dc = float(ln.get("Flow_DC_GW", ln.get("Flow_Proxy_GW", 0.0)))
             overloaded = bool(ln.get("Ueberlast", False))
             color = "red" if overloaded else ("orange" if util_pct >= 90 else "green")
+            # Mittelpunkt berechnen
+            lon_mid = (ln["lon0"] + ln["lon1"]) / 2
+            lat_mid = (ln["lat0"] + ln["lat1"]) / 2
+            # Den unsichtbaren Hover-Punkt in der Mitte hinzufügen
             fig.add_trace(go.Scattergeo(
-                lon=[ln["lon0"], ln["lon1"]],
-                lat=[ln["lat0"], ln["lat1"]],
-                mode="lines",
-                line=dict(width=2 + 4 * min(util, 1.5), color=color),
-                opacity=0.78,
+                lon=[lon_mid],
+                lat=[lat_mid],
+                mode="markers",
+                marker=dict(size=10, opacity=0), # Unsichtbar, aber als Hitbox vorhanden
                 text=(
                     f"{ln['Name']} ({ln['von']} → {ln['nach']})<br>"
                     f"Kapazität: {float(ln['Kapazitaet_GW']):.2f} GW<br>"
@@ -107,6 +110,16 @@ def build_map(
                     f"Status: {'ÜBERLAST' if overloaded else 'ok'}"
                 ),
                 hoverinfo="text",
+                showlegend=False,
+            ))
+            #Sichtbare Lines zeichnen
+            fig.add_trace(go.Scattergeo(
+                lon=[ln["lon0"], ln["lon1"]],
+                lat=[ln["lat0"], ln["lat1"]],
+                mode="lines",
+                line=dict(width=2 + 4 * min(util, 1.5), color=color),
+                opacity=0.78,
+                hoverinfo="none",
                 showlegend=False,
             ))
 
