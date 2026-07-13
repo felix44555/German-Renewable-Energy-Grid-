@@ -83,6 +83,7 @@ def load_scenario_defaults(scenario_key: str) -> None:
         st.session_state[key] = value
 def on_scenario_change():
     load_scenario_defaults(st.session_state["scenario_key"])
+    st.session_state["data_just_loaded"] = True
 def on_date_change():
     st.session_state["data_just_loaded"] = True
 
