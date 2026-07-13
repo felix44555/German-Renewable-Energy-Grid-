@@ -228,7 +228,7 @@ def main() -> None:
     )
     nodal_status = line_status.attrs.get("dc_nodal_status", pd.DataFrame())
     scenario_eval = evaluate_scenario(hour_row=hour_row, line_status=line_status, scenario_key=scenario_key)
-    kpi_result = _calculate_current_kpi(
+    kpi_hour = _calculate_current_kpi(
         hour_row=hour_row,
         line_status=line_status,
         wind_pct=wind_pct,
@@ -264,6 +264,10 @@ def main() -> None:
     if st.session_state.get("data_just_loaded", False):
         hour=find_max_line_utilization_24h(line_status_24h)
         st.session_state.setdefault("hour", hour)
+        
+        start_kpi_hour = kpi_hour
+        start_kpi_24h = kpi_24h
+        
         st.session_state.setdefault("data_just_loaded", False)
         
     #st.subheader("Szenario-Bewertung") #old dsplay
@@ -278,7 +282,8 @@ def main() -> None:
     else:
         st.warning("Szenario noch nicht bewältigt.")
         
-    kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
+    kpi0, kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(6)
+    kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
@@ -385,12 +390,13 @@ def main() -> None:
         st.subheader("Stündliche Engineering-Feasibility-KPI")
         
         kpi_cols = st.columns(4)
-        kpi_cols[0].metric("Feasibility-KPI", f"{kpi_result['kpi']:.2f}")
-        kpi_cols[1].metric("EE-Anteil [%]", f"{kpi_result['re_share_pct']:.1f}")
-        #kpi_cols[2].metric("max. Leitung [%]", f"{kpi_result['max_line_load']:.0f}")
-        kpi_cols[2].metric(
+        kpi_cols[0].metric("Start Feasibility-KPI", f"{start_kpi_hour['kpi']:.2f}")
+        kpi_cols[1].metric("Feasibility-KPI", f"{kpi_hour['kpi']:.2f}")
+        kpi_cols[2].metric("EE-Anteil [%]", f"{kpi_hour['re_share_pct']:.1f}")
+        #kpi_cols[2].metric("max. Leitung [%]", f"{kpi_hour['max_line_load']:.0f}")
+        kpi_cols[3].metric(
             "Ausbau-Faktor",
-            f"{kpi_result['grid_added'] + kpi_result['bat_added'] + kpi_result['pv_added'] + kpi_result['wind_added']:.2f}",
+            f"{kpi_hour['grid_added'] + kpi_hour['bat_added'] + kpi_hour['pv_added'] + kpi_hour['wind_added']:.2f}",
     )
         e2, e3, e4 = st.columns(3)
         #e1.metric("Bilanz [GW]", f"{scenario_eval.get('balance_gw', 0.0):+.2f}")
