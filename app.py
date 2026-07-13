@@ -75,7 +75,7 @@ def init_session_state() -> None:
     defaults = dict(scenario.get("defaults", {}))
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
-    #st.session_state["data_just_loaded"] = True
+    st.session_state.setdefault("data_just_loaded", True)
 
 
 def load_scenario_defaults(scenario_key: str) -> None:
