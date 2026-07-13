@@ -283,8 +283,8 @@ def main() -> None:
     else:
         st.warning("Szenario noch nicht bewältigt.")
         
-    kpi0, kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(6)
-    kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
+    kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
+    #kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
