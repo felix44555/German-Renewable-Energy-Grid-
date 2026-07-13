@@ -27,7 +27,6 @@ BASE_DIR = Path(__file__).resolve().parent
 NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
 APP_VERSION = "modular-smard-api-dc-safe-1"
 
-st.session_state["data_just_loaded"] = True
 
 def _format_gap(value: float) -> str:
     ''' input float, return Wert string'''
@@ -76,6 +75,7 @@ def init_session_state() -> None:
     defaults = dict(scenario.get("defaults", {}))
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
+    st.session_state["data_just_loaded"] = True
 
 
 def load_scenario_defaults(scenario_key: str) -> None:
