@@ -128,7 +128,7 @@ def main() -> None:
          #   load_scenario_defaults(scenario_key)
          #   st.rerun()
 
-        #st.header("Datenquelle")
+        st.header("Datenquelle")
         #profile_source = st.radio(
         #    "Zeitreihe",
         #    options=["SMARD-API", "synthetisch"],
