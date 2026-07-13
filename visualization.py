@@ -301,7 +301,6 @@ def build_line_utilization_chart_24h(line_status_24h: dict[int, pd.DataFrame]) -
         name="Maximale Leitungsauslastung",
         marker_color=["red" if bool(x) else ("orange" if y >= 90 else "green") for x, y in zip(summary_df["Ueberlast"], summary_df["Auslastung_pct"])],
         hovertext=[
-            f"{row['Name']}<br>{row['Leitung']}"
             f"{row['Name']}<br>{row['von']} → {row['nach']}<br>"
             f"Kapazität: {row['Kapazitaet_GW']:.2f} GW<br>"
             f"DC-Flow: {row.get('Flow_DC_GW', row.get('Flow_Proxy_GW', 0.0)):+.2f} GW<br>"
