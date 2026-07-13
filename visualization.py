@@ -282,10 +282,10 @@ def build_line_utilization_chart_24h(line_status_24h: dict[int, pd.DataFrame]) -
         if df.empty or "Auslastung_pct" not in df.columns:
             continue
     
-    max_idx = df["Auslastung_pct"].idxmax()
-    worst_line_row = df.loc[max_idx].copy()
-    worst_line_row["Stunde"] = hour #eventuell doppellung
-    max_lines_per_hour.append(worst_line_row)
+        max_idx = df["Auslastung_pct"].idxmax()
+        worst_line_row = df.loc[max_idx].copy()
+        worst_line_row["Stunde"] = hour #eventuell doppellung
+        max_lines_per_hour.append(worst_line_row)
     
     if not max_lines_per_hour:
         fig.update_layout(title="Keine Auslastungsdaten gefunden", height=320)
