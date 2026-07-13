@@ -80,7 +80,8 @@ def load_scenario_defaults(scenario_key: str) -> None:
     scenario = SCENARIOS.get(scenario_key, SCENARIOS["training"])
     for key, value in scenario.get("defaults", {}).items():
         st.session_state[key] = value
-
+def on_scenario_change():
+    load_scenario_defaults(st.session_state["scenario_key"])
 
 def main() -> None:
     st.set_page_config(page_title="Deutschland-Netzkarte: SMARD + DC-Lastfluss", layout="wide")
@@ -119,12 +120,13 @@ def main() -> None:
             options=list(SCENARIOS.keys()),
             format_func=lambda k: SCENARIOS[k].get("name", k),
             key="scenario_key",
+            on_change = on_scenario_change,
         )
         scenario = SCENARIOS[scenario_key]
         st.info(str(scenario.get("task", "")))
-        if st.button("Szenario-Startwerte laden"):
-            load_scenario_defaults(scenario_key)
-            st.rerun()
+        #if st.button("Szenario-Startwerte laden"): #Button zum laden ersetzt
+         #   load_scenario_defaults(scenario_key)
+         #   st.rerun()
 
         st.header("Datenquelle")
         profile_source = st.radio(
