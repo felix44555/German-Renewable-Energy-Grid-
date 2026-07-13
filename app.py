@@ -137,7 +137,8 @@ def main() -> None:
         is_locked = scenario.get("date_locked", True)
         
         if is_locked:
-            smard_day = scenario.get("smard_day", date(2026, 1, 1))
+            target_date = scenario.get("smard_day", date.today() - timedelta(days=2))
+            st.session_state["smard_day"] = target_date
         else:
             smard_day = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         
