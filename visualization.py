@@ -205,7 +205,7 @@ def build_stack(df: pd.DataFrame, highlight_hour: int) -> go.Figure:
     fig.add_trace(go.Bar(x=h, y=-df["BESS_Laden_GW"], name="BESS Laden", marker_color="rgba(44,160,44,0.5)"))
     fig.add_trace(go.Bar(x=h, y=-df["Curtailment_GW"], name="EE-Abregelung", marker_color="rgba(214,39,40,0.4)"))
     fig.add_trace(go.Scatter(x=h, y=df["Last_GW"], name="Last/Ziel", line=dict(color="black", width=3)))
-    fig.add_trace(go.Scatter(x=h, y=df["Konv_Soll_GW"], name="Soll Restl. Erz. vor Limits", line=dict(color="gray", width=2, dash="dot")))
+    #fig.add_trace(go.Scatter(x=h, y=df["Konv_Soll_GW"], name="Soll Restl. Erz. vor Limits", line=dict(color="gray", width=2, dash="dot")))
     fig.add_vline(x=highlight_hour, line_dash="dash", line_color="red")
     fig.update_layout(
         barmode="relative",
