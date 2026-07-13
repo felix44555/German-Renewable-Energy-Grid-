@@ -134,7 +134,7 @@ def main() -> None:
             help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         )
         current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
-        is_locked = scenario.get("date_locked", True)
+        is_locked = st.session_state.get("date_locked", True)
         
         
         st.session_state["smard_day"] = current_date
