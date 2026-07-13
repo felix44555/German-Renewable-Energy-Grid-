@@ -249,18 +249,19 @@ def main() -> None:
         line_status=line_status_24h,  
     )
 
-    st.subheader("Szenario-Bewertung")
+    #st.subheader("Szenario-Bewertung") #old dsplay
+
+
+    #for msg in scenario_eval.get("messages", []): #old display
+     #   st.write(f"- {msg}")
+    
+    st.subheader("24h Grid Performance Score")
+    
     if bool(scenario_eval.get("solved", False)):
         st.success("Szenario bewältigt.")
     else:
         st.warning("Szenario noch nicht bewältigt.")
-
-    for msg in scenario_eval.get("messages", []):
-        st.write(f"- {msg}")
-
-    
-    st.subheader("24h Grid Performance Score")
-
+        
     kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(5)
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
@@ -330,6 +331,11 @@ def main() -> None:
             f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
         )
         # ab hier runter
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++AUSGEBLENDET AM SEITENENDE*+++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         st.subheader("Live-Kennzahlen")
         k1, k2, k3, k4, k5, k6 = st.columns(6)
         k1.metric("Last/Ziel [GW]", f"{hour_row['Last_GW']:.2f}")
