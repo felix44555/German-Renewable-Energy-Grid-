@@ -117,7 +117,14 @@ def _calculate_24h_kpi(
     #max() um Division durch 0 zu vermeiden'''
     re_share_pct_24h = max(0.0, min(re_share_pct_24h, 100.0))
     #sorgt dafür das Wert zwischen 0 und 100 ist'''
-
+    
+    total_curtailment_gwh = float(
+        (
+            pd.to_numeric(df["Curtailment_GW"], errors="coerce").fillna(0.0)
+        ).sum()
+    )
+    curtailment_pct_24h = total_curtailment_gwh / max(total_load_gwh, 1e-9)
+    
     hourly_rows: list[dict[str, float]] = []
     max_line_load_24h = 0.0
     overloaded_hours = 0
@@ -161,6 +168,7 @@ def _calculate_24h_kpi(
         pv_added=pv_added,
         wind_added=wind_added,
         max_line_load=max_line_load_24h,
+        derating = curtailment_pct_24h,
     )
 
     return {
