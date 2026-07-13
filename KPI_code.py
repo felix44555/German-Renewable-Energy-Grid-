@@ -1,6 +1,6 @@
 import pandas as pd
 
-def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, derating=0.0, tuning_factor=0.05):
+def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, derating, tuning_factor=0.05):
     """
     Calculates the engineering feasibility KPI for the grid simulation.
     Derating is now penalized instead of PV and Wind capacity expansion.
@@ -46,7 +46,10 @@ def _calculate_current_kpi(
 
     re_share_pct = 100.0 * (wind_gw + pv_gw + bess_gw) / load_gw
     re_share_pct = max(0.0, min(re_share_pct, 100.0))
-
+    
+    curtailment_gw = max(float(hour_row.get("Curtailment_GW", 0.0)), 0.0)
+    curtailment_pct = curtailment_gw / max((wind_gw + pv_gw + bess_gw), 1e-9)
+    
     if line_status.empty or "Auslastung_pct" not in line_status.columns:
         max_line_load = 0.0
     else:
@@ -68,6 +71,7 @@ def _calculate_current_kpi(
         pv_added=pv_added,
         wind_added=wind_added,
         max_line_load=max_line_load,
+        derating=curtailment_pct,
     )
 
     return {
