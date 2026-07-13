@@ -99,12 +99,12 @@ def main() -> None:
     st.title("Deutschland-Netzkarte: SMARD-API, regelbare Restleistung und DC-Lastfluss")
     st.markdown(
         "SMARD wird nur für Netzlast, Wind und PV genutzt. Externe Importe/Exporte und SMARD-Restkategorien "
-        "werden nicht geladen. Die restlichen Erzeuger werden künstlich als regelbare Leistung aus der .nc-/Fallback-Kapazität modelliert."
+        "werden nicht geladen. Die restlichen Erzeuger werden künstlich als konventionelle Leistungen netzstützend modelliert"# Die restlichen Erzeuger werden künstlich als regelbare Leistung aus der .nc-/Fallback-Kapazität modelliert."
     )
-    st.caption(
-        f"Version: {APP_VERSION}. Module: smard_api.py, dispatch.py, grid_io.py, dc_powerflow.py, visualization.py, scenarios.py. "
-        "Leitungsauslastung wird mit einer DC-Lastfluss-Näherung gerechnet."
-    )
+    #st.caption(
+     #   f"Version: {APP_VERSION}. Module: smard_api.py, dispatch.py, grid_io.py, dc_powerflow.py, visualization.py, scenarios.py. "
+     #  "Leitungsauslastung wird mit einer DC-Lastfluss-Näherung gerechnet."
+    #)
 
     try:
         _, refs, consumers, generators, lines = _load_network_tables()
