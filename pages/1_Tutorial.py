@@ -320,7 +320,7 @@ st.markdown(
     """
 )
 
-st.warning(
+st.info(
     "Ein großer Speicher kann die Bilanz verbessern, erhöht aber auch den "
     "die Kosten eines Systems. Mehr Speicher ist daher nicht automatisch die beste Lösung."
 )
@@ -344,8 +344,6 @@ st.markdown(
     """
     - **50 %:** halbe Leitungskapazität
     - **100 %:** ursprüngliche Leitungskapazität
-    - **125 %:** 25 % mehr Leitungskapazität
-    - **150 %:** 50 % mehr Leitungskapazität
     - **200 %:** doppelte Leitungskapazität
     """
 )
@@ -355,16 +353,15 @@ st.markdown(
     **Experiment**
 
     1. Erzeuge zunächst durch mehr Wind oder PV eine Leitungsüberlastung.
-    2. Suche im Balkendiagramm die am stärksten ausgelastete Leitung.
-    3. Finde diese Leitung anschließend auf der Netzkarte.
-    4. Erhöhe den Netzausbau in kleinen Schritten.
-    5. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
+    2. Erhöhe den Netzausbau in kleinen Schritten.
+    3. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
+    4. Prüfe ob der Grid Performance Score gestiegen oder gefallen ist.
     """
 )
 
 st.info(
     "Verändere den Netzausbau möglichst in kleinen Schritten. Ein unnötig hoher "
-    "Ausbau kann den KPI trotz sicherer Leitungen verschlechtern."
+    "Ausbau kann den Grid Performance Score trotz sicherer Leitungen verschlechtern."
 )
 
 st.caption(
@@ -372,10 +369,7 @@ st.caption(
     "Slider ist eine didaktische Vereinfachung."
 )
 
-st.checkbox(
-    "Ich habe einen Netzengpass identifiziert und durch begrenzten Ausbau reduziert.",
-    key="tutorial_step_6",
-)
+
 
 st.divider()
 
@@ -395,7 +389,7 @@ st.markdown(
     3. Kontrolliere die maximale Leitungsauslastung.
     4. Nutze Speicher für zeitliche Überschüsse.
     5. Baue das Netz nur so weit aus wie erforderlich.
-    6. Vergleiche nach jeder Änderung den KPI.
+    6. Vergleiche nach jeder Änderung den Grid Performance Score.
     """
 )
 
@@ -411,21 +405,17 @@ with goal_col1:
 with goal_col2:
     st.metric(
         label="Ziel 2",
-        value="Keine Überlastung",
-        help="Leitungen sollen während des gesamten Tages unter 100 % bleiben.",
+        value="Sicherheit",
+        help="Keine Überlastung: Leitungen sollen während des gesamten Tages unter 100 % bleiben.",
     )
 
 with goal_col3:
     st.metric(
         label="Ziel 3",
-        value="Begrenzter Ausbau",
-        help="Die Ziele sollen ohne unnötig große Zusatzkapazitäten erreicht werden.",
+        value="Effizienz",
+        help="Es sollte möglichst effizient ausgebaut werden, also möglichst wenig Erneuerbare Überproduktion welche zu Abregelung führt.",
     )
 
-st.checkbox(
-    "Ich habe eine eigene Lösung entwickelt und mit dem Ausgangszustand verglichen.",
-    key="tutorial_step_7",
-)
 
 st.divider()
 
@@ -434,13 +424,12 @@ st.divider()
 # Diagrammreferenz
 # ============================================================
 
-st.header("Referenz: Was zeigen die Diagramme?")
+st.header("Was zeigen die Diagramme?")
 
-map_tab, line_tab, balance_tab, dispatch_tab = st.tabs(
+map_tab, line_tab, dispatch_tab = st.tabs(
     [
         "Netzkarte",
         "Leitungsauslastung",
-        "Netzbilanz",
         "Erzeugungsmix",
     ]
 )
@@ -501,39 +490,11 @@ with line_tab:
         """
     )
 
-    st.warning(
+    st.info(
         "Ein Wert über 100 % bedeutet, dass der berechnete Leistungsfluss "
         "größer als die im Modell verfügbare Leitungskapazität ist."
     )
 
-with balance_tab:
-    st.subheader("Ziellücke und Netzbilanz")
-
-    st.markdown(
-        """
-        **Balken: Bilanz vor BESS**
-
-        Zeigen die Differenz zwischen Erzeugung und Verbrauch, bevor der
-        Batteriespeicher eingesetzt wird.
-
-        **Linie: Bilanz nach BESS**
-
-        Zeigt die verbleibende Differenz nach Laden oder Entladen des Speichers.
-        """
-    )
-
-    st.markdown(
-        """
-        - Positiver Wert: Stromüberschuss
-        - Negativer Wert: Stromunterdeckung
-        - 0 GW: Erzeugung und Verbrauch sind ausgeglichen
-        """
-    )
-
-    st.write(
-        "Die vertikale rote Linie markiert die über den Stundenslider "
-        "ausgewählte Stunde."
-    )
 
 with dispatch_tab:
     st.subheader("Dispatch und Erzeugungsmix")
@@ -572,7 +533,7 @@ with dispatch_tab:
 # Weitere Kennzahlen
 # ============================================================
 
-st.header("Referenz: Weitere Kennzahlen")
+st.header("Weitere Kennzahlen")
 
 with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
     st.markdown(
@@ -589,14 +550,8 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
         **BESS [GW]**  
         Positiv bedeutet Entladung, negativ bedeutet Ladung.
 
-        **Bilanz [GW]**  
-        Verbleibende Differenz zwischen Erzeugung und Verbrauch.
-
         **Ziellücke nach EE**  
         Last abzüglich Wind- und PV-Erzeugung.
-
-        **Restl. Soll [GW]**  
-        Rechnerisch benötigte restliche Erzeugung.
 
         **Restl. verfügbar [GW]**  
         Maximal verfügbare Leistung der restlichen Erzeuger.
@@ -607,17 +562,9 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
         **SOC [%]**  
         Aktueller Ladezustand des Batteriespeichers.
 
-        **Konventionelle Fehlleistung**  
-        Leistung, die zusätzlich benötigt würde, aber nicht verfügbar ist.
-
-        **Mindestlauf-Überschuss**  
-        Überschuss, der durch einen angenommenen Mindestbetrieb entstehen würde.
-
         **Abregelung**  
         Erneuerbare Erzeugung, die nicht verwendet werden kann.
 
-        **Status**  
-        Textliche Einordnung der aktuellen Versorgungssituation.
         """
     )
 
@@ -628,19 +575,7 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
 
 st.divider()
 
-completed, total = tutorial_progress()
 
-if completed == total:
-    st.success(
-        "🎉 Tutorial abgeschlossen! Du kannst jetzt ein Szenario selbstständig "
-        "analysieren und optimieren."
-    )
-else:
-    st.info(
-        f"Du hast {completed} von {total} Schritten abgeschlossen. "
-        "Bearbeite die verbleibenden Aufgaben, bevor du mit der freien "
-        "Optimierung beginnst."
-    )
 
 st.page_link(
     "app.py",
