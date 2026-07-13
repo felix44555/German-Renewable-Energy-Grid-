@@ -134,14 +134,23 @@ def main() -> None:
             help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         )
         current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
+        is_locked = scenario.get("date_locked", False)
+        
+        if is_locked:
+            smard_day = scenario.get("smard_day", date(2026, 1, 1))
+        else:
+            smard_day = st.session_state.get("smard_day", date.today() - timedelta(days=2))
+        
         smard_day = st.date_input(
             "SMARD-Datum",
             value = current_date,
             min_value=date(2015, 1, 1),
             max_value=date.today() - timedelta(days=2),
+            disabled=is_locked,
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
-        st.session_state["smard_day"] = smard_day
+        if not is_locked:
+            st.session_state["smard_day"] = smard_day
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
         #region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
         region = "DE"
