@@ -128,13 +128,14 @@ def main() -> None:
          #   load_scenario_defaults(scenario_key)
          #   st.rerun()
 
-        st.header("Datenquelle")
-        profile_source = st.radio(
-            "Zeitreihe",
-            options=["SMARD-API", "synthetisch"],
-            index=0,
-            help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
-        )
+        #st.header("Datenquelle")
+        #profile_source = st.radio(
+        #    "Zeitreihe",
+        #    options=["SMARD-API", "synthetisch"],
+        #    index=0,
+        #    help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
+        #)
+        profile_source = "SMARD-API"
         current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         is_locked = st.session_state.get("date_locked", True)
         
