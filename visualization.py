@@ -99,7 +99,6 @@ def build_map(
                 mode="lines",
                 line=dict(width=2 + 4 * min(util, 1.5), color=color),
                 opacity=0.78,
-                hoverinfo="text",
                 text=(
                     f"{ln['Name']} ({ln['von']} → {ln['nach']})<br>"
                     f"Kapazität: {float(ln['Kapazitaet_GW']):.2f} GW<br>"
@@ -107,6 +106,7 @@ def build_map(
                     f"Auslastung: {util_pct:.0f} %<br>"
                     f"Status: {'ÜBERLAST' if overloaded else 'ok'}"
                 ),
+                hoverinfo="text",
                 showlegend=False,
             ))
 
