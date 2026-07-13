@@ -19,7 +19,7 @@ from grid_io import (
 )
 from scenarios import SCENARIOS, apply_scenario_to_profiles, evaluate_scenario
 from smard_api import load_smard_api_profile
-from visualization import build_balance_chart, build_line_utilization_chart, build_map, build_stack
+from visualization import build_balance_chart, build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack
 from KPI_code import _calculate_24h_kpi,_calculate_current_kpi
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -280,16 +280,7 @@ def main() -> None:
         st.info("Mittlerer Grid Performance Score: technisch brauchbar, aber Ausbau, EE-Anteil oder Netzbelastung sind nicht optimal.")
     else:
         st.warning("Niedriger Grid Performance Score: geringe technische Güte durch niedrigen EE-Anteil, hohen Ausbau oder Netzüberlast.")
-    with st.expander("Modellannahmen"):
-        st.write(
-            "- Zielgröße ist die SMARD-Netzlast.\n"
-            "- Wind = SMARD Wind Offshore + Wind Onshore.\n"
-            "- PV = SMARD Photovoltaik.\n"
-            "- Restliche Erzeuger werden nicht aus SMARD geladen, sondern künstlich auf die Residuallast gefahren.\n"
-            "- Externe Importe, Exporte und kommerzielle Austauschflüsse werden nicht geladen.\n"
-            "- BESS: positiv = Entladung, negativ = Ladung.\n"
-            "- Leitungsauslastung: DC-Lastfluss-Näherung, kein vollständiger AC-Lastfluss."
-        )
+
 
     c_left, c_right = st.columns([1.2, 1.0])
     with c_left:
@@ -311,10 +302,30 @@ def main() -> None:
     with c_right:
         st.subheader("Leitungsauslastung")
         st.plotly_chart(build_line_utilization_chart(line_status), width="stretch")
+        st.plotly_chart(build_line_utilization_chart_24h(line_status_24h), width="stretch")       
 
     #st.subheader("Bilanz und Erzeugungsmix")
     #st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
+    
+    
+       # ab hier runter
+       #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+       #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+       #+++++++++++++++++++++++++++++++++AUSGEBLENDET AM SEITENENDE*+++++++++++++++++++++++++++++++++++++++
+       #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+       #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    with st.expander("Modellannahmen"):
+        st.write(
+            "- Zielgröße ist die SMARD-Netzlast.\n"
+            "- Wind = SMARD Wind Offshore + Wind Onshore.\n"
+            "- PV = SMARD Photovoltaik.\n"
+            "- Restliche Erzeuger werden nicht aus SMARD geladen, sondern künstlich auf die Residuallast gefahren.\n"
+            "- Externe Importe, Exporte und kommerzielle Austauschflüsse werden nicht geladen.\n"
+            "- BESS: positiv = Entladung, negativ = Ladung.\n"
+            "- Leitungsauslastung: DC-Lastfluss-Näherung, kein vollständiger AC-Lastfluss."
+        )
+    
     with st.expander("Weitere Kennzahlen"):
         st.subheader("Ausführlich24h Engineering-Feasibility-KPI") 
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
@@ -330,12 +341,8 @@ def main() -> None:
             "Ausbau-Faktor",
             f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
         )
-        # ab hier runter
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        #+++++++++++++++++++++++++++++++++AUSGEBLENDET AM SEITENENDE*+++++++++++++++++++++++++++++++++++++++
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        
+        
         st.subheader("Live-Kennzahlen")
         k1, k2, k3, k4, k5, k6 = st.columns(6)
         k1.metric("Last/Ziel [GW]", f"{hour_row['Last_GW']:.2f}")

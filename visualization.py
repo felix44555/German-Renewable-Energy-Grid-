@@ -267,3 +267,57 @@ def build_line_utilization_chart(line_status: pd.DataFrame) -> go.Figure:
     )
     fig.update_xaxes(tickangle=-35)
     return fig
+
+def build_line_utilization_chart_24h(line_status_24h: dict[int, pd.DataFrame]) -> go.Figure:
+    fig = go.Figure()
+    
+    # Safety-Check
+    if not line_status_24h:
+        fig.update_layout(title="Keine Leitungsdaten verfügbar", height=320)
+        return fig
+    
+    max_lines_per_hour = []
+    
+    for hour, df in line_status_24h.items():
+        if df.empty or "Auslastung_pct" not in df.columns:
+            continue
+    
+    max_idx = df["Auslastung_pct"].idxmax()
+    worst_line_row = df.loc[max_idx].copy()
+    worst_line_row["Stunde"] = hour #eventuell doppellung
+    max_lines_per_hour.append(worst_line_row)
+    
+    if not max_lines_per_hour:
+        fig.update_layout(title="Keine Auslastungsdaten gefunden", height=320)
+        return fig
+    
+    summary_df = pd.DataFrame(max_lines_per_hour)
+    summary_df = summary_df.sort_values("Stunde") #nur zur Sicherheit
+    
+    
+    fig.add_trace(go.Bar(
+        x=summary_df["Stunde"],
+        y=summary_df["Auslastung_pct"],
+        name="Maximale Leitungsauslastung",
+        marker_color=["red" if bool(x) else ("orange" if y >= 90 else "green") for x, y in zip(summary_df["Ueberlast"], summary_df["Auslastung_pct"])],
+        hovertext=[
+            f"{row['Name']}<br>{row['Leitung']}"
+            f"{row['Name']}<br>{row['von']} → {row['nach']}<br>"
+            f"Kapazität: {row['Kapazitaet_GW']:.2f} GW<br>"
+            f"DC-Flow: {row.get('Flow_DC_GW', row.get('Flow_Proxy_GW', 0.0)):+.2f} GW<br>"
+            f"Auslastung: {row['Auslastung_pct']:.0f} %"
+            for _, row in summary_df.iterrows()
+        ],
+        hoverinfo="text",
+    ))
+    fig.add_hline(y=100, line_dash="dash", line_color="red")
+    fig.update_layout(
+        title="Maximale Leitungsauslastung pro Stunde - DC-Lastfluss",
+        xaxis_title="Stunde",
+        yaxis_title="Auslastung [%]",
+        height=380,
+        margin=dict(l=40, r=20, t=50, b=120),
+        xaxis=dict(tickmode='linear', tick0=0, dtick=1)
+    )
+    #fig.update_xaxes(tickangle=-35)
+    return fig
