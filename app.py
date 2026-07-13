@@ -27,6 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent
 NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
 APP_VERSION = "modular-smard-api-dc-safe-1"
 
+st.session_state["data_just_loaded"] = True
 
 def _format_gap(value: float) -> str:
     ''' input float, return Wert string'''
