@@ -82,6 +82,8 @@ def load_scenario_defaults(scenario_key: str) -> None:
         st.session_state[key] = value
 def on_scenario_change():
     load_scenario_defaults(st.session_state["scenario_key"])
+def on_date_change():
+    st.session_state["data_just_loaded"] = True
 
 def main() -> None:
     st.set_page_config(page_title="Deutschland-Netzkarte: SMARD + DC-Lastfluss", layout="wide")
@@ -148,6 +150,7 @@ def main() -> None:
             min_value=date(2015, 1, 1),
             max_value=date.today() - timedelta(days=2),
             disabled=is_locked,
+            on_change = on_date_change,
             help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         )
         if not is_locked:
@@ -257,9 +260,13 @@ def main() -> None:
         line_stress_factor=float(SCENARIOS[scenario_key].get("line_stress_factor", 1.0)),
         line_status=line_status_24h,  
     )
-
+    
+    if st.session_state.get("data_just_loaded", False):
+        hour=build_line_utilization_chart_24h(line_status_24h)
+        st.session_state.setdefault("hour", hour)
+        st.session_state.setdefault("data_just_loaded", False)
+        
     #st.subheader("Szenario-Bewertung") #old dsplay
-
 
     #for msg in scenario_eval.get("messages", []): #old display
      #   st.write(f"- {msg}")

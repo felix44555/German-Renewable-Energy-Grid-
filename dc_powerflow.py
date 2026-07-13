@@ -506,3 +506,20 @@ def compute_dc_line_status(
 
 # Kompatibilitätsname, falls vorhandene UI/Tests noch den alten Namen erwarten.
 compute_line_status_proxy = compute_dc_line_status
+
+
+def find_max_line_utilization_24h(line_status_24h: dict[int, pd.DataFrame]) -> int:
+    max_hour = 0
+    max_util = -1.0
+    
+    for hour, df in line_status_24h.items():
+        # Sicherheitscheck, ob Daten vorhanden sind
+        if not df.empty and "Auslastung_pct" in df.columns:
+            # .max() sucht extrem schnell den höchsten Wert in der ganzen Spalte
+            current_max = float(df["Auslastung_pct"].max()) 
+            
+            if current_max > max_util:
+                max_util = current_max
+                max_hour = hour
+                
+    return max_hour
