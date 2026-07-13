@@ -433,11 +433,11 @@ def main() -> None:
     #with st.expander("Netz-Referenzwerte"):
      #   st.json(refs)
 
-    st.caption(
-        "Topologie und räumliche Verteilung kommen aus real_germany_8n.nc. "
-        "Zeitreihen kommen bei SMARD-API-Modus nur für Last/Wind/PV direkt von SMARD. "
-        "Restliche Erzeuger sind regelbare Modellleistung. Die App löst kein PyPSA-Optimierungsproblem."
-    )
+    #st.caption(
+    #    "Topologie und räumliche Verteilung kommen aus real_germany_8n.nc. "
+    #    "Zeitreihen kommen bei SMARD-API-Modus nur für Last/Wind/PV direkt von SMARD. "
+    #    "Restliche Erzeuger sind regelbare Modellleistung. Die App löst kein PyPSA-Optimierungsproblem."
+    #)
 
 
 
