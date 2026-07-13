@@ -10,7 +10,7 @@ default_day = date.today() - timedelta(days=2)
 
 SCENARIOS: dict[str, dict[str, Any]] = {
     "training": {
-        "name": "Training: SMARD-Orientierung",
+        "name": "Sandbox: SMARD-Daten",
         "task": (
             "Nutze Wind, PV, restliche Erzeuger, BESS, Last und Abregelung so, "
             "dass die SMARD-Netzlast ohne Importe/Exporte bilanziell gedeckt wird. "
