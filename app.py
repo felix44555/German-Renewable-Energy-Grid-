@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
-from dc_powerflow import compute_dc_line_status
+from dc_powerflow import compute_dc_line_status, find_max_line_utilization_24h
 from dispatch import generate_synthetic_profiles, prepare_dispatch_profiles
 from grid_io import (
     ensure_bess_visible,
@@ -262,7 +262,7 @@ def main() -> None:
     )
     
     if st.session_state.get("data_just_loaded", False):
-        hour=build_line_utilization_chart_24h(line_status_24h)
+        hour=find_max_line_utilization_24h(line_status_24h)
         st.session_state.setdefault("hour", hour)
         st.session_state.setdefault("data_just_loaded", False)
         
