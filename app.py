@@ -264,15 +264,15 @@ def main() -> None:
     
     if st.session_state.get("data_just_loaded", False):
         hour=find_max_line_utilization_24h(line_status_24h)
-        st.session_state("hour", hour)
+        st.session_state["hour"]=hour
         
         st.session_state["start_kpi_hour"] = copy.deepcopy(kpi_hour)
         st.session_state["start_kpi_24h"] = copy.deepcopy(kpi_24h)
         
-        st.session_state("data_just_loaded", False)
+        st.session_state["data_just_loaded"]=False
      
-    start_kpi_hour = st.session_state.get("start_kpi_hour", 0)
-    start_kpi_24h = st.session_state.get("start_kpi_24h", 0)
+    start_kpi_hour = st.session_state.get("start_kpi_hour", {"kpi": 0.0})
+    start_kpi_24h = st.session_state.get("start_kpi_24h", {"kpi_24h": 0.0})
     #st.subheader("Szenario-Bewertung") #old dsplay
 
     #for msg in scenario_eval.get("messages", []): #old display
