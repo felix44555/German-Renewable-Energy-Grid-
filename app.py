@@ -201,11 +201,10 @@ def main() -> None:
         ee_curtail_pct=ee_curtail_pct,
         konv_min_pct=konv_min_pct,
     )
-
-    st.subheader("Zeitslider")
-    hour = st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
+    
+    hour = st.session_state.get("hour", 0)
     hour_row = df.iloc[int(hour)]
-
+    
     line_status = compute_dc_line_status(
         generators=generators,
         consumers=consumers,
@@ -303,7 +302,8 @@ def main() -> None:
         st.subheader("Leitungsauslastung")
         st.plotly_chart(build_line_utilization_chart(line_status), width="stretch")
         st.plotly_chart(build_line_utilization_chart_24h(line_status_24h), width="stretch")       
-
+        #st.subheader("Zeitslider")
+        st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
     #st.subheader("Bilanz und Erzeugungsmix")
     #st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
