@@ -19,7 +19,7 @@ from grid_io import (
 )
 from scenarios import SCENARIOS, apply_scenario_to_profiles, evaluate_scenario
 from smard_api import load_smard_api_profile
-from visualization import build_balance_chart, build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack
+from visualization import build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack #build_balance_chart,
 from KPI_code import _calculate_24h_kpi,_calculate_current_kpi
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -171,14 +171,14 @@ def main() -> None:
         line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
         ee_curtail_pct = 100.0
         
-        st.caption(
-            f"Referenzwerte aus Netz/Fallback:\n"
-            f"- Wind: {refs['wind_gw']:.2f} GW\n"
-            f"- PV: {refs['pv_gw']:.2f} GW\n"
-            f"- Restliche Erzeuger: {refs['konv_gw']:.2f} GW\n"
-            f"- BESS: {refs['bess_gw']:.2f} GW / {refs['bess_gwh']:.2f} GWh\n"
-            f"- mittlere Netzlast: {refs['load_mean_gw']:.2f} GW"
-        )
+        #st.caption(
+         #   f"Referenzwerte aus Netz/Fallback:\n"
+         #   f"- Wind: {refs['wind_gw']:.2f} GW\n"
+         #   f"- PV: {refs['pv_gw']:.2f} GW\n"
+         #   f"- Restliche Erzeuger: {refs['konv_gw']:.2f} GW\n"
+         #   f"- BESS: {refs['bess_gw']:.2f} GW / {refs['bess_gwh']:.2f} GWh\n"
+         #   f"- mittlere Netzlast: {refs['load_mean_gw']:.2f} GW"
+        #)
 
     wind_scale = wind_pct / 100.0
     pv_scale = pv_pct / 100.0
@@ -422,8 +422,8 @@ def main() -> None:
         else:
             st.write("Keine Knotensalden verfügbar.")
 
-    with st.expander("Netz-Referenzwerte"):
-        st.json(refs)
+    #with st.expander("Netz-Referenzwerte"):
+     #   st.json(refs)
 
     st.caption(
         "Topologie und räumliche Verteilung kommen aus real_germany_8n.nc. "
