@@ -209,7 +209,8 @@ def build_stack(df: pd.DataFrame, highlight_hour: int) -> go.Figure:
     fig.add_vline(x=highlight_hour, line_dash="dash", line_color="red")
     fig.update_layout(
         barmode="relative",
-        title="Dispatch: SMARD-Last/Wind/PV + künstlich geregelte restliche Erzeuger",
+        title="Energiemix",
+        #title="Dispatch: SMARD-Last/Wind/PV + künstlich geregelte restliche Erzeuger",
         xaxis_title="Stunde",
         yaxis_title="Leistung [GW]",
         height=440,

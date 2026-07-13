@@ -316,7 +316,7 @@ def main() -> None:
     #st.subheader("Bilanz und Erzeugungsmix")
     #st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
-    
+    st.caption("Dispatch: (teilweise skalierte) SMARD-Last/Wind/PV + künstlich geregelte restliche Erzeuger")
     
        # ab hier runter
        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
