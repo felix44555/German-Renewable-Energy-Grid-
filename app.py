@@ -87,7 +87,15 @@ def on_scenario_change():
     st.session_state["data_just_loaded"] = True
 def on_date_change():
     st.session_state["data_just_loaded"] = True
-
+    reset_slider()
+def reset_slider():
+    st.header("Stellgrößen")
+    st.session_state["wind_pct"]=100
+    st.session_state["pv_pct"]=100
+    st.session_state["bess_pct"]=100
+    st.session_state["soc_pct"]=50
+    st.session_state["line_capacity_pct"]=100
+    
 def main() -> None:
     st.set_page_config(page_title="Deutschland-Netzkarte: SMARD + DC-Lastfluss", layout="wide")
     init_session_state()
