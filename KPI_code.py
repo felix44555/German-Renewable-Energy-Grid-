@@ -1,6 +1,6 @@
 import pandas as pd
 
-def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, derating, tuning_factor=0.05):
+def calculate_feasibility_kpi(re_share_pct, grid_added, bat_added, pv_added, wind_added, max_line_load, derating, tuning_factor=0.15):
     """
     Calculates the engineering feasibility KPI for the grid simulation.
     Derating is now penalized instead of PV and Wind capacity expansion.
