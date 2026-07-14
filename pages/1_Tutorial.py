@@ -437,7 +437,7 @@ bess_scale=st.session_state.get("tut_bess_scale", 1.0)
 refs=st.session_state.get("tut_refs", {})
 line_status_24h = st.session_state.get("tut_line_status_24h", {})
 df = st.session_state.get("tut_df", pd.DataFrame())
-hour = 12
+hour = st.session_state.get("tut_hour", 12)
 
 st.header("Was zeigen die Diagramme?")
 
