@@ -500,7 +500,7 @@ with map_tab:
 
 with line_tab:
     st.subheader("Leitungsauslastung")
-
+    st.plotly_chart(build_line_utilization_chart(line_status), width="stretch")
     st.write(
         "Das Balkendiagramm zeigt die Auslastung aller Leitungen in der "
         "ausgewählten Stunde."
