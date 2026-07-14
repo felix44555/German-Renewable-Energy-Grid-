@@ -436,7 +436,8 @@ konv_scale=st.session_state.get("tut_konv_scale", 1.0)
 bess_scale=st.session_state.get("tut_bess_scale", 1.0)
 refs=st.session_state.get("tut_refs", {})
 line_status_24h = st.session_state.get("tut_line_status_24h", {})
-
+df = st.session_state.get("tut_df", pd.DataFrame())
+hour = 12
 
 st.header("Was zeigen die Diagramme?")
 
@@ -539,7 +540,7 @@ with line_tab_max:
 
 with dispatch_tab:
     st.subheader("Dispatch und Erzeugungsmix")
-
+    st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
     st.write(
         "Das Diagramm zeigt für jede Stunde, durch welche Technologien der "
         "Stromverbrauch gedeckt wird."

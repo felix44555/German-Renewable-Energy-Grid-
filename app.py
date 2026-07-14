@@ -317,6 +317,7 @@ def main() -> None:
     st.session_state["tut_bess_scale"] = bess_scale
     st.session_state["tut_refs"] = refs
     st.session_state["tut_line_status_24h"] = line_status_24h
+    st.session_state["tut_df"] = df
     
     c_left, c_right = st.columns([1.2, 1.0])
     with c_left:
