@@ -426,10 +426,11 @@ st.divider()
 
 st.header("Was zeigen die Diagramme?")
 
-map_tab, line_tab, dispatch_tab = st.tabs(
+map_tab, line_tab,line_tab_max, dispatch_tab = st.tabs(
     [
         "Netzkarte",
-        "Leitungsauslastung",
+        "Leitungsauslastung der aktuellen Stunde",
+        "Maximale Leitungsauslastung des Tages"
         "Erzeugungsmix",
     ]
 )
@@ -495,6 +496,19 @@ with line_tab:
         "größer als die im Modell verfügbare Leitungskapazität ist."
     )
 
+with line_tab_max:
+    st.subheader("Maximale Leitungsauslastung")
+
+    st.write(
+        "Das Balkendiagramm zeigt die maximale Leitungsauslastung jeder Stunde "
+        "des Tages."
+    )
+
+    
+    st.info(
+        "Ein Wert über 100 % bedeutet, dass der berechnete Leistungsfluss "
+        "größer als die im Modell verfügbare Leitungskapazität ist."
+    )
 
 with dispatch_tab:
     st.subheader("Dispatch und Erzeugungsmix")
