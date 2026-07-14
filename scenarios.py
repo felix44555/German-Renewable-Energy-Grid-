@@ -143,7 +143,8 @@ def evaluate_scenario(hour_row: pd.Series, line_status: pd.DataFrame, scenario_k
     line_limit = float(limits.get("max_line_util_pct", 100.0))
 
     balance = float(hour_row.get("Netzbilanz_GW", 0.0))
-    curtailment = float(hour_row.get("Curtailment_GW", 0.0))
+    #curtailment = float(hour_row.get("Curtailment_GW", 0.0))
+    curtailment = 0.0
 
     if line_status.empty or "Auslastung_pct" not in line_status.columns:
         peak_line = 0.0
