@@ -430,7 +430,7 @@ map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
     [
         "Netzkarte",
         "Leitungsauslastung der aktuellen Stunde",
-        "Maximale Leitungsauslastung des Tages"
+        "Maximale Leitungsauslastung des Tages",
         "Erzeugungsmix",
     ]
 )
