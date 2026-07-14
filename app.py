@@ -306,8 +306,17 @@ def main() -> None:
         st.info("Mittlerer Grid Performance Score: technisch brauchbar, aber Ausbau, EE-Anteil oder Netzbelastung sind nicht optimal.")
     else:
         st.warning("Niedriger Grid Performance Score: geringe technische Güte durch niedrigen EE-Anteil, hohen Ausbau oder Netzüberlast.")
-
-
+# Übergabe in Session State um sie auf den anderen Unteseiten zu nutzen
+    st.session_state["tut_generators"] = generators
+    st.session_state["tut_consumers"] = consumers
+    st.session_state["tut_line_status"] = line_status
+    st.session_state["tut_hour_row"] = hour_row
+    st.session_state["tut_wind_scale"] = wind_scale
+    st.session_state["tut_pv_scale"] = pv_scale
+    st.session_state["tut_konv_scale"] = konv_scale
+    st.session_state["tut_bess_scale"] = bess_scale
+    st.session_state["tut_refs"] = refs
+    
     c_left, c_right = st.columns([1.2, 1.0])
     with c_left:
         st.subheader("Netzkarte")

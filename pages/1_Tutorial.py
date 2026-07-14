@@ -1,5 +1,6 @@
 import streamlit as st
-
+import pandas as pd
+from visualization import build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack #build_balance_chart,
 
 st.set_page_config(
     page_title="Tutorial",
@@ -437,7 +438,29 @@ map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
 
 with map_tab:
     st.subheader("Netzkarte")
-
+    generators=st.session_state.get("tut_generators", pd.DataFrame()),
+    consumers=st.session_state.get("tut_consumers", pd.DataFrame()),
+    line_status=st.session_state.get("tut_line_status", pd.DataFrame()),
+    hour_row=st.session_state.get("tut_hour_row", pd.DataFrame()),
+    wind_scale=st.session_state.get("tut_wind_scale", pd.DataFrame()),
+    pv_scale=st.session_state.get("tut_pv_scale", pd.DataFrame()),
+    konv_scale=st.session_state.get("tut_konv_scale", pd.DataFrame()),
+    bess_scale=st.session_state.get("tut_bess_scale", pd.DataFrame()),
+    refs=st.session_state.get("tut_refs", pd.DataFrame()),
+    st.plotly_chart(
+        build_map(
+            generators=generators,
+            consumers=consumers,
+            lines=line_status,
+            hour_row=hour_row,
+            wind_scale=wind_scale,
+            pv_scale=pv_scale,
+            konv_scale=konv_scale,
+            bess_scale=bess_scale,
+            refs=refs,
+        ),
+        width="stretch",
+    )
     st.write(
         "Die Netzkarte zeigt Erzeuger, Verbraucher, Batteriespeicher und "
         "Leitungen für die ausgewählte Stunde."
