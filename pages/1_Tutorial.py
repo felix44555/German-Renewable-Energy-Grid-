@@ -438,15 +438,15 @@ map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
 
 with map_tab:
     st.subheader("Netzkarte")
-    generators=st.session_state.get("tut_generators", pd.DataFrame()),
-    consumers=st.session_state.get("tut_consumers", pd.DataFrame()),
-    line_status=st.session_state.get("tut_line_status", pd.DataFrame()),
-    hour_row=st.session_state.get("tut_hour_row", pd.DataFrame()),
-    wind_scale=st.session_state.get("tut_wind_scale", pd.DataFrame()),
-    pv_scale=st.session_state.get("tut_pv_scale", pd.DataFrame()),
-    konv_scale=st.session_state.get("tut_konv_scale", pd.DataFrame()),
-    bess_scale=st.session_state.get("tut_bess_scale", pd.DataFrame()),
-    refs=st.session_state.get("tut_refs", pd.DataFrame()),
+    generators=st.session_state.get("tut_generators", pd.DataFrame())
+    consumers=st.session_state.get("tut_consumers", pd.DataFrame())
+    line_status=st.session_state.get("tut_line_status", pd.DataFrame())
+    hour_row=st.session_state.get("tut_hour_row", pd.Series(dtype=float))
+    wind_scale=st.session_state.get("tut_wind_scale", 1.0)
+    pv_scale=st.session_state.get("tut_pv_scale", 1.0)
+    konv_scale=st.session_state.get("tut_konv_scale", 1.0)
+    bess_scale=st.session_state.get("tut_bess_scale", 1.0)
+    refs=st.session_state.get("tut_refs", {})
     st.plotly_chart(
         build_map(
             generators=generators,
