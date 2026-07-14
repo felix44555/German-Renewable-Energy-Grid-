@@ -426,7 +426,7 @@ st.divider()
 
 st.header("Was zeigen die Diagramme?")
 
-map_tab, line_tab,line_tab_max, dispatch_tab = st.tabs(
+map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
     [
         "Netzkarte",
         "Leitungsauslastung der aktuellen Stunde",
