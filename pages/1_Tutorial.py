@@ -425,6 +425,19 @@ st.divider()
 # Diagrammreferenz
 # ============================================================
 
+#Werte werden aus session state geholt
+generators=st.session_state.get("tut_generators", pd.DataFrame())
+consumers=st.session_state.get("tut_consumers", pd.DataFrame())
+line_status=st.session_state.get("tut_line_status", pd.DataFrame())
+hour_row=st.session_state.get("tut_hour_row", pd.Series(dtype=float))
+wind_scale=st.session_state.get("tut_wind_scale", 1.0)
+pv_scale=st.session_state.get("tut_pv_scale", 1.0)
+konv_scale=st.session_state.get("tut_konv_scale", 1.0)
+bess_scale=st.session_state.get("tut_bess_scale", 1.0)
+refs=st.session_state.get("tut_refs", {})
+line_status_24h = st.session_state.get("tut_line_status_24h", {})
+
+
 st.header("Was zeigen die Diagramme?")
 
 map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
@@ -438,15 +451,6 @@ map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
 
 with map_tab:
     st.subheader("Netzkarte")
-    generators=st.session_state.get("tut_generators", pd.DataFrame())
-    consumers=st.session_state.get("tut_consumers", pd.DataFrame())
-    line_status=st.session_state.get("tut_line_status", pd.DataFrame())
-    hour_row=st.session_state.get("tut_hour_row", pd.Series(dtype=float))
-    wind_scale=st.session_state.get("tut_wind_scale", 1.0)
-    pv_scale=st.session_state.get("tut_pv_scale", 1.0)
-    konv_scale=st.session_state.get("tut_konv_scale", 1.0)
-    bess_scale=st.session_state.get("tut_bess_scale", 1.0)
-    refs=st.session_state.get("tut_refs", {})
     st.plotly_chart(
         build_map(
             generators=generators,
@@ -521,7 +525,7 @@ with line_tab:
 
 with line_tab_max:
     st.subheader("Maximale Leitungsauslastung")
-
+    st.plotly_chart(build_line_utilization_chart_24h(line_status_24h), width="stretch")  
     st.write(
         "Das Balkendiagramm zeigt die maximale Leitungsauslastung jeder Stunde "
         "des Tages."
