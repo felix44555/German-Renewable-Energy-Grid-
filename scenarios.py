@@ -35,7 +35,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "Wind": {
-        "name": "Sehr Windiger Tag mit hohem Verbrauch",
+        "name": "Sehr Windiger Tag - hoher Verbrauch",
         "task": (
             "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
         ),
@@ -58,7 +58,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "Sonne": {
-        "name": "Sehr Sonninger Tag mit hohem Verbrauch",
+        "name": "Sehr Sonninger Tag - hoher Verbrauch",
         "task": (
             "Die Sonne scheint an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Klimageräten und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
         ),
@@ -76,12 +76,12 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "smard_day": date(2025, 6, 20),
             "date_locked": True,
         },
-        "profile_factors": {"wind": 1.0, "pv": 2.0, "load": 1.0},
+        "profile_factors": {"wind": 1.0, "pv": 2.0, "load": 1.2},
         "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "WindSonne": {
-        "name": "Wind- und Sonninger Tag mit viel Verbrauch",
+        "name": "Wind- und Sonninger Tag - hoher Verbrauch",
         "task": (
             "Die Sonne scheint an diesem Tag stark während gleichzeitig der Wind stark weht. Die Last dem aktuell erwartbaren verbrauch."
         ),
@@ -99,7 +99,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "smard_day": date(2025, 4, 15),
             "date_locked": True,
         },
-        "profile_factors": {"wind": 1.1, "pv": 1.1, "load": 1.00},
+        "profile_factors": {"wind": 1.2, "pv": 1.2, "load": 1.3},
         "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
