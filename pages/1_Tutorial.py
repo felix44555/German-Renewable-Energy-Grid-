@@ -439,6 +439,12 @@ line_status_24h = st.session_state.get("tut_line_status_24h", {})
 df = st.session_state.get("tut_df", pd.DataFrame())
 hour = st.session_state.get("tut_hour", 12)
 
+# C-Analogie: if (ptr == NULL) -> goto main
+if "tut_df" not in st.session_state or st.session_state.get("tut_df", pd.DataFrame()).empty:
+    st.warning("Die Daten wurden noch nicht berechnet. Du wirst zur Hauptseite weitergeleitet...")
+    st.switch_page("app.py") # Bricht hier ab und lädt sofort die Hauptseite neu!
+    st.stop() # Sicherheitsabbruch, damit der restliche Code auf dieser Seite nicht crasht
+
 st.header("Was zeigen die Diagramme?")
 
 map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
