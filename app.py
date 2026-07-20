@@ -110,7 +110,7 @@ def main() -> None:
         st.divider()
 
     # --- TUTORIAL BANNER END ---
-    #st.title("Deutschland-Netzkarte: SMARD-API, regelbare Restleistung und DC-Lastfluss")
+    st.title("Deutschland-Netzkarte: SMARD-API, regelbare Restleistung und DC-Lastfluss")
     st.markdown(
         "SMARD wird nur für Netzlast, Wind und PV genutzt. Externe Importe/Exporte und SMARD-Restkategorien "
         "werden nicht geladen. Die restlichen Erzeuger werden künstlich als konventionelle Erzeuger netzstützend modelliert."# Die restlichen Erzeuger werden künstlich als regelbare Leistung aus der .nc-/Fallback-Kapazität modelliert."
