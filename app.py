@@ -363,15 +363,17 @@ def main() -> None:
                width="stretch", on_select="rerun")
 
         # Hier liegen jetzt die Daten des Klicks drin
-        if event and event["selection"]["points"]:
-            # Hole dir den Index des angeklickten Punktes
+        # Prüfe erst das Event, dann das Dictionary, dann die Liste
+        if event and "selection" in event and "points" in event["selection"] and len(event["selection"]["points"]) > 0:
             point_index = event["selection"]["points"][0]["pointIndex"]
-            st.session_state["clicked_point_index"] = point_index
-                
+            st.session_state["last_clicked_index"] = point_index
+        else:
+            # Optional: Aufräumen oder nichts tun
+            pass
+        
+        # Hier nun die Anzeige basierend auf dem State
         if "last_clicked_index" in st.session_state:
-            # Jetzt kannst du basierend auf dem gespeicherten Index dein Fenster öffnen
-            st.write(f"Du hast den Punkt mit Index {st.session_state['last_clicked_index']} angeklickt!")
-            # Hier könnte nun dein popover oder expander folgen...     
+            st.write(f"Du hast den Punkt mit Index {st.session_state['last_clicked_index']} angeklickt!")    
 ####################################ENDE TEST####################################
         #st.subheader("Zeitslider")
         st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
