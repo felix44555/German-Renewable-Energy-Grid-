@@ -362,15 +362,13 @@ def main() -> None:
                ),
                width="stretch", on_select="rerun")
 
-        # Hier liegen jetzt die Daten des Klicks drin
-        # Prüfe erst das Event, dann das Dictionary, dann die Liste
-        if event and "selection" in event and "points" in event["selection"] and len(event["selection"]["points"]) > 0:
-            point_index = event["selection"]["points"][0]["pointIndex"]
-            st.session_state["last_clicked_index"] = point_index
-        else:
-            # Optional: Aufräumen oder nichts tun
-            pass
-        
+        if event and "selection" in event and event["selection"].get("points"):
+            points = event["selection"]["points"]
+            if len(points) > 0:
+                point_index = points[0].get("pointIndex")
+                if point_index is not None:
+                    st.session_state["clicked_point_index"] = point_index
+        st.write(event)
         # Hier nun die Anzeige basierend auf dem State
         if "last_clicked_index" in st.session_state:
             st.write(f"Du hast den Punkt mit Index {st.session_state['last_clicked_index']} angeklickt!")    
