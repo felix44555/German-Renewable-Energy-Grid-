@@ -331,20 +331,48 @@ def main() -> None:
     c_left, c_right = st.columns([1.2, 1.0])
     with c_left:
         st.subheader("Netzkarte")
-        st.plotly_chart(
+       # st.plotly_chart(
+       #     build_map(
+       #         generators=generators,
+       #         consumers=consumers,
+       #         lines=line_status,
+       #         hour_row=hour_row,
+       #         wind_scale=wind_scale,
+       #        pv_scale=pv_scale,
+       #         konv_scale=konv_scale,
+       #         bess_scale=bess_scale,
+       #         refs=refs,
+       #     ),
+       #     width="stretch",
+        #)
+        ##########################ANFANG TEST###########################################
+        # Statt st.plotly_chart(fig)
+        # Nutze on_select="rerun", um bei jedem Klick das Skript neu zu laden
+        event = st.plotly_chart(
             build_map(
-                generators=generators,
-                consumers=consumers,
-                lines=line_status,
-                hour_row=hour_row,
-                wind_scale=wind_scale,
-                pv_scale=pv_scale,
-                konv_scale=konv_scale,
-                bess_scale=bess_scale,
-                refs=refs,
-            ),
-            width="stretch",
-        )
+                   generators=generators,
+                   consumers=consumers,
+                   lines=line_status,
+                   hour_row=hour_row,
+                   wind_scale=wind_scale,
+                   pv_scale=pv_scale,
+                   konv_scale=konv_scale,
+                   bess_scale=bess_scale,
+                   refs=refs,
+               ),
+               width="stretch", on_select="rerun")
+
+        # Hier liegen jetzt die Daten des Klicks drin
+        if event and event["selection"]["points"]:
+            # Hole dir den Index des angeklickten Punktes
+            point_index = event["selection"]["points"][0]["pointIndex"]
+            st.session_state["clicked_point_index"] = point_index
+                
+        if "last_clicked_index" in st.session_state:
+            # Jetzt kannst du basierend auf dem gespeicherten Index dein Fenster öffnen
+            st.write(f"Du hast den Punkt mit Index {st.session_state['last_clicked_index']} angeklickt!")
+            # Hier könnte nun dein popover oder expander folgen...     
+####################################ENDE TEST####################################
         #st.subheader("Zeitslider")
         st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
     with c_right:
