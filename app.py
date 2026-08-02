@@ -236,15 +236,13 @@ def main() -> None:
     load_scale = load_pct / 100.0
 
     api_meta = pd.DataFrame()
-    if profile_source == "SMARD-API":
-        try:
-            base_profiles, api_meta = _cached_smard_profile(smard_day.isoformat(), region)
-        except Exception as exc:
-            st.error(f"SMARD-API-Daten konnten nicht geladen werden: {exc}")
-            st.info("Prüfe Internetzugang, Datum und requirements.txt. Für Offline-Demo kann die synthetische Quelle genutzt werden.")
-            st.stop()
-    else:
-        base_profiles = generate_synthetic_profiles(refs)
+
+    try:
+        base_profiles, api_meta = _cached_smard_profile(smard_day.isoformat(), region)
+    except Exception as exc:
+        st.error(f"SMARD-API-Daten konnten nicht geladen werden: {exc}")
+        st.info("Prüfe Internetzugang, Datum und requirements.txt. Für Offline-Demo kann die synthetische Quelle genutzt werden.")
+        st.stop()
 
     scenario_profiles = apply_scenario_to_profiles(base_profiles, scenario_key=scenario_key, ee_curtail_pct=0.0)
     df = prepare_dispatch_profiles(
