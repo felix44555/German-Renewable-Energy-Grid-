@@ -57,17 +57,35 @@ def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.D
 
 @st.dialog("Knoten-Erzeugung anpassen")
 def node_adjustment_modal(node_index):
+    # 1. Der "Dirty Hack": Wir schießen CSS ein, um den 'X'-Button zu killen
+    st.markdown(
+        """
+        <style>
+        /* Blendet den Standard-Schließen-Button (X) im Dialog aus */
+        button[aria-label="Close"] { display: none; }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.write(f"Du bearbeitest den Wind-Knoten mit der ID: {node_index}")
     
     # Hier kommt dein UI für den einzelnen Knoten rein
     neuer_wert = st.slider("Lokale Wind-Erzeugung [%]", 0, 100, 100)
     
-    if st.button("Speichern & Berechnen"):
-        # 1. Wert in den globalen Speicher schreiben
-        st.session_state[f"wind_node_{node_index}"] = neuer_wert
-        
-        # 2. Modal schließen und Rerun triggern
-        st.rerun()
+    # 2. Zwei saubere Exit-Strategien (Speichern oder Abbrechen)
+    c_left, c_right = st.columns(2)
+    
+    with c_left:
+        if st.button("Speichern & Berechnen", type="primary"):
+            # Wert in den globalen Speicher schreiben
+            st.session_state[f"wind_node_{node_index}"] = neuer_wert
+            st.rerun() # Schließt das Fenster und triggert den Main-Loop
+            
+    with c_right:
+        if st.button("Abbrechen"):
+            # Macht gar nichts, außer das Fenster zu schließen
+            st.rerun()
 
 def _load_network_tables() -> tuple[Any, dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if not NETWORK_FILE.exists():
