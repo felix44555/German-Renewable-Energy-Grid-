@@ -189,12 +189,14 @@ def build_map(
                 line=dict(width=1.2, color="black"),
                 opacity=0.9,
             ),
-            selected=dict(marker=dict(opacity=1.0)),
-            unselected=dict(marker=dict(opacity=1.0)),
-            selected=dict(name=dict(opacity=1.0)),
-            unselected=dict(name=dict(opacity=1.0)),
-            selected=dict(text=dict(opacity=1.0)),
-            unselected=dict(text=dict(opacity=1.0))
+            selected=dict(
+                marker=dict(opacity=0.9), 
+                textfont=dict(color="black") # Hält den Text schwarz
+            ),
+            unselected=dict(
+                marker=dict(opacity=0.9), 
+                textfont=dict(color="black") # Verhindert das Ausgrauen des Textes
+            )
         ))
 
     fig.update_geos(
