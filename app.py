@@ -398,7 +398,7 @@ def main() -> None:
                     st.session_state.pop("last_clicked_index", None)
 
         # Wenn Wind (14) geklickt wird -> Öffne das Pop-up!
-        if curve_number == 24 and point_index is not None:
+        if "last_clicked_index" in st.session_state and point_index is not None:
             node_adjustment_modal(point_index)
         # Hier nun die Anzeige basierend auf dem State
         if "last_clicked_index" in st.session_state:
