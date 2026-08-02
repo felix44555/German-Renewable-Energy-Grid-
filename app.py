@@ -384,7 +384,7 @@ def main() -> None:
                     st.session_state.pop("last_clicked_index", None)
 
         st.write(event)
-        
+        st.write(f" {st.session_state['last_clicked_index']}")
         # Hier nun die Anzeige basierend auf dem State
         if "last_clicked_index" in st.session_state:
             st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['last_clicked_index']} angeklickt!")    
