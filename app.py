@@ -409,16 +409,16 @@ def main() -> None:
                 # FILTER: Nur wenn die curveNumber 14 (Wind) ist, speichern wir den Klick
                 if curve_number == 24 and point_index is not None:
                     st.session_state["clicked_point_index"] = point_index
-                    st.session_state["last_clicked_index"] = point_index # Für dein st.write unten
+                    #st.session_state["last_clicked_index"] = point_index # Für dein st.write unten
                 
                 # Optional: Wenn man auf etwas anderes (z.B. curve 15) klickt, 
                 # heben wir die Wind-Auswahl wieder auf
                 elif curve_number != 24:
                     st.session_state.pop("clicked_point_index", None)
-                    st.session_state.pop("last_clicked_index", None)
+                    #st.session_state.pop("last_clicked_index", None)
 
         # Wenn Wind (14) geklickt wird -> Öffne das Pop-up!
-        if "last_clicked_index" in st.session_state and point_index is not None:
+        if "clicked_point_index" in st.session_state:
             node_adjustment_modal(point_index)
         # Hier nun die Anzeige basierend auf dem State
         if "last_clicked_index" in st.session_state:
