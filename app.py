@@ -380,8 +380,8 @@ def main() -> None:
                 # Optional: Wenn man auf etwas anderes (z.B. curve 15) klickt, 
                 # heben wir die Wind-Auswahl wieder auf
                 elif curve_number != 24:
-                    st.session_state.pop("clicked_point_index", None)
-                    st.session_state.pop("last_clicked_index", None)
+                    st.session_state["clicked_point_index"] = 0
+                    st.session_state["last_clicked_index"] = 0 # Für dein st.write unten
 
         st.write(event)
         st.write(f" {st.session_state['last_clicked_index']}")
