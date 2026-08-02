@@ -111,8 +111,6 @@ def build_map(
                 ),
                 hoverinfo="text",
                 showlegend=False,
-                selected=dict(marker=dict(opacity=1.0)),
-                unselected=dict(marker=dict(opacity=1.0))
             ))
             #Sichtbare Lines zeichnen
             fig.add_trace(go.Scattergeo(
