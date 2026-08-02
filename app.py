@@ -55,6 +55,20 @@ def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.D
     return load_smard_api_profile(day_iso, region=region)
 #ebenfalls wird funktion nicht jedes mal geladen, zeitlich jedoch auf 3600s begrenztz (STunde)'''
 
+@st.dialog("Knoten-Erzeugung anpassen")
+def node_adjustment_modal(node_index):
+    st.write(f"Du bearbeitest den Wind-Knoten mit der ID: {node_index}")
+    
+    # Hier kommt dein UI für den einzelnen Knoten rein
+    neuer_wert = st.slider("Lokale Wind-Erzeugung [%]", 0, 100, 100)
+    
+    if st.button("Speichern & Berechnen"):
+        # 1. Wert in den globalen Speicher schreiben
+        st.session_state[f"wind_node_{node_index}"] = neuer_wert
+        
+        # 2. Modal schließen und Rerun triggern
+        st.rerun()
+
 def _load_network_tables() -> tuple[Any, dict[str, float], pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     if not NETWORK_FILE.exists():
         raise FileNotFoundError(f"Netzdatei nicht gefunden: {NETWORK_FILE.name}")
@@ -383,7 +397,9 @@ def main() -> None:
                     st.session_state.pop("clicked_point_index", None)
                     st.session_state.pop("last_clicked_index", None)
 
-        st.write(event)
+        # Wenn Wind (14) geklickt wird -> Öffne das Pop-up!
+        if "last_clicked_index" in st.session_state and point_index is not None:
+            node_adjustment_modal(point_index)
         # Hier nun die Anzeige basierend auf dem State
         if "last_clicked_index" in st.session_state:
             st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['last_clicked_index']} angeklickt!")    
