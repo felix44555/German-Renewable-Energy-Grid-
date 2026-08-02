@@ -187,10 +187,14 @@ def build_map(
                 color=TYP_COLORS["Verbraucher"],
                 symbol=TYP_SYMBOLS["Verbraucher"],
                 line=dict(width=1.2, color="black"),
-                #opacity=0.9,
+                opacity=0.9,
             ),
             selected=dict(marker=dict(opacity=1.0)),
-            unselected=dict(marker=dict(opacity=1.0))
+            unselected=dict(marker=dict(opacity=1.0)),
+            selected=dict(name=dict(opacity=1.0)),
+            unselected=dict(name=dict(opacity=1.0)),
+            selected=dict(text=dict(opacity=1.0)),
+            unselected=dict(text=dict(opacity=1.0))
         ))
 
     fig.update_geos(
