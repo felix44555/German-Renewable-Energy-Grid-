@@ -6,34 +6,6 @@ import pandas as pd
 HOURS = np.arange(24)
 
 
-def generate_synthetic_profiles(refs: dict[str, float], seed: int = 7) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    h = HOURS
-    raw_load_shape = (
-        55.0
-        + 12.0 * np.exp(-((h - 8) ** 2) / 6.0)
-        + 8.0 * np.exp(-((h - 13) ** 2) / 10.0)
-        + 18.0 * np.exp(-((h - 19) ** 2) / 5.0)
-    )
-    load_shape = raw_load_shape / float(np.mean(raw_load_shape))
-    load = refs["load_mean_gw"] * load_shape
-
-    pv_shape = np.where((h >= 6) & (h <= 20), np.exp(-((h - 13) ** 2) / 9.0), 0.0)
-    pv = refs["pv_gw"] * 0.55 * pv_shape
-
-    raw_wind = rng.normal(loc=0.45, scale=0.18, size=24)
-    wind_factor = np.convolve(raw_wind, np.ones(5) / 5.0, mode="same")
-    wind_factor = np.clip(wind_factor, 0.08, 0.85)
-    wind = refs["wind_gw"] * wind_factor
-
-    out = pd.DataFrame({"Stunde": h, "Last_GW": load, "Wind_GW": wind, "PV_GW": pv})
-    out["Konv_GW"] = 0.0
-    out["BESS_GW"] = 0.0
-    out["SMARD_EE_Orientierung_GW"] = out["Wind_GW"] + out["PV_GW"]
-    out["SMARD_Zielluecke_GW"] = out["Last_GW"] - out["SMARD_EE_Orientierung_GW"]
-    return out
-
-
 def _as_nonnegative_float(value: object, default: float = 0.0) -> float:
     try:
         out = float(value)
