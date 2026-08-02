@@ -9,7 +9,7 @@ import streamlit as st
 import copy
 
 from dc_powerflow import compute_dc_line_status, find_max_line_utilization_24h
-from dispatch import generate_synthetic_profiles, prepare_dispatch_profiles
+from dispatch import prepare_dispatch_profiles
 from grid_io import (
     ensure_bess_visible,
     get_reference_values,
@@ -66,9 +66,13 @@ def node_adjustment_modal(node_index):
         """,
         unsafe_allow_html=True
     )
-
+    if f"wind_node_{node_index}" in st.session_state :
+        aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
+    else:
+        aktuellerWert = 100
+    
     st.write(f"Du bearbeitest den Wind-Knoten mit der ID: {node_index}")
-    neuer_wert = st.slider("Lokale Wind-Erzeugung [%]", 0, 100, 100)
+    neuer_wert = st.slider("Lokale Wind-Erzeugung [%]", 0, 100, aktuellerWert)
     
     c_left, c_right = st.columns(2)
     
@@ -182,7 +186,6 @@ def main() -> None:
         #    index=0,
         #    help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
         #)
-        profile_source = "SMARD-API"
         current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         is_locked = st.session_state.get("date_locked", True)
         

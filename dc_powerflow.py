@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-
+import streamlit as st
 
 def _as_float(value: object, default: float = 0.0) -> float:
     try:
@@ -123,6 +123,51 @@ def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
 
             share = _as_float(gen.get("Anteil", 0.0), 0.0)
             nodal.loc[bus, typ_to_col[typ]] += share * typ_power[typ]
+            
+    # -----------------------------------------------------------------
+    # NEU: MANUELLE KNOTEN-ANPASSUNGEN (WIND -> KONV)
+    # -----------------------------------------------------------------
+    if not generators.empty and "Bus" in generators.columns:
+        
+        # Welcher Knoten soll die fehlende Leistung übernehmen?
+        # Ich suche hier automatisch den konventionellen Generator mit dem 
+        # größten Anteil. Du kannst hier auch hart einen Bus-Namen eintragen!
+        ersatz_bus = "DE0 1"
+        for gen_idx, gen in generators.iterrows():
+            typ = str(gen.get("Typ", ""))
+            bus = str(gen.get("Bus", ""))
+
+            if typ == "Wind":
+                try:
+                    # Schneidet "DE0 " ab und wandelt den Rest in eine Zahl um
+                    knoten_nummer = int(bus.replace("DE0 ", "").strip())
+                except ValueError:
+                    continue # Falls der Name mal ganz anders lautet, ignorieren wir ihn
+                    
+                state_key = f"wind_node_{knoten_nummer}"
+                
+                if state_key in st.session_state:
+                    # Der Wert vom Slider (0 bis 100)
+                    slider_prozent = st.session_state[state_key] / 100.0 
+                    
+                    # Wie viel Wind war hier normalerweise?
+                    share = _as_float(gen.get("Anteil", 0.0), 0.0)
+                    original_wind_hier = share * typ_power["Wind"]
+                    
+                    # Wie viel fehlt jetzt?
+                    neuer_wind_hier = original_wind_hier * slider_prozent
+                    fehlender_wind = original_wind_hier - neuer_wind_hier
+                    
+                    # 1. Wir ziehen den Wind am Original-Knoten ab
+                    nodal.loc[bus, "Wind_GW"] -= fehlender_wind
+                    
+                    # 2. Wir addieren exakt die fehlende Menge auf den Konv-Knoten
+                    if ersatz_bus is not None and ersatz_bus in nodal.index:
+                        nodal.loc[ersatz_bus, "Konv_GW"] += fehlender_wind
+
+    # -----------------------------------------------------------------
+    # ENDE NEU
+    # -----------------------------------------------------------------
 
     total_load = _as_float(hour_row.get("Last_GW", 0.0), 0.0)
 
