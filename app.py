@@ -402,27 +402,28 @@ def main() -> None:
             if len(points) > 0:
                 clicked_point = points[0]
                 
-                # Lese curveNumber und pointIndex aus (wie Struct-Member-Zugriff in C)
-                curve_number = clicked_point.get("curve_number")
-                point_index = clicked_point.get("point_index")
+                # ACHTUNG: Plotly-Keys sind camelCase (wie Struct-Member)
+                curve_number = clicked_point.get("curveNumber")
+                point_index = clicked_point.get("pointIndex")
 
-                # FILTER: Nur wenn die curveNumber 14 (Wind) ist, speichern wir den Klick
+                # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
                 if curve_number == 24 and point_index is not None:
                     st.session_state["clicked_point_index"] = point_index
-                    #st.session_state["last_clicked_index"] = point_index # Für dein st.write unten
                 
-                # Optional: Wenn man auf etwas anderes (z.B. curve 15) klickt, 
-                # heben wir die Wind-Auswahl wieder auf
+                # Optional: Wenn man auf etwas anderes klickt, heben wir die Auswahl wieder auf
                 elif curve_number != 24:
                     st.session_state.pop("clicked_point_index", None)
-                    #st.session_state.pop("last_clicked_index", None)
 
-        # Wenn Wind (14) geklickt wird -> Öffne das Pop-up!
+        # Wenn Wind geklickt wurde -> Öffne das Pop-up!
+        # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
         if "clicked_point_index" in st.session_state:
-            node_adjustment_modal(point_index)
-        # Hier nun die Anzeige basierend auf dem State
-        if "last_clicked_index" in st.session_state:
-            st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['last_clicked_index']} angeklickt!")    
+            sicherer_index = st.session_state["clicked_point_index"]
+            node_adjustment_modal(sicherer_index)
+            
+        # Optionales Debugging:
+        if "clicked_point_index" in st.session_state:
+            st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
+
         ####################################ENDE TEST####################################
         #st.subheader("Zeitslider")
         st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
