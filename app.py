@@ -365,65 +365,66 @@ def main() -> None:
     c_left, c_right = st.columns([1.2, 1.0])
     with c_left:
         st.subheader("Netzkarte")
-       # st.plotly_chart(
-       #     build_map(
-       #         generators=generators,
-       #         consumers=consumers,
-       #         lines=line_status,
-       #         hour_row=hour_row,
-       #         wind_scale=wind_scale,
-       #        pv_scale=pv_scale,
-       #         konv_scale=konv_scale,
-       #         bess_scale=bess_scale,
-       #         refs=refs,
-       #     ),
-       #     width="stretch",
-        #)
         ##########################ANFANG TEST###########################################
         # Statt st.plotly_chart(fig)
         # Nutze on_select="rerun", um bei jedem Klick das Skript neu zu laden
-        event = st.plotly_chart(
-            build_map(
-                   generators=generators,
-                   consumers=consumers,
-                   lines=line_status,
-                   hour_row=hour_row,
-                   wind_scale=wind_scale,
-                   pv_scale=pv_scale,
-                   konv_scale=konv_scale,
-                   bess_scale=bess_scale,
-                   refs=refs,
-               ),
-               width="stretch", on_select="rerun", key=f"map_{st.session_state['map_key']}")
-
-        # Auswertung des Klicks
-        if event and "selection" in event and event["selection"].get("points"):
-            points = event["selection"]["points"]
-            if len(points) > 0:
-                clicked_point = points[0]
+        if  st.session_state.get("scenario_key") == "Wind":
+            event = st.plotly_chart(
+                build_map(
+                       generators=generators,
+                       consumers=consumers,
+                       lines=line_status,
+                       hour_row=hour_row,
+                       wind_scale=wind_scale,
+                       pv_scale=pv_scale,
+                       konv_scale=konv_scale,
+                       bess_scale=bess_scale,
+                       refs=refs,
+                   ),
+                   width="stretch", on_select="rerun", key=f"map_{st.session_state['map_key']}")
+    
+            # Auswertung des Klicks
+            if event and "selection" in event and event["selection"].get("points"):
+                points = event["selection"]["points"]
+                if len(points) > 0:
+                    clicked_point = points[0]
+                    
+                    # ACHTUNG: Plotly-Keys sind camelCase (wie Struct-Member)
+                    curve_number = clicked_point.get("curve_number")
+                    point_index = clicked_point.get("point_index")
+    
+                    # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
+                    if curve_number == 24 and point_index is not None:
+                        st.session_state["clicked_point_index"] = point_index
+                    
+                    # Optional: Wenn man auf etwas anderes klickt, heben wir die Auswahl wieder auf
+                    elif curve_number != 24:
+                        st.session_state.pop("clicked_point_index", None)
+    
+            # Wenn Wind geklickt wurde -> Öffne das Pop-up!
+            # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
+            if "clicked_point_index" in st.session_state:
+                sicherer_index = st.session_state["clicked_point_index"]
+                node_adjustment_modal(sicherer_index)
                 
-                # ACHTUNG: Plotly-Keys sind camelCase (wie Struct-Member)
-                curve_number = clicked_point.get("curve_number")
-                point_index = clicked_point.get("point_index")
-
-                # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
-                if curve_number == 24 and point_index is not None:
-                    st.session_state["clicked_point_index"] = point_index
-                
-                # Optional: Wenn man auf etwas anderes klickt, heben wir die Auswahl wieder auf
-                elif curve_number != 24:
-                    st.session_state.pop("clicked_point_index", None)
-
-        # Wenn Wind geklickt wurde -> Öffne das Pop-up!
-        # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
-        if "clicked_point_index" in st.session_state:
-            sicherer_index = st.session_state["clicked_point_index"]
-            node_adjustment_modal(sicherer_index)
-            
-        # Optionales Debugging:
-        if "clicked_point_index" in st.session_state:
-            st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
-
+            # Optionales Debugging:
+            if "clicked_point_index" in st.session_state:
+                st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
+        else:
+             st.plotly_chart(
+                 build_map(
+                     generators=generators,
+                     consumers=consumers,
+                     lines=line_status,
+                     hour_row=hour_row,
+                     wind_scale=wind_scale,
+                    pv_scale=pv_scale,
+                     konv_scale=konv_scale,
+                     bess_scale=bess_scale,
+                     refs=refs,
+                 ),
+                 width="stretch",
+             )
         ####################################ENDE TEST####################################
         #st.subheader("Zeitslider")
         st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
