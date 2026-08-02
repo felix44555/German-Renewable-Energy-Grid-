@@ -111,6 +111,8 @@ def build_map(
                 ),
                 hoverinfo="text",
                 showlegend=False,
+                selected=dict(marker=dict(opacity=1.0)),
+                unselected=dict(marker=dict(opacity=1.0))
             ))
             #Sichtbare Lines zeichnen
             fig.add_trace(go.Scattergeo(
@@ -121,6 +123,8 @@ def build_map(
                 opacity=0.78,
                 hoverinfo="none",
                 showlegend=False,
+                selected=dict(marker=dict(opacity=1.0)),
+                unselected=dict(marker=dict(opacity=1.0))
             ))
 
     typ_to_value = {
@@ -165,6 +169,8 @@ def build_map(
                 line=dict(width=1, color="black"),
                 opacity=0.9,
             ),
+            selected=dict(marker=dict(opacity=1.0)),
+            unselected=dict(marker=dict(opacity=1.0))
         ))
 
     if not consumers.empty:
@@ -185,6 +191,8 @@ def build_map(
                 line=dict(width=1.2, color="black"),
                 opacity=0.9,
             ),
+            selected=dict(marker=dict(opacity=1.0)),
+            unselected=dict(marker=dict(opacity=1.0))
         ))
 
     fig.update_geos(
