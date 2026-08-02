@@ -77,14 +77,14 @@ def node_adjustment_modal(node_index):
             st.session_state[f"wind_node_{node_index}"] = neuer_wert
             
             # WICHTIG: State Machine resetten und Karte neu laden
-            st.session_state.pop("processed_point", None)
+            st.session_state.pop("clicked_point_index", None)
             st.session_state["map_key"] += 1 
             st.rerun() 
             
     with c_right:
         if st.button("Abbrechen"):
             # WICHTIG: State Machine resetten und Karte neu laden
-            st.session_state.pop("processed_point", None)
+            st.session_state.pop("clicked_point_index", None)
             st.session_state["map_key"] += 1 
             st.rerun()
 
