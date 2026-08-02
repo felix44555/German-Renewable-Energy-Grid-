@@ -369,8 +369,8 @@ def main() -> None:
                 clicked_point = points[0]
                 
                 # Lese curveNumber und pointIndex aus (wie Struct-Member-Zugriff in C)
-                curve_number = clicked_point.get("curveNumber")
-                point_index = clicked_point.get("pointIndex")
+                curve_number = clicked_point.get("curve_number")
+                point_index = clicked_point.get("point_index")
 
                 # FILTER: Nur wenn die curveNumber 14 (Wind) ist, speichern wir den Klick
                 if curve_number == 24 and point_index is not None:
