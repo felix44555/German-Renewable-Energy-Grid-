@@ -185,7 +185,7 @@ def main() -> None:
     with st.sidebar:
         st.header("Sprache")
         lang = st.radio("Sprache / Language", options=["DE", "EN"])
-        st.session.state["lang"] = lang
+        st.session_state["lang"] = lang
         st.divider()
         st.header("Szenario")
         scenario_key = st.selectbox(
