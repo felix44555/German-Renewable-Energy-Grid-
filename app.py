@@ -405,13 +405,12 @@ def main() -> None:
                     point_index = clicked_point.get("point_index")
     
                     # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
-                    if curve_number == 24 and point_index is not None:
+                    if (curve_number == 24 or curve_number == 24 )and point_index is not None:
                         st.session_state["clicked_point_index"] = point_index
-                    
-                    # Optional: Wenn man auf etwas anderes klickt, heben wir die Auswahl wieder auf
-                    elif curve_number != 24:
+                    elif not (curve_number == 24 or curve_number == 24 ):
                         st.session_state.pop("clicked_point_index", None)
-    
+            
+            st.write(event)
             # Wenn Wind geklickt wurde -> Öffne das Pop-up!
             # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
             if "clicked_point_index" in st.session_state:
