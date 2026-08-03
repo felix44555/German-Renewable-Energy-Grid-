@@ -139,6 +139,9 @@ def reset_slider():
 def main() -> None:
     if not "lang" in st.session_state:
         lang = "DE"
+    else:
+        lang = st.session_state["lang"]
+        
     st.set_page_config(page_title=TXT[lang]["Seitentitel"], layout="wide")
     init_session_state()
     # --- TUTORIAL BANNER START ---
