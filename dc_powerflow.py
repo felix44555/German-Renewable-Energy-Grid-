@@ -135,7 +135,7 @@ def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
             typ = str(gen.get("Typ", ""))
             bus = str(gen.get("Bus", ""))
 
-            if typ == "Wind":
+            if typ == "Wind" and st.session_state.get("scenario_key") == "Wind2":
                 try:
                     # Schneidet "DE0 " ab und wandelt den Rest in eine Zahl um
                     knoten_nummer = int(bus.replace("DE0 ", "").strip())
