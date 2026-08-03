@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 import copy
 
+from texts import TXT
 from dc_powerflow import compute_dc_line_status, find_max_line_utilization_24h
 from dispatch import prepare_dispatch_profiles
 from grid_io import (
@@ -57,7 +58,7 @@ def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.D
 
 @st.dialog("Knoten-Erzeugung anpassen")
 def node_adjustment_modal(node_index):
-    # Der CSS-Hack bleibt...
+    lang = st.session.state["lang"] 
     st.markdown(
         """
         <style>
@@ -71,7 +72,7 @@ def node_adjustment_modal(node_index):
     else:
         aktuellerWert = 100
     
-    st.write(f"Du bearbeitest den Wind-Knoten mit der ID: {node_index}")
+    st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
     neuer_wert = st.slider("Lokale Wind-Erzeugung [%]", 0, 100, aktuellerWert)
     
     c_left, c_right = st.columns(2)
@@ -184,6 +185,7 @@ def main() -> None:
     with st.sidebar:
         st.header("Sprache")
         lang = st.radio("Sprache / Language", options=["DE", "EN"])
+        st.session.state["lang"] = lang
         st.divider()
         st.header("Szenario")
         scenario_key = st.selectbox(
