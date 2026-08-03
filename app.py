@@ -137,7 +137,8 @@ def reset_slider():
     st.session_state["line_capacity_pct"]=100
     
 def main() -> None:
-    lang = st.session_state["lang"] 
+    if not "lang" in st.session_state:
+        lang = "DE"
     st.set_page_config(page_title=TXT[lang]["Seitentitel"], layout="wide")
     init_session_state()
     # --- TUTORIAL BANNER START ---
