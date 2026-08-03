@@ -50,6 +50,5 @@ TXT = {
         "soc_slider":"BESS start-SOC [%]",
         "titel_EE":"Grid measures",
         "slider_Netz":"Conductor capacity / grid expansion [%]"
-
     }
 }
