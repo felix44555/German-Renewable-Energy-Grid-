@@ -147,16 +147,15 @@ def build_map(
         sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
         # 2. Spezifische Anpassung NUR für Wind
         if typ == "Wind":
-            # Wir iterieren durch alle Zeilen (Knoten-IDs) der Wind-Tabelle
-            for idx in sub.index:
-                state_key = f"wind_node_{idx}"
+           for i, idx in enumerate(sub.index):
                 
-                # Wenn für genau diesen Knoten ein Slider-Wert existiert
+                # Wir suchen den Key nach dem Plotly-Index (wie im Klick-Event gespeichert)
+                state_key = f"wind_node_{i}" 
+                
                 if state_key in st.session_state:
-                    # Slider geht von 0 bis 100 (Prozent), wir brauchen einen Faktor (z.B. 0.8)
                     faktor = st.session_state[state_key] / 100.0 
                     
-                    # sub.at ist das Python-Äquivalent zu struct_array[idx].Aktuell_GW
+                    # Wir schreiben den Wert unter der echten Pandas-ID zurück
                     sub.at[idx, "Aktuell_GW"] = sub.at[idx, "Aktuell_GW"] * faktor
         
         sub = apply_marker_offsets(sub)
