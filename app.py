@@ -137,10 +137,6 @@ def reset_slider():
     st.session_state["line_capacity_pct"]=100
     
 def main() -> None:
-    #if not "lang" in st.session_state:
-    #    lang = "DE"
-    #else:
-    #    lang = st.session_state["lang"]
     lang = st.session_state.get("lang", "DE")  
     st.set_page_config(page_title=TXT[lang]["Seitentitel"], layout="wide")
     init_session_state()
@@ -150,7 +146,7 @@ def main() -> None:
     
         st.info(TXT[lang]["neu_hier_txt"])
     
-        st.page_link("pages/1_Tutorial.py", label="Zum Tutorial")
+        st.page_link("pages/1_Tutorial.py", label=TXT[lang]["Tutorial_Knopf"])
     
         st.divider()
 
@@ -160,10 +156,6 @@ def main() -> None:
         "SMARD wird nur für Netzlast, Wind und PV genutzt. Externe Importe/Exporte und SMARD-Restkategorien "
         "werden nicht geladen. Die restlichen Erzeuger werden künstlich als konventionelle Erzeuger netzstützend modelliert."# Die restlichen Erzeuger werden künstlich als regelbare Leistung aus der .nc-/Fallback-Kapazität modelliert."
     )
-    #st.caption(
-     #   f"Version: {APP_VERSION}. Module: smard_api.py, dispatch.py, grid_io.py, dc_powerflow.py, visualization.py, scenarios.py. "
-     #  "Leitungsauslastung wird mit einer DC-Lastfluss-Näherung gerechnet."
-    #)
 
     try:
         _, refs, consumers, generators, lines = _load_network_tables()

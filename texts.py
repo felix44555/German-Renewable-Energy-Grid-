@@ -12,7 +12,8 @@ TXT = {
         "Abbruch_Knopf_wind": "Abbrechen",
         "Stellgrößen": "Stellgrößen",
         "Seitentitel": "Deutschland-Netzkarte: SMARD + DC-Lastfluss",
-        "neu_hier_txt": "👋 Neu im Simulator? Lerne die Grundlagen der Netzbalance in unserem Tutorial."
+        "neu_hier_txt": "👋 Neu im Simulator? Lerne die Grundlagen der Netzbalance in unserem Tutorial.",
+        "Tutorial_Knopf": "Zum Tutorial"
     },
     "EN": {
         "title": "Germany Grid Map",
@@ -25,6 +26,7 @@ TXT = {
         "Abbruch_Knopf_wind": "Abort",
         "Stellgrößen": "Adjustable values",
         "Seitentitel": "German grid map: SMARD + DC-Loadflow",
-        "neu_hier_txt": "👋 First time in this Simulator? Learn the basics of grid balance in our tutorial."
+        "neu_hier_txt": "👋 First time in this Simulator? Learn the basics of grid balance in our tutorial.",
+        "Tutorial_Knopf": "Go to the tutorial"
     }
 }
