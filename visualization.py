@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -144,6 +145,20 @@ def build_map(
             continue
         sub["Aktuell_GW"] = sub["Anteil"] * typ_to_value[typ]
         sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
+        # 2. Spezifische Anpassung NUR für Wind
+        if typ == "Wind":
+            # Wir iterieren durch alle Zeilen (Knoten-IDs) der Wind-Tabelle
+            for idx in sub.index:
+                state_key = f"wind_node_{idx}"
+                
+                # Wenn für genau diesen Knoten ein Slider-Wert existiert
+                if state_key in st.session_state:
+                    # Slider geht von 0 bis 100 (Prozent), wir brauchen einen Faktor (z.B. 0.8)
+                    faktor = st.session_state[state_key] / 100.0 
+                    
+                    # sub.at ist das Python-Äquivalent zu struct_array[idx].Aktuell_GW
+                    sub.at[idx, "Aktuell_GW"] = sub.at[idx, "Aktuell_GW"] * faktor
+        
         sub = apply_marker_offsets(sub)
         marker_size = 10 + np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"]), 0.0)) * 4.0
         fig.add_trace(go.Scattergeo(
