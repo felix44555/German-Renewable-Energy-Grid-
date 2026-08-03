@@ -75,14 +75,14 @@ def node_adjustment_modal(node_index, symbol_typ):
         
         st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
         neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
-    elif symbol_typ == "konv":
-        if f"konv_node_{node_index}" in st.session_state :
-            aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
-        else:
-            aktuellerWert = 100
-        
-            st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
-            neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
+    #elif symbol_typ == "konv":
+    #    if f"konv_node_{node_index}" in st.session_state :
+    #        aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
+    #    else:
+    #        aktuellerWert = 100
+    #    
+    #        st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
+    #        neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
         
     c_left, c_right = st.columns(2)
     
@@ -180,12 +180,12 @@ def main() -> None:
         state_key = f"wind_node_{node_id}"
         if state_key not in st.session_state:
             st.session_state[state_key] = 100
-    konv_generators = generators[generators["Typ"] == "Konventionell"] 
-    # Die Iteration (foreach-Schleife)
-    for node_id in konv_generators.index:
-        state_key = f"konv_node_{node_id}"
-        if state_key not in st.session_state:
-            st.session_state[state_key] = 100
+   # load_generators = generators[generators["Typ"] == "Konventionell"] 
+   # # Die Iteration (foreach-Schleife)
+   # for node_id in load_generators.index:
+   #     state_key = f"load_node_{node_id}"
+   #     if state_key not in st.session_state:
+   #         st.session_state[state_key] = 100
             
     # 3. reset bei Szenario wechsel
     if st.session_state["data_just_loaded"]:
@@ -425,14 +425,15 @@ def main() -> None:
                     if curve_number == 24 and point_index is not None:
                         st.session_state["clicked_point_index"] = point_index
                         st.session_state["clicked_point_type"] = "wind"
-                    elif curve_number == 26 and point_index is not None:
-                        st.session_state["clicked_point_index"] = point_index
-                        st.session_state["clicked_point_type"] = "konv"
-                    elif not (curve_number == 24 or curve_number == 26 ):
+                    #elif curve_number == 26 and point_index is not None:
+                    #    st.session_state["clicked_point_index"] = point_index
+                    #    st.session_state["clicked_point_type"] = "konv"
+                    #elif not (curve_number == 24 or curve_number == 26 ):
+                    else:
                         st.session_state.pop("clicked_point_index", None)
                         st.session_state.pop("clicked_point_type", None)
             
-            st.write(event)
+            #st.write(event)
             # Wenn Wind geklickt wurde -> Öffne das Pop-up!
             # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
             if "clicked_point_index" in st.session_state:
@@ -441,8 +442,8 @@ def main() -> None:
                 node_adjustment_modal(sicherer_index, symbol_typ)
                 
             # Optionales Debugging:
-            if "clicked_point_index" in st.session_state:
-                st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
+            #if "clicked_point_index" in st.session_state:
+            #    st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
         else:
              st.plotly_chart(
                  build_map(
