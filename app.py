@@ -182,6 +182,9 @@ def main() -> None:
                 st.session_state[key] = 100   
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
     with st.sidebar:
+        st.header("Sprache")
+        lang = st.radio("Sprache / Language", options=["DE", "EN"])
+        st.divider()
         st.header("Szenario")
         scenario_key = st.selectbox(
             "Aufgabe",
