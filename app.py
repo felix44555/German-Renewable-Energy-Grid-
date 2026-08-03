@@ -164,17 +164,22 @@ def main() -> None:
         st.error(str(exc))
         st.stop()
         
-    # 1. Wir filtern das DataFrame (die Tabelle) nach Wind-Generatoren.
+ 
     wind_generators = generators[generators["Typ"] == "Wind"] 
-
-    # 2. Die Iteration (foreach-Schleife)
+    # Die Iteration (foreach-Schleife)
     for node_id in wind_generators.index:
         state_key = f"wind_node_{node_id}"
-        
-        # Der C-Pointer-Check: if (speicher[key] == NULL)
         if state_key not in st.session_state:
             st.session_state[state_key] = 100
             
+    # 3. reset bei Szenario wechsel
+    if st.session_state["data_just_loaded"]:
+        # Wir iterieren über alle aktuell existierenden Keys im globalen Speicher
+        for key in st.session_state.keys():
+            # Wenn der Key mit "wind_node_" beginnt (C-Analogie: strncmp)
+            if str(key).startswith("wind_node_"):
+                # Setze den Wert hart auf 100 zurück
+                st.session_state[key] = 100   
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
     with st.sidebar:
         st.header("Szenario")
