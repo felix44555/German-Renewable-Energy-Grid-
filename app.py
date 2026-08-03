@@ -186,7 +186,7 @@ def main() -> None:
         st.divider()
         st.header("Szenario")
         scenario_key = st.selectbox(
-            "Aufgabe",
+            TXT[lang]["Aufgabe"],
             options=list(SCENARIOS.keys()),
             format_func=lambda k: SCENARIOS[k].get("name", k),
             key="scenario_key",
@@ -194,17 +194,8 @@ def main() -> None:
         )
         scenario = SCENARIOS[scenario_key]
         st.info(str(scenario.get("task", "")))
-        #if st.button("Szenario-Startwerte laden"): #Button zum laden ersetzt
-         #   load_scenario_defaults(scenario_key)
-         #   st.rerun()
 
-        st.header("Datenquelle")
-        #profile_source = st.radio(
-        #    "Zeitreihe",
-        #    options=["SMARD-API", "synthetisch"],
-        #    index=0,
-        #    help="SMARD lädt nur Netzlast, Wind Offshore/Onshore und PV. Restliche Erzeuger kommen nicht aus SMARD.",
-        #)
+        st.header(TXT[lang]["Datenquelle"])
         current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
         is_locked = st.session_state.get("date_locked", True)
         
@@ -212,7 +203,7 @@ def main() -> None:
         st.session_state["smard_day"] = current_date
         
         smard_day = st.date_input(
-            "SMARD-Datum",
+            TXT[lang]["SMARD_Datum"],
             value = current_date,
             min_value=date(2015, 1, 1),
             max_value=date.today() - timedelta(days=2),
@@ -226,20 +217,20 @@ def main() -> None:
         #region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
         region = "DE"
         
-        st.header("Stellgrößen")
-        wind_pct = st.slider("Wind [% der SMARD-Orientierung]", 0, 300, key="wind_pct", step=5)
-        pv_pct = st.slider("PV [% der SMARD-Orientierung]", 0, 300, key="pv_pct", step=5)
+        st.header(TXT[lang]["Stellgrößen"])
+        wind_pct = st.slider(TXT[lang]["wind_slider"], 0, 300, key="wind_pct", step=5)
+        pv_pct = st.slider(TXT[lang]["pv_slider"], 0, 300, key="pv_pct", step=5)
         #konv_pct = st.slider("Restliche Erzeuger verfügbare Leistung [%]", 0, 250, key="konv_pct", step=5, help="Skaliert die verfügbare regelbare Leistung aus .nc/Fallback. Nicht SMARD-gekoppelt.",)
         konv_pct = 100.0
         #konv_min_pct = st.slider("Restliche Erzeuger Mindestbetrieb [% verfügbar]", 0, 80, key="konv_min_pct", step=5, help="0 % bedeutet vollständig herunterfahrbar. Höhere Werte erzeugen bei viel EE eher Überschuss.",)
         konv_min_pct = 0.0
-        bess_pct = st.slider("BESS Leistung/Energie [%]", 0, 500, key="bess_pct", step=5)
+        bess_pct = st.slider(TXT[lang]["batterie_slider"], 0, 500, key="bess_pct", step=5)
         #load_pct = st.slider("Last/Ziel [% der SMARD-Last]", 50, 200, key="load_pct", step=5)
         load_pct = st.session_state["load_pct"] 
-        soc_pct = st.slider("BESS Start-SOC [%]", 0, 100, key="soc_pct", step=5)
+        soc_pct = st.slider(TXT[lang]["soc_slider"], 0, 100, key="soc_pct", step=5)
         #st.info(str(load_pct))
-        st.header("Netz- und EE-Maßnahmen")
-        line_capacity_pct = st.slider("Leitungskapazität / Netzausbau [%]", 50, 200, key="line_capacity_pct", step=5)
+        st.header(TXT[lang]["titel_EE"])
+        line_capacity_pct = st.slider(TXT[lang]["slider_Netz"], 50, 200, key="line_capacity_pct", step=5)
         ee_curtail_pct = 100.0
         
         #st.caption(
