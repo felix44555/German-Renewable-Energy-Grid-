@@ -13,7 +13,9 @@ TXT = {
         "Stellgrößen": "Stellgrößen",
         "Seitentitel": "Deutschland-Netzkarte: SMARD + DC-Lastfluss",
         "neu_hier_txt": "👋 Neu im Simulator? Lerne die Grundlagen der Netzbalance in unserem Tutorial.",
-        "Tutorial_Knopf": "Zum Tutorial"
+        "Tutorial_Knopf": "Zum Tutorial",
+        "Website_Title": "Deutschland-Netzkarte: SMARD-API, regelbare Restleistung und DC-Lastfluss",
+        "Website_Untertitel": "SMARD wird nur für Netzlast, Wind und PV genutzt. Externe Importe/Exporte und SMARD-Restkategorien werden nicht geladen. Die restlichen Erzeuger werden künstlich als konventionelle Erzeuger netzstützend modelliert."
     },
     "EN": {
         "title": "Germany Grid Map",
@@ -27,6 +29,9 @@ TXT = {
         "Stellgrößen": "Adjustable values",
         "Seitentitel": "German grid map: SMARD + DC-Loadflow",
         "neu_hier_txt": "👋 First time in this Simulator? Learn the basics of grid balance in our tutorial.",
-        "Tutorial_Knopf": "Go to the tutorial"
+        "Tutorial_Knopf": "Go to the tutorial",
+        "Website_Title": "German grid map: SMARD-API, adjustable konventional power and DC-Loadflow",
+        "Website_Untertitel": "SMARD is just used for the load, wind and PV. Extern Imports/Exports and remaining SMARD-kategories are not used. The remaining power plants are artificially modelled as conventionel power plants which support the network"
+
     }
 }
