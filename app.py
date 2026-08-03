@@ -180,7 +180,7 @@ def main() -> None:
                 st.session_state[key] = 100   
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
     with st.sidebar:
-        st.header("Sprache")
+        st.header(TXT[lang]["Sprache"])
         st.radio("Sprache / Language", options=["DE", "EN"], key="lang")
         #st.session_state["lang"] = lang
         st.divider()
