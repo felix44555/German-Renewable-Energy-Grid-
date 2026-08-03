@@ -57,7 +57,7 @@ def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.D
 #ebenfalls wird funktion nicht jedes mal geladen, zeitlich jedoch auf 3600s begrenztz (STunde)'''
 
 @st.dialog("Knoten-Erzeugung anpassen")
-def node_adjustment_modal(node_index):
+def node_adjustment_modal(node_index, symbol_typ):
     lang = st.session_state["lang"] 
     st.markdown(
         """
@@ -67,20 +67,31 @@ def node_adjustment_modal(node_index):
         """,
         unsafe_allow_html=True
     )
-    if f"wind_node_{node_index}" in st.session_state :
-        aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
-    else:
-        aktuellerWert = 100
-    
-    st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
-    neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
-    
+    if symbol_typ == "wind":
+        if f"wind_node_{node_index}" in st.session_state :
+            aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
+        else:
+            aktuellerWert = 100
+        
+        st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
+        neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
+    elif symbol_typ == "konv":
+        if f"konv_node_{node_index}" in st.session_state :
+            aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
+        else:
+            aktuellerWert = 100
+        
+            st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
+            neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
+        
     c_left, c_right = st.columns(2)
     
     with c_left:
         if st.button(TXT[lang]["Speicher_Knopf_wind"], type="primary"):
-            st.session_state[f"wind_node_{node_index}"] = neuer_wert
-            
+            if symbol_typ == "wind":
+                st.session_state[f"wind_node_{node_index}"] = neuer_wert
+            elif symbol_typ == "konv":
+                st.session_state[f"konv_node_{node_index}"] = neuer_wert
             # WICHTIG: State Machine resetten und Karte neu laden
             st.session_state.pop("clicked_point_index", None)
             st.session_state["map_key"] += 1 
@@ -169,13 +180,19 @@ def main() -> None:
         state_key = f"wind_node_{node_id}"
         if state_key not in st.session_state:
             st.session_state[state_key] = 100
+    konv_generators = generators[generators["Typ"] == "Konventionell"] 
+    # Die Iteration (foreach-Schleife)
+    for node_id in konv_generators.index:
+        state_key = f"konv_node_{node_id}"
+        if state_key not in st.session_state:
+            st.session_state[state_key] = 100
             
     # 3. reset bei Szenario wechsel
     if st.session_state["data_just_loaded"]:
         # Wir iterieren über alle aktuell existierenden Keys im globalen Speicher
         for key in st.session_state.keys():
             # Wenn der Key mit "wind_node_" beginnt (C-Analogie: strncmp)
-            if str(key).startswith("wind_node_"):
+            if str(key).startswith("wind_node_") or str(key).startswith("konv_node_"):
                 # Setze den Wert hart auf 100 zurück
                 st.session_state[key] = 100   
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
@@ -405,17 +422,23 @@ def main() -> None:
                     point_index = clicked_point.get("point_index")
     
                     # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
-                    if (curve_number == 24 or curve_number == 24 )and point_index is not None:
+                    if curve_number == 24 and point_index is not None:
                         st.session_state["clicked_point_index"] = point_index
-                    elif not (curve_number == 24 or curve_number == 24 ):
+                        st.session_state["clicked_point_type"] = "wind"
+                    elif curve_number == 26 and point_index is not None:
+                        st.session_state["clicked_point_index"] = point_index
+                        st.session_state["clicked_point_type"] = "konv"
+                    elif not (curve_number == 24 or curve_number == 26 ):
                         st.session_state.pop("clicked_point_index", None)
+                        st.session_state.pop("clicked_point_type", None)
             
             st.write(event)
             # Wenn Wind geklickt wurde -> Öffne das Pop-up!
             # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
             if "clicked_point_index" in st.session_state:
                 sicherer_index = st.session_state["clicked_point_index"]
-                node_adjustment_modal(sicherer_index)
+                symbol_typ = st.session_state["clicked_point_type"]
+                node_adjustment_modal(sicherer_index, symbol_typ)
                 
             # Optionales Debugging:
             if "clicked_point_index" in st.session_state:
