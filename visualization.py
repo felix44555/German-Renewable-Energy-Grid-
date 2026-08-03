@@ -157,6 +157,14 @@ def build_map(
                     
                     # Wir schreiben den Wert unter der echten Pandas-ID zurück
                     sub.at[idx, "Aktuell_GW"] = sub.at[idx, "Aktuell_GW"] * faktor
+                    
+        if typ == "Konventionell":
+                # Wir suchen den Key nach dem Plotly-Index (wie im Klick-Event gespeichert)
+                state_key = "additional_load_DE01"
+                
+                if state_key in st.session_state:
+                    # Wir schreiben den Wert unter der echten Pandas-ID zurück
+                    sub.loc[sub["Name"] == "backup_DE0 1", "Aktuell_GW"] += st.state_session.get("additional_load_DE01", 0)
         
         sub = apply_marker_offsets(sub)
         marker_size = 10 + np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"]), 0.0)) * 4.0

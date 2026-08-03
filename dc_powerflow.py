@@ -128,10 +128,8 @@ def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
     # NEU: MANUELLE KNOTEN-ANPASSUNGEN (WIND -> KONV)
     # -----------------------------------------------------------------
     if not generators.empty and "Bus" in generators.columns:
-        
+        summe_fehlender_wind = 0.0
         # Welcher Knoten soll die fehlende Leistung übernehmen?
-        # Ich suche hier automatisch den konventionellen Generator mit dem 
-        # größten Anteil. Du kannst hier auch hart einen Bus-Namen eintragen!
         ersatz_bus = "DE0 1"
         for gen_idx, gen in generators.iterrows():
             typ = str(gen.get("Typ", ""))
@@ -157,18 +155,19 @@ def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
                     # Wie viel fehlt jetzt?
                     neuer_wind_hier = original_wind_hier * slider_prozent
                     fehlender_wind = original_wind_hier - neuer_wind_hier
-                    
+                    summe_fehlender_wind += fehlender_wind
                     # 1. Wir ziehen den Wind am Original-Knoten ab
                     nodal.loc[bus, "Wind_GW"] -= fehlender_wind
                     
                     # 2. Wir addieren exakt die fehlende Menge auf den Konv-Knoten
                     if ersatz_bus is not None and ersatz_bus in nodal.index:
                         nodal.loc[ersatz_bus, "Konv_GW"] += fehlender_wind
-
+    
+    st.session_state["additional_load_DE01"] = summe_fehlender_wind
     # -----------------------------------------------------------------
     # ENDE NEU
     # -----------------------------------------------------------------
-
+    
     total_load = _as_float(hour_row.get("Last_GW", 0.0), 0.0)
 
     if not consumers.empty and "Bus" in consumers.columns:
