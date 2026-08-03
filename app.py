@@ -58,7 +58,7 @@ def _cached_smard_profile(day_iso: str, region: str) -> tuple[pd.DataFrame, pd.D
 
 @st.dialog("Knoten-Erzeugung anpassen")
 def node_adjustment_modal(node_index):
-    lang = st.session.state["lang"] 
+    lang = st.session_state["lang"] 
     st.markdown(
         """
         <style>
