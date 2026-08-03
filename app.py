@@ -73,12 +73,12 @@ def node_adjustment_modal(node_index):
         aktuellerWert = 100
     
     st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
-    neuer_wert = st.slider("Lokale Wind-Erzeugung [%]", 0, 100, aktuellerWert)
+    neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
     
     c_left, c_right = st.columns(2)
     
     with c_left:
-        if st.button("Speichern & Berechnen", type="primary"):
+        if st.button(TXT[lang]["Speicher_Knopf_wind"], type="primary"):
             st.session_state[f"wind_node_{node_index}"] = neuer_wert
             
             # WICHTIG: State Machine resetten und Karte neu laden
@@ -87,7 +87,7 @@ def node_adjustment_modal(node_index):
             st.rerun() 
             
     with c_right:
-        if st.button("Abbrechen"):
+        if st.button(TXT[lang]["Abbruch_Knopf_wind"]):
             # WICHTIG: State Machine resetten und Karte neu laden
             st.session_state.pop("clicked_point_index", None)
             st.session_state["map_key"] += 1 
@@ -128,7 +128,8 @@ def on_date_change():
     st.session_state["data_just_loaded"] = True
     reset_slider()
 def reset_slider():
-    st.header("Stellgrößen")
+    lang = st.session_state["lang"] 
+    st.header(TXT[lang]["Stellgrößen"])
     st.session_state["wind_pct"]=100
     st.session_state["pv_pct"]=100
     st.session_state["bess_pct"]=100
@@ -136,13 +137,14 @@ def reset_slider():
     st.session_state["line_capacity_pct"]=100
     
 def main() -> None:
-    st.set_page_config(page_title="Deutschland-Netzkarte: SMARD + DC-Lastfluss", layout="wide")
+    lang = st.session_state["lang"] 
+    st.set_page_config(page_title=TXT[lang]["Seitentitel"], layout="wide")
     init_session_state()
     # --- TUTORIAL BANNER START ---
     
     with st.container():
     
-        st.info("👋 Neu im Simulator? Lerne die Grundlagen der Netzbalance in unserem Tutorial.")
+        st.info(TXT[lang]["neu_hier_txt"])
     
         st.page_link("pages/1_Tutorial.py", label="Zum Tutorial")
     
