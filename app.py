@@ -137,11 +137,11 @@ def reset_slider():
     st.session_state["line_capacity_pct"]=100
     
 def main() -> None:
-    if not "lang" in st.session_state:
-        lang = "DE"
-    else:
-        lang = st.session_state["lang"]
-        
+    #if not "lang" in st.session_state:
+    #    lang = "DE"
+    #else:
+    #    lang = st.session_state["lang"]
+    lang = st.session_state.get("lang", "DE")  
     st.set_page_config(page_title=TXT[lang]["Seitentitel"], layout="wide")
     init_session_state()
     # --- TUTORIAL BANNER START ---
@@ -190,8 +190,8 @@ def main() -> None:
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
     with st.sidebar:
         st.header("Sprache")
-        lang = st.radio("Sprache / Language", options=["DE", "EN"])
-        st.session_state["lang"] = lang
+        st.radio("Sprache / Language", options=["DE", "EN"], key="lang")
+        #st.session_state["lang"] = lang
         st.divider()
         st.header("Szenario")
         scenario_key = st.selectbox(
