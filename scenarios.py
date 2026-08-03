@@ -103,6 +103,29 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
+    "Wind2": {
+        "name": "Wind Sandbox",
+        "task": (
+            "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
+        ),
+        "defaults": {
+            "wind_pct": 100,
+            "pv_pct": 100,
+            "konv_pct": 100,
+            "konv_min_pct": 0,
+            "bess_pct": 100,
+            "load_pct": 140,
+            "soc_pct": 50,
+            "line_capacity_pct": 100,
+            "ee_curtail_pct": 0,
+            "hour": 19,
+            "smard_day": date(2026, 2, 2),
+            "date_locked": True,
+        },
+        "profile_factors": {"wind": 2.00, "pv": 1.00, "load": 1.00},
+        "line_stress_factor": 1.00,
+        "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
+    },
 }
 
 

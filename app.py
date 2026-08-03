@@ -386,7 +386,7 @@ def main() -> None:
         ##########################ANFANG TEST###########################################
         # Statt st.plotly_chart(fig)
         # Nutze on_select="rerun", um bei jedem Klick das Skript neu zu laden
-        if  st.session_state.get("scenario_key") == "Wind":
+        if  st.session_state.get("scenario_key") == "Wind2":
             event = st.plotly_chart(
                 build_map(
                        generators=generators,
