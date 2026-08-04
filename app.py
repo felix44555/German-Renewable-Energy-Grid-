@@ -75,14 +75,14 @@ def node_adjustment_modal(node_index, symbol_typ):
         
         st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
         neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
-    #elif symbol_typ == "konv":
-    #    if f"konv_node_{node_index}" in st.session_state :
+    #elif symbol_typ == "load":
+    #    if f"load_node_{node_index}" in st.session_state :
     #        aktuellerWert = st.session_state.get(f"wind_node_{node_index}")
     #    else:
     #        aktuellerWert = 100
     #    
-    #        st.write(TXT[lang]["Wind_node_chosen"].format(node_index))
-    #        neuer_wert = st.slider(TXT[lang]["lokal_slider_wind"], 0, 100, aktuellerWert)
+    #        st.write(TXT[lang]["load_node_chosen"].format(node_index))
+    #        neuer_wert = st.slider(TXT[lang]["lokal_slider_load"], 0, 100, aktuellerWert)
         
     c_left, c_right = st.columns(2)
     
@@ -425,15 +425,15 @@ def main() -> None:
                     if curve_number == 24 and point_index is not None:
                         st.session_state["clicked_point_index"] = point_index
                         st.session_state["clicked_point_type"] = "wind"
-                    #elif curve_number == 26 and point_index is not None:
+                    #elif curve_number == 28 and point_index is not None:
                     #    st.session_state["clicked_point_index"] = point_index
-                    #    st.session_state["clicked_point_type"] = "konv"
-                    #elif not (curve_number == 24 or curve_number == 26 ):
+                    #    st.session_state["clicked_point_type"] = "load"
+                    #elif not (curve_number == 24 or curve_number == 28 ):
                     else:
                         st.session_state.pop("clicked_point_index", None)
                         st.session_state.pop("clicked_point_type", None)
             
-            st.write(event)
+            #st.write(event)
             # Wenn Wind geklickt wurde -> Öffne das Pop-up!
             # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
             if "clicked_point_index" in st.session_state:
