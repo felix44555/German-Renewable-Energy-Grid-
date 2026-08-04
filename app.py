@@ -433,7 +433,7 @@ def main() -> None:
                         st.session_state.pop("clicked_point_index", None)
                         st.session_state.pop("clicked_point_type", None)
             
-            #st.write(event)
+            st.write(event)
             # Wenn Wind geklickt wurde -> Öffne das Pop-up!
             # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
             if "clicked_point_index" in st.session_state:
