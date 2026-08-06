@@ -124,46 +124,42 @@ def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
             share = _as_float(gen.get("Anteil", 0.0), 0.0)
             nodal.loc[bus, typ_to_col[typ]] += share * typ_power[typ]
             
-    # -----------------------------------------------------------------
-    # NEU: MANUELLE KNOTEN-ANPASSUNGEN (WIND -> KONV)
+ # -----------------------------------------------------------------
+    # NEU: MANUELLE KNOTEN-ANPASSUNGEN FÜR WIND (Sauber!)
     # -----------------------------------------------------------------
     if not generators.empty and "Bus" in generators.columns:
-        summe_fehlender_wind = 0.0
-        # Welcher Knoten soll die fehlende Leistung übernehmen?
-        ersatz_bus = "DE0 1"
-        for gen_idx, gen in generators.iterrows():
-            typ = str(gen.get("Typ", ""))
-            bus = str(gen.get("Bus", ""))
+        
+        if st.session_state.get("scenario_key") == "Wind2":
+            nodal["Wind_GW"] = 0.0 # Wir bauen Wind manuell neu auf
+            effective_wind_ratio = st.session_state.get("effective_wind_ratio")
+            # WICHTIG: Da hour_row["Wind_GW"] schon reduziert ist, müssen wir
+            # kurz zurückrechnen, was 100% Wind gewesen wären, um es korrekt zu verteilen
+            # (Verhindert Division-by-Zero, falls gar kein Wind weht)
+            if effective_wind_ratio > 0.01:
+                base_wind_global = typ_power["Wind"] / effective_wind_ratio
+            else:
+                base_wind_global = 0.0
+            
+            for gen_idx, gen in generators.iterrows():
+                typ = str(gen.get("Typ", ""))
+                bus = str(gen.get("Bus", ""))
 
-            if typ == "Wind" and st.session_state.get("scenario_key") == "Wind2":
-                try:
-                    # Schneidet "DE0 " ab und wandelt den Rest in eine Zahl um
-                    knoten_nummer = int(bus.replace("DE0 ", "").strip())
-                except ValueError:
-                    continue # Falls der Name mal ganz anders lautet, ignorieren wir ihn
-                    
-                state_key = f"wind_node_{knoten_nummer}"
-                
-                if state_key in st.session_state:
-                    # Der Wert vom Slider (0 bis 100)
-                    slider_prozent = st.session_state[state_key] / 100.0 
-                    
-                    # Wie viel Wind war hier normalerweise?
+                if typ == "Wind":
                     share = _as_float(gen.get("Anteil", 0.0), 0.0)
-                    original_wind_hier = share * typ_power["Wind"]
                     
-                    # Wie viel fehlt jetzt?
-                    neuer_wind_hier = original_wind_hier * slider_prozent
-                    fehlender_wind = original_wind_hier - neuer_wind_hier
-                    summe_fehlender_wind += fehlender_wind
-                    # 1. Wir ziehen den Wind am Original-Knoten ab
-                    nodal.loc[bus, "Wind_GW"] -= fehlender_wind
+                    try:
+                        knoten_nummer = int(bus.replace("DE0 ", "").strip())
+                        state_key = f"wind_node_{knoten_nummer}"
+                        slider_prozent = st.session_state.get(state_key, 100) / 100.0
+                    except ValueError:
+                        slider_prozent = 1.0
+                        
+                    # Lokalen Wind berechnen und exakt auf diesen Knoten schreiben
+                    lokaler_wind = share * base_wind_global * slider_prozent
                     
-                    # 2. Wir addieren exakt die fehlende Menge auf den Konv-Knoten
-                    if ersatz_bus is not None and ersatz_bus in nodal.index:
-                        nodal.loc[ersatz_bus, "Konv_GW"] += fehlender_wind
-    
-    st.session_state["additional_load_DE01"] = summe_fehlender_wind
+                    if bus in nodal.index:
+                        nodal.loc[bus, "Wind_GW"] += lokaler_wind
+                        
     # -----------------------------------------------------------------
     # ENDE NEU
     # -----------------------------------------------------------------

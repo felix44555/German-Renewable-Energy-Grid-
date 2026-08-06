@@ -258,8 +258,29 @@ def main() -> None:
          #   f"- BESS: {refs['bess_gw']:.2f} GW / {refs['bess_gwh']:.2f} GWh\n"
          #   f"- mittlere Netzlast: {refs['load_mean_gw']:.2f} GW"
         #)
+     
+    wind_scale_global = wind_pct / 100.0    
+    # --- NEU: Lokale Wind-Slider vor dem Dispatch zusammenrechnen ---
+    effective_wind_ratio = 1.0
+    if st.session_state.get("scenario_key") == "Wind2":
+        effective_wind_ratio = 0.0
+        wind_gens = generators[generators["Typ"] == "Wind"]
+        for _, gen in wind_gens.iterrows():
+            share = float(gen.get("Anteil", 0.0))
+            bus = str(gen.get("Bus", ""))
+            try:
+                k_num = int(bus.replace("DE0 ", "").strip())
+                node_pct = st.session_state.get(f"wind_node_{k_num}", 100) / 100.0
+            except ValueError:
+                node_pct = 1.0
+            effective_wind_ratio += share * node_pct
+            st.session_state["effective_wind_ratio"] = effective_wind_ratio
+            
+    # Wir übergeben den bereits reduzierten Wind an den Dispatcher!
+    wind_scale = wind_scale_global * effective_wind_ratio
+    # --- ENDE NEU ---
 
-    wind_scale = wind_pct / 100.0
+    
     pv_scale = pv_pct / 100.0
     konv_scale = konv_pct / 100.0
     bess_scale = bess_pct / 100.0
@@ -287,6 +308,7 @@ def main() -> None:
         ee_curtail_pct=ee_curtail_pct,
         konv_min_pct=konv_min_pct,
     )
+    
     
     hour = st.session_state.get("hour", 0)
     hour_row = df.iloc[int(hour)]
