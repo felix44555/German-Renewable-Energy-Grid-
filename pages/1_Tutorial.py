@@ -58,8 +58,7 @@ st.markdown(
     Öffne den Simulator und betrachte zunächst die Seitenleiste.
 
     1. Wähle unter **Aufgabe** ein Szenario oder den Sandboxmodus aus.
-    2. Klicke auf **Szenario-Startwerte laden**.
-    3. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest. In den Szenarios ist das Datum vorgegeben.
+    2. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest. In den Szenarios ist das Datum vorgegeben.
     """
 )
 
@@ -70,11 +69,6 @@ with st.expander("Was bedeuten diese Einstellungen?", expanded=True):
 
         Bestimmt die Ausgangssituation und die Bedingungen, die für eine
         erfolgreiche Lösung erfüllt werden müssen. Hier kannst du auch in den Sandboxmodus wechseln.
-
-        **Szenario-Startwerte laden**
-
-        Setzt alle Stellgrößen auf die zum Szenario gehörenden Ausgangswerte zurück.
-
 
         **SMARD-Datum**
 
@@ -91,7 +85,7 @@ st.header("Schritt 2: Den Ausgangszustand untersuchen")
 
 st.markdown(
     """
-    Verändere zunächst noch keinen Slider. Betrachte die fünf Kennzahlen im
+    Verändere zunächst noch keinen Slider. Betrachte die Kennzahlen im
     Bereich **24h Grid Performance Score**.
     """
 )
@@ -123,15 +117,17 @@ with metric_col1:
         """
     )
 
-    st.markdown(
-        """
-        ### Max. Leitung 24h [%]
-
-        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
-        """
-    )
+   
 
 with metric_col2:
+    st.markdown(
+            """
+            ### Max. Leitung 24h [%]
+    
+            Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
+            """
+        )
+     
     st.markdown(
         """
         ### Stunden mit Überlast
@@ -170,7 +166,7 @@ st.markdown(
 st.subheader("Stunde des Tages")
 
 st.write(
-    "Der Stundenslider verändert nicht den simulierten Tag. Er wählt lediglich "
+    "Der Stundenslider verändert nichts an der Simulation. Er wählt lediglich "
     "die Stunde aus, die auf der Netzkarte, im Leitungsdiagramm und in den "
     "Live-Kennzahlen genauer dargestellt wird."
 )
@@ -215,11 +211,10 @@ with wind_tab:
         """
         **Experiment**
 
-        1. Notiere den aktuellen KPI.
-        2. Erhöhe Wind um 25 oder 50 Prozentpunkte.
-        3. Betrachte den neuen EE-Anteil.
-        4. Prüfe die maximale Leitungsauslastung.
-        5. Untersuche ob der Grid Performance Score gestiegen oder gesunken ist.
+        1. Erhöhe Wind um 25 oder 50 Prozentpunkte.
+        2. Betrachte den neuen EE-Anteil.
+        3. Prüfe die maximale Leitungsauslastung. Wenn eine Leitung aufgrund von erhöhter Windstromerzeugung überlastet ist, kannst du auf das Wind Symbol in der Netzkarte klicken und nur für diesen Knoten die Erzeugung wieder senken.
+        4. Untersuche ob der Grid Performance Score gestiegen oder gesunken ist.
         """
     )
 
@@ -354,7 +349,7 @@ st.markdown(
     **Experiment**
 
     1. Erzeuge zunächst durch mehr Wind oder PV eine Leitungsüberlastung.
-    2. Erhöhe den Netzausbau in kleinen Schritten.
+    2. Erhöhe den Netzausbau in kleinen Schritten und senke Windstromerzeugung an kritischen Knoten.
     3. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
     4. Prüfe ob der Grid Performance Score gestiegen oder gefallen ist.
     """
@@ -506,7 +501,7 @@ with map_tab:
 
     st.info(
         "Bewege den Mauszeiger über eine Leitung, um Kapazität, Leistungsfluss "
-        "und prozentuale Auslastung anzuzeigen."
+        "und prozentuale Auslastung anzuzeigen. Auf das Windsymbol kannst du klicken und die Generation an dem gewählten Knoten reduzieren."
     )
 
 with line_tab:

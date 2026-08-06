@@ -107,10 +107,13 @@ with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
         "Die Knoten $i$ und $j$ speisen jeweils Leistung ein, während Knoten $k$ Leistung aufnimmt."
     )
 
-    st.image(
-    "pages/dc_3_knoten.jpeg",
-    caption="Dreiknoten-Netz für die Beispielrechnung",
-    use_container_width=True
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        st.image(
+        "pages/dc_3_knoten.jpeg",
+        caption="Dreiknoten-Netz für die Beispielrechnung",
+        use_container_width=True # It will now only fill the middle column!
     )
 
     st.latex(r"P_i = +4 \ \mathrm{MW}")
