@@ -109,57 +109,49 @@ def _compute_nodal_injections_gw( #Ermittelt Last am Knoten
         typ: _as_float(hour_row.get(col, 0.0), 0.0)
         for typ, col in typ_to_col.items()
     }
-
+####################################
+#NEU
+########################### 
     if not generators.empty and "Bus" in generators.columns:
+        is_wind2 = (st.session_state.get("scenario_key") == "Wind2")
+        effective_wind_ratio = st.session_state.get("effective_wind_ratio", 1.0)
+        
+        extra_konv = _as_float(hour_row.get("Extra_Konv_GW", 0.0), 0.0)
+        base_konv = max(typ_power["Konventionell"] - extra_konv, 0.0)
+        
+        # Originalwind kurz rekonstruieren (verhindert das 2,22 GW vs 2,61 GW Problem!)
+        if is_wind2 and effective_wind_ratio > 0.01:
+            base_wind_global = typ_power["Wind"] / effective_wind_ratio
+        else:
+            base_wind_global = typ_power["Wind"]
+
         for _, gen in generators.iterrows():
             bus = str(gen.get("Bus", ""))
             typ = str(gen.get("Typ", ""))
-
-            if bus not in nodal.index:
-                continue
-
-            if typ not in typ_to_col:
+            
+            if bus not in nodal.index or typ not in typ_to_col:
                 continue
 
             share = _as_float(gen.get("Anteil", 0.0), 0.0)
-            nodal.loc[bus, typ_to_col[typ]] += share * typ_power[typ]
-            
- # -----------------------------------------------------------------
-    # NEU: MANUELLE KNOTEN-ANPASSUNGEN FÜR WIND (Sauber!)
-    # -----------------------------------------------------------------
-    if not generators.empty and "Bus" in generators.columns:
-        
-        if st.session_state.get("scenario_key") == "Wind2":
-            nodal["Wind_GW"] = 0.0 # Wir bauen Wind manuell neu auf
-            effective_wind_ratio = st.session_state.get("effective_wind_ratio")
-            # WICHTIG: Da hour_row["Wind_GW"] schon reduziert ist, müssen wir
-            # kurz zurückrechnen, was 100% Wind gewesen wären, um es korrekt zu verteilen
-            # (Verhindert Division-by-Zero, falls gar kein Wind weht)
-            if effective_wind_ratio > 0.01:
-                base_wind_global = typ_power["Wind"] / effective_wind_ratio
-            else:
-                base_wind_global = 0.0
-            
-            for gen_idx, gen in generators.iterrows():
-                typ = str(gen.get("Typ", ""))
-                bus = str(gen.get("Bus", ""))
 
-                if typ == "Wind":
-                    share = _as_float(gen.get("Anteil", 0.0), 0.0)
-                    
-                    try:
-                        knoten_nummer = int(bus.replace("DE0 ", "").strip())
-                        state_key = f"wind_node_{knoten_nummer}"
-                        slider_prozent = st.session_state.get(state_key, 100) / 100.0
-                    except ValueError:
-                        slider_prozent = 1.0
-                        
-                    # Lokalen Wind berechnen und exakt auf diesen Knoten schreiben
-                    lokaler_wind = share * base_wind_global * slider_prozent
-                    
-                    if bus in nodal.index:
-                        nodal.loc[bus, "Wind_GW"] += lokaler_wind
-                        
+            if typ == "Wind" and is_wind2:
+                try:
+                    knoten_nummer = int(bus.replace("DE0 ", "").strip())
+                    slider_prozent = st.session_state.get(f"wind_node_{knoten_nummer}", 100) / 100.0
+                except ValueError:
+                    slider_prozent = 1.0
+                nodal.loc[bus, "Wind_GW"] += share * base_wind_global * slider_prozent
+            
+            elif typ == "Konventionell" and is_wind2:
+                # Basisstrom ganz normal nach Anteil verteilen
+                nodal.loc[bus, "Konv_GW"] += share * base_konv
+                
+                # DIE RETTUNG: Nur das Ersatzkraftwerk bekommt die Extra-Leistung!
+                if gen.get("Name") == "backup_DE0 1": 
+                    nodal.loc[bus, "Konv_GW"] += extra_konv
+            else:
+                # Normalfall (PV, BESS oder andere Szenarien)
+                nodal.loc[bus, typ_to_col[typ]] += share * typ_power[typ]   
     # -----------------------------------------------------------------
     # ENDE NEU
     # -----------------------------------------------------------------

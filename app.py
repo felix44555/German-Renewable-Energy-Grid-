@@ -296,6 +296,21 @@ def main() -> None:
         st.stop()
 
     scenario_profiles = apply_scenario_to_profiles(base_profiles, scenario_key=scenario_key, ee_curtail_pct=0.0)
+    # 1. BASELINE-DISPATCH: Was wäre ohne den Slider passiert?
+    df_base = prepare_dispatch_profiles(
+        scenario_profiles,
+        wind_scale=wind_scale_global, # <-- Der unreduzierte Originalwert!
+        pv_scale=pv_scale,
+        konv_scale=konv_scale,
+        load_scale=load_scale,
+        bess_scale=bess_scale,
+        refs=refs,
+        soc_start_pct=soc_pct,
+        ee_curtail_pct=ee_curtail_pct,
+        konv_min_pct=konv_min_pct,
+    )
+
+    # 2. REALER DISPATCH: Was passiert durch den Slider?
     df = prepare_dispatch_profiles(
         scenario_profiles,
         wind_scale=wind_scale,
@@ -309,7 +324,12 @@ def main() -> None:
         konv_min_pct=konv_min_pct,
     )
     
-    
+    # 3. DIFFERENZ BERECHNEN: Genau diesen Zusatzstrom zwingen wir gleich auf einen Knoten!
+    if st.session_state.get("scenario_key") == "Wind2":
+        df["Extra_Konv_GW"] = (df["Konv_GW"] - df_base["Konv_GW"]).clip(lower=0.0)
+    else:
+        df["Extra_Konv_GW"] = 0.0
+        
     hour = st.session_state.get("hour", 0)
     hour_row = df.iloc[int(hour)]
     

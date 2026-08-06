@@ -143,30 +143,41 @@ def build_map(
         sub = generators[generators["Typ"] == typ].copy()
         if sub.empty:
             continue
-        sub["Aktuell_GW"] = sub["Anteil"] * typ_to_value[typ]
+            
+        is_wind2 = (st.session_state.get("scenario_key") == "Wind2")
+        
+        if typ == "Wind" and is_wind2:
+            effective_wind_ratio = st.session_state.get("effective_wind_ratio", 1.0)
+            base_wind = typ_to_value["Wind"] / effective_wind_ratio if effective_wind_ratio > 0.01 else 0.0
+            
+            sub["Aktuell_GW"] = 0.0
+            for idx, row in sub.iterrows():
+                share = float(row.get("Anteil", 0.0))
+                bus = str(row.get("Bus", ""))
+                try:
+                    k_num = int(bus.replace("DE0 ", "").strip())
+                    faktor = st.session_state.get(f"wind_node_{k_num}", 100) / 100.0
+                except ValueError:
+                    faktor = 1.0
+                sub.at[idx, "Aktuell_GW"] = share * base_wind * faktor
+                
+        elif typ == "Konventionell" and is_wind2:
+            extra_konv = float(hour_row.get("Extra_Konv_GW", 0.0))
+            base_konv = max(typ_to_value["Konventionell"] - extra_konv, 0.0)
+            
+            sub["Aktuell_GW"] = sub["Anteil"] * base_konv
+            
+            # Das Zusatzkraftwerk auch auf der Landkarte befeuern!
+            sub.loc[sub["Name"] == "backup_DE0 1", "Aktuell_GW"] += extra_konv
+            
+        else:
+            # Normalfall
+            sub["Aktuell_GW"] = sub["Anteil"] * typ_to_value[typ]
+
         sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
-        # 2. Spezifische Anpassung NUR für Wind
-        if typ == "Wind":
-           for i, idx in enumerate(sub.index):
-                
-                # Wir suchen den Key nach dem Plotly-Index (wie im Klick-Event gespeichert)
-                state_key = f"wind_node_{i}" 
-                
-                if state_key in st.session_state:
-                    faktor = st.session_state[state_key] / 100.0 
-                    
-                    # Wir schreiben den Wert unter der echten Pandas-ID zurück
-                    sub.at[idx, "Aktuell_GW"] = sub.at[idx, "Aktuell_GW"] * faktor
-                    
-        if typ == "Konventionell":
-                # Wir suchen den Key nach dem Plotly-Index (wie im Klick-Event gespeichert)
-                state_key = "additional_load_DE01"
-                
-                if state_key in st.session_state:
-                    # Wir schreiben den Wert unter der echten Pandas-ID zurück
-                    sub.loc[sub["Name"] == "backup_DE0 1", "Aktuell_GW"] += st.session_state.get("additional_load_DE01", 0)
         
         sub = apply_marker_offsets(sub)
+        
         marker_size = 10 + np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"]), 0.0)) * 4.0
         fig.add_trace(go.Scattergeo(
             lon=sub["plot_lon"],
