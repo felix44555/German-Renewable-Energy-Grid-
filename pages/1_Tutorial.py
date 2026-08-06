@@ -120,7 +120,7 @@ with metric_col1:
    
 
 with metric_col2:
-     st.markdown(
+    st.markdown(
             """
             ### Max. Leitung 24h [%]
     
