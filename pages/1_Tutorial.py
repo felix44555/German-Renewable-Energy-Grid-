@@ -117,15 +117,17 @@ with metric_col1:
         """
     )
 
-    st.markdown(
-        """
-        ### Max. Leitung 24h [%]
-
-        Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
-        """
-    )
+   
 
 with metric_col2:
+     st.markdown(
+            """
+            ### Max. Leitung 24h [%]
+    
+            Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
+            """
+        )
+     
     st.markdown(
         """
         ### Stunden mit Überlast
