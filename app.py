@@ -399,25 +399,25 @@ def main() -> None:
     else:
         st.warning(TXT[lang]["Szenario_nicht_bewältigt"])
     
-    kpi0, kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(6)
+    kpi0, kpi1, kpi2, kpi3, kpi4 = st.columns(5)
     kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric(TXT[lang]["24h_EE_Anteil"], f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric(TXT[lang]["max_Auslastung_24h"], f"{kpi_24h['max_line_load_24h']:.0f}")
     kpi4.metric(TXT[lang]["Stunden_Überlast"], str(kpi_24h["overloaded_hours"]))
-    kpi7.metric(
-        "Ausbau-Faktor",
-        f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
-    )
+    #kpi7.metric(
+    #    "Ausbau-Faktor",
+    #    f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
+    #)
     
     if kpi_24h["max_line_load_24h"] > 100.0:
-        st.warning("Der Grid Performance Score wurde stark reduziert, weil im Tagesverlauf mindestens eine Leitung über 100 % ausgelastet ist.")  
+        st.warning(TXT[lang]["Warnung_GPS_ueberlast"])  
     elif kpi_24h["kpi_24h"] >= 70:
-        st.success("Hoher Grid Performance Score: hoher EE-Anteil bei moderatem Ausbau und ohne Leitungsüberlast.")
+        st.success(TXT[lang]["Guter_GPS"])
     elif kpi_24h["kpi_24h"] >= 40:
-        st.info("Mittlerer Grid Performance Score: technisch brauchbar, aber Ausbau, EE-Anteil oder Netzbelastung sind nicht optimal.")
+        st.info(TXT[lang]["Mittel_GPS"])
     else:
-        st.warning("Niedriger Grid Performance Score: geringe technische Güte durch niedrigen EE-Anteil, hohen Ausbau oder Netzüberlast.")
+        st.warning(TXT[lang]["Niedrig_GPS"])
 # Übergabe in Session State um sie auf den anderen Unteseiten zu nutzen
     st.session_state["tut_generators"] = generators
     st.session_state["tut_consumers"] = consumers
@@ -434,7 +434,7 @@ def main() -> None:
     
     c_left, c_right = st.columns([1.2, 1.0])
     with c_left:
-        st.subheader("Netzkarte")
+        st.subheader(TXT[lang]["Netzkarte"])
         ##########################ANFANG TEST###########################################
         # Statt st.plotly_chart(fig)
         # Nutze on_select="rerun", um bei jedem Klick das Skript neu zu laden
@@ -503,15 +503,15 @@ def main() -> None:
              )
         ####################################ENDE TEST####################################
         #st.subheader("Zeitslider")
-        st.slider("Stunde des Tages", 0, 23, key="hour", step=1)
+        st.slider(TXT[lang]["Stunde_des_Tages"], 0, 23, key="hour", step=1)
     with c_right:
-        st.subheader("Leitungsauslastung")
+        st.subheader(TXT[lang]["Leitungsauslastung"])
         st.plotly_chart(build_line_utilization_chart(line_status), width="stretch")
         st.plotly_chart(build_line_utilization_chart_24h(line_status_24h), width="stretch")       
     #st.subheader("Bilanz und Erzeugungsmix")
     #st.plotly_chart(build_balance_chart(df, highlight_hour=int(hour)), width="stretch")
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
-    st.caption("Dispatch: (teilweise skalierte) SMARD-Last/Wind/PV + künstlich geregelte restliche Erzeuger")
+    st.caption(TXT[lang]["Dispatch"])
     
        # ab hier runter
        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -519,15 +519,15 @@ def main() -> None:
        #+++++++++++++++++++++++++++++++++AUSGEBLENDET AM SEITENENDE*+++++++++++++++++++++++++++++++++++++++
        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    with st.expander("Modellannahmen"):
+    with st.expander(TXT[lang]["Modellannahmen"]):
         st.write(
-            "- Zielgröße ist die SMARD-Netzlast.\n"
-            "- Wind = SMARD Wind Offshore + Wind Onshore.\n"
-            "- PV = SMARD Photovoltaik.\n"
-            "- Restliche Erzeuger werden nicht aus SMARD geladen, sondern künstlich auf die Residuallast gefahren.\n"
-            "- Externe Importe, Exporte und kommerzielle Austauschflüsse werden nicht geladen.\n"
-            "- BESS: positiv = Entladung, negativ = Ladung.\n"
-            "- Leitungsauslastung: DC-Lastfluss-Näherung, kein vollständiger AC-Lastfluss."
+            TXT[lang]["Zielgroeße"],
+            TXT[lang]["Windgroeße"],
+            TXT[lang]["PVgroeße"],
+            TXT[lang]["konvgroeße"],
+            TXT[lang]["Extgroeßen"],
+            TXT[lang]["BESSgroeßen"],
+            TXT[lang]["Leitunggroeßen"],
         )
     
     with st.expander("Weitere Kennzahlen"):
