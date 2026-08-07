@@ -404,7 +404,7 @@ def main() -> None:
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
     kpi2.metric(TXT[lang]["24h_EE_Anteil"], f"{kpi_24h['re_share_pct_24h']:.1f}")
     kpi3.metric(TXT[lang]["max_Auslastung_24h"], f"{kpi_24h['max_line_load_24h']:.0f}")
-    kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
+    kpi4.metric(TXT[lang]["Stunden_Überlast"], str(kpi_24h["overloaded_hours"]))
     kpi7.metric(
         "Ausbau-Faktor",
         f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
