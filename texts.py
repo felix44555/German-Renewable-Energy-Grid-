@@ -22,12 +22,18 @@ TXT = {
         "Aufgabe": "Aufgabe",
         "Datenquelle": "Datenquelle",
         "SMARD_Datum": "SMARD-Datum",
+        "help_Tag": "Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
         "wind_slider":"Wind [% der SMARD-Werte]",
         "pv_slider": "PV [% der SMARD-Werte]",
         "batterie_slider":"BESS Leistung/Energie [%]",
         "soc_slider":"BESS Start-SOC [%]",
         "titel_EE":"Netzmaßnahmen",
-        "slider_Netz":"Leitungskapazität / Netzausbau [%]"
+        "slider_Netz":"Leitungskapazität / Netzausbau [%]",
+        "Szenario_bewältigt." : "Szenario bewältigt.",
+        "Szenario_nicht_bewältigt." : "Szenario noch nicht bewältigt.",
+        "24h_EE_Anteil":"24h EE-Anteil [%]",
+        "max_Auslastung_24h":"max. Auslastung 24h [%]",
+        "Stunden_Überlast" : "Stunden mit Überlast"
     },
     "EN": {
         "title": "Germany Grid Map",
@@ -50,11 +56,17 @@ TXT = {
         "Aufgabe": "Exercise",
         "Datenquelle": "Data source",
         "SMARD_Datum": "SMARD-Date",
+        "help_Tag": "Data for very recent days may still be incomplete in SMARD.",
         "wind_slider":"wind [% of the SMARD-Value]",
         "pv_slider": "PV [% of the SMARD-Value]",
         "batterie_slider":"BESS Power/Energiy [%]",
         "soc_slider":"BESS start-SOC [%]",
         "titel_EE":"Grid measures",
-        "slider_Netz":"Conductor capacity / grid expansion [%]"
+        "slider_Netz":"Conductor capacity / grid expansion [%]",
+        "Szenario_bewältigt." : "Scenario Completed.",
+        "Szenario_nicht_bewältigt." : "Scenario not yet resolved.",
+        "24h_EE_Anteil":"24h RE-share [%]",
+        "max_Auslastung_24h":"max. utilization 24h [%]",
+        "Stunden_Überlast" : "Hours with overload"
     }
 }

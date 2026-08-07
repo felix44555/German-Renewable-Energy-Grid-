@@ -226,7 +226,7 @@ def main() -> None:
             max_value=date.today() - timedelta(days=2),
             disabled=is_locked,
             on_change = on_date_change,
-            help="Sehr aktuelle Tage können noch unvollständige SMARD-Daten haben.",
+            help=TXT[lang]["help_Tag"],
         )
         if not is_locked:
             st.session_state["smard_day"] = smard_day
@@ -292,7 +292,7 @@ def main() -> None:
         base_profiles, api_meta = _cached_smard_profile(smard_day.isoformat(), region)
     except Exception as exc:
         st.error(f"SMARD-API-Daten konnten nicht geladen werden: {exc}")
-        st.info("Prüfe Internetzugang, Datum und requirements.txt. Für Offline-Demo kann die synthetische Quelle genutzt werden.")
+        #st.info("Prüfe Internetzugang, Datum und requirements.txt. Für Offline-Demo kann die synthetische Quelle genutzt werden.")
         st.stop()
 
     scenario_profiles = apply_scenario_to_profiles(base_profiles, scenario_key=scenario_key, ee_curtail_pct=0.0)
@@ -395,15 +395,15 @@ def main() -> None:
     st.subheader("24h Grid Performance Score")
     
     if bool(scenario_eval.get("solved", False)):
-        st.success("Szenario bewältigt.")
+        st.success(TXT[lang]["Szenario_bewältigt"])
     else:
-        st.warning("Szenario noch nicht bewältigt.")
+        st.warning(TXT[lang]["Szenario_nicht_bewältigt"])
     
     kpi0, kpi1, kpi2, kpi3, kpi4, kpi7 = st.columns(6)
     kpi0.metric("Start Grid Performance Score", f"{start_kpi_24h['kpi_24h']:.2f}")
     kpi1.metric("Grid Performance Score", f"{kpi_24h['kpi_24h']:.2f}")
-    kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
-    kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
+    kpi2.metric(TXT[lang]["24h_EE_Anteil"], f"{kpi_24h['re_share_pct_24h']:.1f}")
+    kpi3.metric(TXT[lang]["max_Auslastung_24h"], f"{kpi_24h['max_line_load_24h']:.0f}")
     kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
     kpi7.metric(
         "Ausbau-Faktor",
