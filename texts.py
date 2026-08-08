@@ -437,3 +437,5 @@ TXT_Abt = {
         "Abt_Link_Sim": "Directly to the simulator"
     }
 }
+
+#reload erzwingen
