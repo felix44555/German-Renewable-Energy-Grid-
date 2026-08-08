@@ -530,29 +530,29 @@ def main() -> None:
             TXT[lang]["Leitunggroeßen"],
         )
     
-    with st.expander("Weitere Kennzahlen"):
-        st.subheader("Ausführlich24h Engineering-Feasibility-KPI") 
-        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-        kpi1.metric("24h-KPI", f"{kpi_24h['kpi_24h']:.2f}")
-        kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
-        kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
-        kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
+    with st.expander(TXT[lang]["Weitere_Kennzahlen"]):
+        #st.subheader("Ausführlich24h Engineering-Feasibility-KPI") 
+        #kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        #kpi1.metric("24h-KPI", f"{kpi_24h['kpi_24h']:.2f}")
+        #kpi2.metric("24h EE-Anteil [%]", f"{kpi_24h['re_share_pct_24h']:.1f}")
+        #kpi3.metric("max. Leitung 24h [%]", f"{kpi_24h['max_line_load_24h']:.0f}")
+        #kpi4.metric("Stunden mit Überlast", str(kpi_24h["overloaded_hours"]))
         
-        kpi5, kpi6, kpi7 = st.columns(3)
-        kpi5.metric("24h Last [GWh]", f"{kpi_24h['total_load_gwh']:.1f}")
-        kpi6.metric("24h Wind+PV [GWh]", f"{kpi_24h['total_re_gwh']:.1f}")
-        kpi7.metric(
-            "Ausbau-Faktor",
-            f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
-        )
+        #kpi5, kpi6, kpi7 = st.columns(3)
+        #kpi5.metric("24h Last [GWh]", f"{kpi_24h['total_load_gwh']:.1f}")
+        #kpi6.metric("24h Wind+PV [GWh]", f"{kpi_24h['total_re_gwh']:.1f}")
+        #kpi7.metric(
+        #    "Ausbau-Faktor",
+        #    f"{kpi_24h['grid_added'] + kpi_24h['bat_added'] + kpi_24h['pv_added'] + kpi_24h['wind_added']:.2f}",
+        #)
         
         
-        st.subheader("Live-Kennzahlen")
+        st.subheader(TXT[lang]["Live_Kennzahlen"])
         k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Last/Ziel [GW]", f"{hour_row['Last_GW']:.2f}")
-        k2.metric("Wind [GW]", f"{hour_row['Wind_GW']:.2f}")
-        k3.metric("PV [GW]", f"{hour_row['PV_GW']:.2f}")
-        k4.metric("Restl. Erz. [GW]", f"{hour_row['Konv_GW']:.2f}")
+        k1.metric(TXT[lang]["LK_Last"], f"{hour_row['Last_GW']:.2f}")
+        k2.metric(TXT[lang]["LK_Wind"], f"{hour_row['Wind_GW']:.2f}")
+        k3.metric(TXT[lang]["LK_PV"], f"{hour_row['PV_GW']:.2f}")
+        k4.metric(TXT[lang]["LK_Konv"], f"{hour_row['Konv_GW']:.2f}")
         #k6.metric("Bilanz [GW]", f"{hour_row['Netzbilanz_GW']:+.2f}")
     
         #b2, b3, b5 = st.columns(3)
@@ -562,29 +562,29 @@ def main() -> None:
         #b4.metric("Ziellücke vor BESS", _format_gap(float(hour_row["Zielluecke_vor_BESS_GW"])))
         #b5.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
     
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3 = st.columns(3)
         #c1.metric("Konv. Fehlleistung", f"{hour_row['Konv_Fehlleistung_GW']:.2f} GW")
         #c2.metric("Mindestlauf-Überschuss", f"{hour_row['Konv_Mindestlauf_Ueberschuss_GW']:.2f} GW")
-        c1.metric("BESS [GW]", f"{hour_row['BESS_GW']:+.2f}")
-        c2.metric("SOC [%]", f"{hour_row['SOC_pct']:.1f}")
-        c3.metric("Abregelung", f"{hour_row['Curtailment_GW']:.2f} GW")
-        c4.metric("Status", str(hour_row["Status"]))
-        st.subheader("Stündliche Engineering-Feasibility-KPI")
+        c1.metric(TXT[lang]["LK_Bat"], f"{hour_row['BESS_GW']:+.2f}")
+        c2.metric(TXT[lang]["LK_SOC"], f"{hour_row['SOC_pct']:.1f}")
+        c3.metric(TXT[lang]["LK_Abregelung"], f"{hour_row['Curtailment_GW']:.2f} GW")
+        #c4.metric("Status", str(hour_row["Status"]))
         
-        kpi_cols = st.columns(4)
-        kpi_cols[0].metric("Start Feasibility-KPI", f"{start_kpi_hour['kpi']:.2f}")
-        kpi_cols[1].metric("Feasibility-KPI", f"{kpi_hour['kpi']:.2f}")
-        kpi_cols[2].metric("EE-Anteil [%]", f"{kpi_hour['re_share_pct']:.1f}")
+        #st.subheader("Stündliche Engineering-Feasibility-KPI")
+        #kpi_cols = st.columns(4)
+        #kpi_cols[0].metric("Start Feasibility-KPI", f"{start_kpi_hour['kpi']:.2f}")
+        #kpi_cols[1].metric("Feasibility-KPI", f"{kpi_hour['kpi']:.2f}")
+        #kpi_cols[2].metric("EE-Anteil [%]", f"{kpi_hour['re_share_pct']:.1f}")
         #kpi_cols[2].metric("max. Leitung [%]", f"{kpi_hour['max_line_load']:.0f}")
-        kpi_cols[3].metric(
-            "Ausbau-Faktor",
-            f"{kpi_hour['grid_added'] + kpi_hour['bat_added'] + kpi_hour['pv_added'] + kpi_hour['wind_added']:.2f}",
-    )
-        e2, e3, e4 = st.columns(3)
+        #kpi_cols[3].metric(
+        #    "Ausbau-Faktor",
+        #    f"{kpi_hour['grid_added'] + kpi_hour['bat_added'] + kpi_hour['pv_added'] + kpi_hour['wind_added']:.2f}",
+        #)
+        #e2, e3, e4 = st.columns(3)
         #e1.metric("Bilanz [GW]", f"{scenario_eval.get('balance_gw', 0.0):+.2f}")
-        e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
-        e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
-        e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
+        #e2.metric("Abregelung [GW]", f"{scenario_eval.get('curtailment_gw', 0.0):.2f}")
+        #e3.metric("max. Leitung [%]", f"{scenario_eval.get('peak_line_util_pct', 0.0):.0f}")
+        #e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
         #bis hier runter
     
     with st.expander("Stündliche Tabelle"):
@@ -597,26 +597,26 @@ def main() -> None:
         ]
         st.dataframe(_clean_for_display(df[[c for c in cols if c in df.columns]].round(3)), width="stretch")
 
-    with st.expander("SMARD-API Abrufe"):
+    with st.expander(TXT[lang]["SMARD_API_Abrufe"]):
         if api_meta.empty:
-            st.write("Keine API-Metadaten, weil synthetische Quelle aktiv ist.")
+            st.write(TXT[lang]["Fehler_API"])
         else:
             st.dataframe(_clean_for_display(api_meta), width="stretch")
 
-    with st.expander("PyPSA-Erzeuger / Speicher"):
+    with st.expander(TXT[lang]["PyPSA_Erzeuger_Speicher"]):
         st.dataframe(_clean_for_display(generators.round(4)), width="stretch")
 
-    with st.expander("PyPSA-Verbraucher-Cluster"):
+    with st.expander(TXT[lang]["Verbraucher_Cluster"]):
         st.dataframe(_clean_for_display(consumers.round(4)), width="stretch")
 
-    with st.expander("PyPSA-Leitungen und DC-Lastfluss"):
+    with st.expander(TXT[lang]["PyPSA_Leitung"]):
         st.dataframe(_clean_for_display(line_status.round(4)), width="stretch")
 
-    with st.expander("DC-Knotensalden und Winkel"):
+    with st.expander(TXT[lang]["DC_Saldo_Winkel"]):
         if isinstance(nodal_status, pd.DataFrame) and not nodal_status.empty:
             st.dataframe(_clean_for_display(nodal_status.round(4)), width="stretch")
         else:
-            st.write("Keine Knotensalden verfügbar.")
+            st.write(TXT[lang]["Kein_Saldo"])
 
     #with st.expander("Netz-Referenzwerte"):
      #   st.json(refs)
