@@ -29,7 +29,7 @@ TXT = {
         "soc_slider":"BESS Start-SOC [%]",
         "titel_EE":"Netzmaßnahmen",
         "slider_Netz":"Leitungskapazität / Netzausbau [%]",
-        "Szenario_bewältigt." : "Szenario bewältigt.",
+        "Szenario_bewaeltigt." : "Szenario bewältigt.",
         "Szenario_nicht_bewältigt." : "Szenario noch nicht bewältigt.",
         "24h_EE_Anteil":"24h EE-Anteil [%]",
         "max_Auslastung_24h":"max. Auslastung 24h [%]",

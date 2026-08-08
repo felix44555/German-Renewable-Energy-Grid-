@@ -395,7 +395,7 @@ def main() -> None:
     st.subheader("24h Grid Performance Score")
     
     if bool(scenario_eval.get("solved", False)):
-        st.success(TXT[lang]["Szenario_bewältigt"])
+        st.success(TXT[lang]["Szenario_bewaeltigt"])
     else:
         st.warning(TXT[lang]["Szenario_nicht_bewältigt"])
     
