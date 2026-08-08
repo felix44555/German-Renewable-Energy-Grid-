@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from visualization import build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack #build_balance_chart,
-from texts import TXT_Tut # oder wo auch immer du das Dictionary abspeicherst
+from texts import TXT_Tut 
 
 lang = st.session_state.get("lang", "DE") 
 
