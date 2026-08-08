@@ -1,31 +1,25 @@
 import streamlit as st
 import pandas as pd
 from visualization import build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack #build_balance_chart,
+from texts_tut import TXT_Tut # oder wo auch immer du das Dictionary abspeicherst
+
+lang = st.session_state.get("lang", "DE") 
 
 st.set_page_config(
-    page_title="Tutorial",
+    page_title=TXT_Tut[lang]["Page_Title"],
     page_icon="📘",
     layout="wide",
 )
-
-
 
 # ============================================================
 # Kopfbereich
 # ============================================================
 
-st.title("📘 Tutorial: Das deutsche Stromnetz gestalten")
+st.title(TXT_Tut[lang]["Tut_Title"])
 
-st.write(
-    "In diesem Tutorial lernst du Schritt für Schritt, wie du den Simulator "
-    "bedienst, Netzengpässe erkennst und den Anteil erneuerbarer Energien erhöhst."
-)
+st.write(TXT_Tut[lang]["Tut_Intro"])
 
-st.info(
-    "Das Ziel ist nicht, einfach alle Slider auf den höchsten Wert zu stellen. "
-    "Gesucht wird eine technisch sinnvolle Lösung mit hohem EE-Anteil, "
-    "sicheren Leitungen und möglichst begrenztem Ausbau."
-)
+st.info(TXT_Tut[lang]["Tut_Goal"])
 
 
 navigation_col1, navigation_col2 = st.columns(2)
@@ -33,394 +27,162 @@ navigation_col1, navigation_col2 = st.columns(2)
 with navigation_col1:
     st.page_link(
         "app.py",
-        label="Simulator öffnen",
+        label=TXT_Tut[lang]["Nav_Sim"],
         icon="🎮",
     )
 
 with navigation_col2:
     st.page_link(
         "pages/2_About.py",
-        label="Modellgrundlagen",
+        label=TXT_Tut[lang]["Nav_Model"],
         icon="📖",
     )
-
-
 
 
 # ============================================================
 # Tutorial-Ablauf
 # ============================================================
 
-st.header("Schritt 1: Szenario und Daten auswählen")
+st.header(TXT_Tut[lang]["Step1_Header"])
 
-st.markdown(
-    """
-    Öffne den Simulator und betrachte zunächst die Seitenleiste.
+st.markdown(TXT_Tut[lang]["Step1_Text"])
 
-    1. Wähle unter **Aufgabe** ein Szenario oder den Sandboxmodus aus.
-    2. Wenn du in der Sandbox Aufgabe bist, wähle ein Datum, für das du SMARD Daten möchtest. In den Szenarios ist das Datum vorgegeben.
-    """
-)
-
-with st.expander("Was bedeuten diese Einstellungen?", expanded=True):
-    st.markdown(
-        """
-        **Aufgabe**
-
-        Bestimmt die Ausgangssituation und die Bedingungen, die für eine
-        erfolgreiche Lösung erfüllt werden müssen. Hier kannst du auch in den Sandboxmodus wechseln.
-
-        **SMARD-Datum**
-
-        Bestimmt, welcher Tag simuliert wird. Wind, Sonne und Stromverbrauch
-        können sich von Tag zu Tag stark unterscheiden.
-        """
-    )
-
+with st.expander(TXT_Tut[lang]["Step1_Expander_Title"], expanded=True):
+    st.markdown(TXT_Tut[lang]["Step1_Expander_Text"])
 
 
 # ============================================================
 
-st.header("Schritt 2: Den Ausgangszustand untersuchen")
+st.header(TXT_Tut[lang]["Step2_Header"])
 
-st.markdown(
-    """
-    Verändere zunächst noch keinen Slider. Betrachte die Kennzahlen im
-    Bereich **24h Grid Performance Score**.
-    """
-)
+st.markdown(TXT_Tut[lang]["Step2_Text"])
 
 metric_col1, metric_col2 = st.columns(2)
 
 with metric_col1:
-    st.markdown(
-        """
-        ### Grid Performance Score
-
-        
-        Ist eine errechnete Gesamtbewertung deiner Lösung.
-
-        Ein hoher Wert bedeutet grundsätzlich:
-
-        - hoher Anteil erneuerbarer Energien,
-        - keine Netzüberlastung,
-        - wenig Abschaltung von erneuerbaren Erzeugern. (also kein unnötig großer Ausbau)
-        """
-    )
-
-    st.markdown(
-        """
-        ### 24h EE-Anteil [%]
-
-        Zeigt, welcher Anteil des Tagesverbrauchs durch Wind, PV und nutzbare
-        Batterieentladung gedeckt wird.
-        """
-    )
-
-   
-
-with metric_col2:
-    st.markdown(
-            """
-            ### Max. Leitung 24h [%]
+    st.markdown(TXT_Tut[lang]["Step2_Score"])
+    st.markdown(TXT_Tut[lang]["Step2_EE"])
     
-            Die höchste Leitungsauslastung, die während des gesamten Tages auftritt. Mehr als 100 % auslastung ist nicht zulässig und verschlechtert den Grid Performancescore stark.
-            """
-        )
-     
-    st.markdown(
-        """
-        ### Stunden mit Überlast
-
-        Anzahl der Stunden, in denen mindestens eine Leitung über 100 %
-        ausgelastet ist.
-
-        Ein Zielwert von **0 Stunden** bedeutet, dass während des gesamten Tages
-        keine modellierte Leitungsgrenze überschritten wird.
-        """
-    )
-
-   
-
+with metric_col2:
+    st.markdown(TXT_Tut[lang]["Step2_MaxLine"])
+    st.markdown(TXT_Tut[lang]["Step2_Overload"])
+    
 
 st.divider()
 
-
 # ============================================================
 
-st.header("Schritt 3: Eine einzelne Stunde untersuchen")
+st.header(TXT_Tut[lang]["Step3_Header"])
 
-st.markdown(
-    """
-    Nutze den Slider **Stunde des Tages**, um verschiedene Stunden zwischen
-    0 und 23 Uhr auszuwählen.
+st.markdown(TXT_Tut[lang]["Step3_Text"])
 
-    Untersuche stichprobenartig:
+st.subheader(TXT_Tut[lang]["Step3_Subheader"])
 
-    - eine Nachtstunde,
-    - eine Mittagsstunde,
-    - eine Abendstunde.
-    """
-)
+st.write(TXT_Tut[lang]["Step3_SliderText"])
 
-st.subheader("Stunde des Tages")
-
-st.write(
-    "Der Stundenslider verändert nichts an der Simulation. Er wählt lediglich "
-    "die Stunde aus, die auf der Netzkarte, im Leitungsdiagramm und in den "
-    "Live-Kennzahlen genauer dargestellt wird."
-)
-
-st.markdown(
-    """
-    Beim Verschieben des Reglers solltest du beobachten:
-
-    1. Wie hoch ist der Anteil der Photovoltaikerzeugung?
-    2. Wie hoch ist der Anteil der Winderzeugung?
-    3. Wie hoch ist die maximale Leitungsauslastung?
-    4. Lädt oder entlädt der Batteriespeicher?
-    """
-)
+st.markdown(TXT_Tut[lang]["Step3_Observe"])
 
 
 # ============================================================
 
-st.header("Schritt 4: Wind- und PV-Ausbau testen")
+st.header(TXT_Tut[lang]["Step4_Header"])
 
-wind_tab, pv_tab = st.tabs(["Wind", "Photovoltaik"])
+wind_tab, pv_tab = st.tabs([TXT_Tut[lang]["Tab_Wind"], TXT_Tut[lang]["Tab_PV"]])
 
 with wind_tab:
-    st.subheader("Wind [%]")
-
-    st.write(
-        "Dieser Slider skaliert die gesamte Windstromerzeugung des ausgewählten "
-        "Tages. Wind an Land und Wind auf See werden gemeinsam verändert."
-    )
-
-    st.markdown(
-        """
-        - **0 %:** keine Windstromerzeugung
-        - **100 %:** reale Windstromerzeugung
-        - **150 %:** 50 % mehr Windstrom
-        - **200 %:** doppelte Windstromerzeugung
-        - **300 %:** dreifache Windstromerzeugung
-        """
-    )
-
-    st.markdown(
-        """
-        **Experiment**
-
-        1. Erhöhe Wind um 25 oder 50 Prozentpunkte.
-        2. Betrachte den neuen EE-Anteil.
-        3. Prüfe die maximale Leitungsauslastung. Wenn eine Leitung aufgrund von erhöhter Windstromerzeugung überlastet ist, kannst du auf das Wind Symbol in der Netzkarte klicken und nur für diesen Knoten die Erzeugung wieder senken.
-        4. Untersuche ob der Grid Performance Score gestiegen oder gesunken ist.
-        """
-    )
-
-    st.info(
-        "Mehr Windenergie erhöht häufig den EE-Anteil. Gleichzeitig muss die "
-        "zusätzliche Energie von den windreichen Regionen zu den Verbrauchern "
-        "transportiert werden."
-    )
+    st.subheader(TXT_Tut[lang]["Step4_Wind_Subheader"])
+    st.write(TXT_Tut[lang]["Step4_Wind_Text"])
+    st.markdown(TXT_Tut[lang]["Step4_Wind_Bullets"])
+    st.markdown(TXT_Tut[lang]["Step4_Wind_Experiment"])
+    st.info(TXT_Tut[lang]["Step4_Wind_Info"])
 
 with pv_tab:
-    st.subheader("PV [%]")
-
-    st.write(
-        "Dieser Slider skaliert die Photovoltaikerzeugung des ausgewählten Tages."
-    )
-
-    st.markdown(
-        """
-        - **0 %:** keine Photovoltaikerzeugung
-        - **100 %:** reale Photovoltaikerzeugung
-        - **150 %:** 50 % mehr Photovoltaik
-        - **200 %:** doppelte Photovoltaikerzeugung
-        - **300 %:** dreifache Photovoltaikerzeugung
-        """
-    )
-
-    st.markdown(
-        """
-        **Experiment**
-
-        1. Stelle Wind zunächst wieder auf den Ausgangswert.
-        2. Erhöhe PV um 25 oder 50 Prozentpunkte.
-        3. Betrachte besonders die Mittagsstunden.
-        4. Prüfe, ob der Batteriespeicher lädt.
-        5. Achte auf Überschüsse oder Abregelung.
-        """
-    )
-
-    st.info(
-        "PV erzeugt hauptsächlich tagsüber Strom. Ein sehr hoher PV-Ausbau kann "
-        "deshalb mittags Überschüsse erzeugen, obwohl nachts weiterhin zusätzliche "
-        "Erzeugung benötigt wird."
-    )
-
-
+    st.subheader(TXT_Tut[lang]["Step4_PV_Subheader"])
+    st.write(TXT_Tut[lang]["Step4_PV_Text"])
+    st.markdown(TXT_Tut[lang]["Step4_PV_Bullets"])
+    st.markdown(TXT_Tut[lang]["Step4_PV_Experiment"])
+    st.info(TXT_Tut[lang]["Step4_PV_Info"])
 
 st.divider()
 
-
 # ============================================================
 
-st.header("Schritt 5: Batteriespeicher einsetzen")
+st.header(TXT_Tut[lang]["Step5_Header"])
 
 bess_col1, bess_col2 = st.columns(2)
 
 with bess_col1:
-    st.subheader("BESS Leistung/Energie [%]")
-
-    st.write(
-        "BESS bedeutet Battery Energy Storage System. Der Slider skaliert im "
-        "Simulator gleichzeitig die Lade- und Entladeleistung sowie die "
-        "verfügbare Speicherkapazität."
-    )
-
-    st.markdown(
-        """
-        - **0 %:** kein Batteriespeicher
-        - **100 %:** Referenzgröße
-        - **200 %:** doppelte Leistung und Speicherkapazität
-        - **500 %:** fünffache Leistung und Speicherkapazität
-        """
-    )
+    st.subheader(TXT_Tut[lang]["Step5_BessPower"])
+    st.write(TXT_Tut[lang]["Step5_BessPower_Text"])
+    st.markdown(TXT_Tut[lang]["Step5_BessPower_Bullets"])
 
 with bess_col2:
-    st.subheader("BESS Start-SOC [%]")
+    st.subheader(TXT_Tut[lang]["Step5_BessSOC"])
+    st.write(TXT_Tut[lang]["Step5_BessSOC_Text"])
+    st.markdown(TXT_Tut[lang]["Step5_BessSOC_Bullets"])
 
-    st.write(
-        "SOC bedeutet State of Charge und beschreibt den Ladezustand des "
-        "Speichers zu Beginn des Tages."
-    )
+st.markdown(TXT_Tut[lang]["Step5_Experiment"])
 
-    st.markdown(
-        """
-        - **0 %:** Speicher vollständig leer
-        - **50 %:** Speicher zur Hälfte geladen
-        - **100 %:** Speicher vollständig geladen
-        """
-    )
-
-st.markdown(
-    """
-    **Experiment**
-
-    1. Erzeuge durch einen höheren Wind- oder PV-Wert zeitweise einen Überschuss.
-    2. Vergleiche die Bilanz vor und nach BESS.
-    3. Erhöhe anschließend die BESS-Größe.
-    4. Prüfe, ob mehr Überschuss aufgenommen werden kann.
-    5. Beobachte den SOC im Tagesverlauf.
-    """
-)
-
-st.info(
-    "Ein großer Speicher kann die Bilanz verbessern, erhöht aber auch den "
-    "die Kosten eines Systems. Mehr Speicher ist daher nicht automatisch die beste Lösung."
-)
+st.info(TXT_Tut[lang]["Step5_Info"])
 
 
 st.divider()
 
-
 # ============================================================
 
-st.header("Schritt 6: Einen Netzengpass beheben")
+st.header(TXT_Tut[lang]["Step6_Header"])
 
-st.subheader("Leitungskapazität / Netzausbau [%]")
+st.subheader(TXT_Tut[lang]["Step6_Grid_Subheader"])
 
-st.write(
-    "Dieser Slider skaliert die Kapazität aller modellierten Leitungen. "
-    "Er stellt einen vereinfachten Ausbau des gesamten Übertragungsnetzes dar."
-)
+st.write(TXT_Tut[lang]["Step6_Grid_Text"])
 
-st.markdown(
-    """
-    - **50 %:** halbe Leitungskapazität
-    - **100 %:** ursprüngliche Leitungskapazität
-    - **200 %:** doppelte Leitungskapazität
-    """
-)
+st.markdown(TXT_Tut[lang]["Step6_Grid_Bullets"])
 
-st.markdown(
-    """
-    **Experiment**
+st.markdown(TXT_Tut[lang]["Step6_Experiment"])
 
-    1. Erzeuge zunächst durch mehr Wind oder PV eine Leitungsüberlastung.
-    2. Erhöhe den Netzausbau in kleinen Schritten und senke Windstromerzeugung an kritischen Knoten.
-    3. Stoppe, sobald die Leitungsauslastung ausreichend reduziert wurde.
-    4. Prüfe ob der Grid Performance Score gestiegen oder gefallen ist.
-    """
-)
+st.info(TXT_Tut[lang]["Step6_Info"])
 
-st.info(
-    "Verändere den Netzausbau möglichst in kleinen Schritten. Ein unnötig hoher "
-    "Ausbau kann den Grid Performance Score trotz sicherer Leitungen verschlechtern."
-)
-
-st.caption(
-    "In der Realität würden einzelne Leitungen gezielt ausgebaut. Der globale "
-    "Slider ist eine didaktische Vereinfachung."
-)
-
+st.caption(TXT_Tut[lang]["Step6_Caption"])
 
 
 st.divider()
 
-
 # ============================================================
 
-st.header("Schritt 7: Eine eigene Lösung optimieren")
+st.header(TXT_Tut[lang]["Step7_Header"])
 
-st.markdown(
-    """
-    Versuche nun, das ausgewählte Szenario vollständig zu lösen.
-
-    Gehe dabei iterativ vor:
-
-    1. Erhöhe Wind oder PV nur in kleinen Schritten.
-    2. Prüfe nach jeder Änderung den 24h-EE-Anteil.
-    3. Kontrolliere die maximale Leitungsauslastung.
-    4. Nutze Speicher für zeitliche Überschüsse.
-    5. Baue das Netz nur so weit aus wie erforderlich.
-    6. Vergleiche nach jeder Änderung den Grid Performance Score.
-    """
-)
+st.markdown(TXT_Tut[lang]["Step7_Text"])
 
 goal_col1, goal_col2, goal_col3 = st.columns(3)
 
 with goal_col1:
     st.metric(
-        label="Ziel 1",
-        value="Hoher EE-Anteil",
-        help="Wind, PV und Speicher sollen möglichst viel Last decken.",
+        label=TXT_Tut[lang]["Goal1"],
+        value=TXT_Tut[lang]["Goal1_Val"],
+        help=TXT_Tut[lang]["Goal1_Help"],
     )
 
 with goal_col2:
     st.metric(
-        label="Ziel 2",
-        value="Sicherheit",
-        help="Keine Überlastung: Leitungen sollen während des gesamten Tages unter 100 % bleiben.",
+        label=TXT_Tut[lang]["Goal2"],
+        value=TXT_Tut[lang]["Goal2_Val"],
+        help=TXT_Tut[lang]["Goal2_Help"],
     )
 
 with goal_col3:
     st.metric(
-        label="Ziel 3",
-        value="Effizienz",
-        help="Es sollte möglichst effizient ausgebaut werden, also möglichst wenig Erneuerbare Überproduktion welche zu Abregelung führt.",
+        label=TXT_Tut[lang]["Goal3"],
+        value=TXT_Tut[lang]["Goal3_Val"],
+        help=TXT_Tut[lang]["Goal3_Help"],
     )
 
-
 st.divider()
-
 
 # ============================================================
 # Diagrammreferenz
 # ============================================================
 
-#Werte werden aus session state geholt
+# Werte werden aus session state geholt
 generators=st.session_state.get("tut_generators", pd.DataFrame())
 consumers=st.session_state.get("tut_consumers", pd.DataFrame())
 line_status=st.session_state.get("tut_line_status", pd.DataFrame())
@@ -436,23 +198,23 @@ hour = st.session_state.get("tut_hour", 12)
 
 # C-Analogie: if (ptr == NULL) -> goto main
 if "tut_df" not in st.session_state or st.session_state.get("tut_df", pd.DataFrame()).empty:
-    st.warning("Die Daten wurden noch nicht berechnet. Du wirst zur Hauptseite weitergeleitet...")
+    st.warning(TXT_Tut[lang]["Warning_NoData"])
     st.switch_page("app.py") # Bricht hier ab und lädt sofort die Hauptseite neu!
     st.stop() # Sicherheitsabbruch, damit der restliche Code auf dieser Seite nicht crasht
 
-st.header("Was zeigen die Diagramme?")
+st.header(TXT_Tut[lang]["Charts_Header"])
 
 map_tab, line_tab, line_tab_max, dispatch_tab = st.tabs(
     [
-        "Netzkarte",
-        "Leitungsauslastung der aktuellen Stunde",
-        "Maximale Leitungsauslastung des Tages",
-        "Erzeugungsmix",
+        TXT_Tut[lang]["Tab_Map"],
+        TXT_Tut[lang]["Tab_Line"],
+        TXT_Tut[lang]["Tab_Line_Max"],
+        TXT_Tut[lang]["Tab_Dispatch"],
     ]
 )
 
 with map_tab:
-    st.subheader("Netzkarte")
+    st.subheader(TXT_Tut[lang]["Chart_Map_Sub"])
     st.plotly_chart(
         build_map(
             generators=generators,
@@ -467,149 +229,39 @@ with map_tab:
         ),
         width="stretch",
     )
-    st.write(
-        "Die Netzkarte zeigt Erzeuger, Verbraucher, Batteriespeicher und "
-        "Leitungen für die ausgewählte Stunde."
-    )
-
-    st.markdown(
-        """
-        **Leitungsfarben**
-
-        - 🟢 Grün: weniger als 90 % ausgelastet
-        - 🟠 Orange: mindestens 90 %, aber nicht über 100 %
-        - 🔴 Rot: über 100 % ausgelastet
-        """
-    )
-
-    st.markdown(
-        """
-        **Symbole**
-
-        - Dreieck: Wind
-        - Quadrat: Photovoltaik
-        - Raute: Batteriespeicher
-        - Kreis: restliche regelbare Erzeugung
-        - Stern: Verbrauchercluster
-        """
-    )
-
-    st.write(
-        "Die Größe der Symbole hängt von der aktuellen Erzeugung oder dem "
-        "aktuellen Verbrauch ab."
-    )
-
-    st.info(
-        "Bewege den Mauszeiger über eine Leitung, um Kapazität, Leistungsfluss "
-        "und prozentuale Auslastung anzuzeigen. Auf das Windsymbol kannst du klicken und die Generation an dem gewählten Knoten reduzieren."
-    )
+    st.write(TXT_Tut[lang]["Chart_Map_Text1"])
+    st.markdown(TXT_Tut[lang]["Chart_Map_Colors"])
+    st.markdown(TXT_Tut[lang]["Chart_Map_Symbols"])
+    st.write(TXT_Tut[lang]["Chart_Map_Text2"])
+    st.info(TXT_Tut[lang]["Chart_Map_Info"])
 
 with line_tab:
-    st.subheader("Leitungsauslastung")
+    st.subheader(TXT_Tut[lang]["Chart_Line_Sub"])
     st.plotly_chart(build_line_utilization_chart(line_status), width="stretch")
-    st.write(
-        "Das Balkendiagramm zeigt die Auslastung aller Leitungen in der "
-        "ausgewählten Stunde."
-    )
-
-    st.markdown(
-        """
-        - Die Balken sind nach Auslastung sortiert.
-        - Die rote gestrichelte Linie markiert 100 %.
-        - Der höchste Balken zeigt den aktuell größten Netzengpass.
-        """
-    )
-
-    st.info(
-        "Ein Wert über 100 % bedeutet, dass der berechnete Leistungsfluss "
-        "größer als die im Modell verfügbare Leitungskapazität ist."
-    )
+    st.write(TXT_Tut[lang]["Chart_Line_Text1"])
+    st.markdown(TXT_Tut[lang]["Chart_Line_Bullets"])
+    st.info(TXT_Tut[lang]["Chart_Line_Info"])
 
 with line_tab_max:
-    st.subheader("Maximale Leitungsauslastung")
+    st.subheader(TXT_Tut[lang]["Chart_LineMax_Sub"])
     st.plotly_chart(build_line_utilization_chart_24h(line_status_24h), width="stretch")  
-    st.write(
-        "Das Balkendiagramm zeigt die maximale Leitungsauslastung jeder Stunde "
-        "des Tages."
-    )
-
-    
-    st.info(
-        "Ein Wert über 100 % bedeutet, dass der berechnete Leistungsfluss "
-        "größer als die im Modell verfügbare Leitungskapazität ist."
-    )
+    st.write(TXT_Tut[lang]["Chart_LineMax_Text"])
+    st.info(TXT_Tut[lang]["Chart_Line_Info"])
 
 with dispatch_tab:
-    st.subheader("Dispatch und Erzeugungsmix")
+    st.subheader(TXT_Tut[lang]["Chart_Dispatch_Sub"])
     st.plotly_chart(build_stack(df, highlight_hour=int(hour)), width="stretch")
-    st.write(
-        "Das Diagramm zeigt für jede Stunde, durch welche Technologien der "
-        "Stromverbrauch gedeckt wird."
-    )
-
-    st.markdown(
-        """
-        **Positive Balken**
-
-        - Wind
-        - Photovoltaik
-        - restliche regelbare Erzeuger
-        - BESS-Entladung
-
-        **Negative Balken**
-
-        - BESS-Ladung
-        - Abregelung erneuerbarer Energie
-
-        **Schwarze Linie**
-
-        Stromverbrauch beziehungsweise Ziel-Last.
-
-        **Gepunktete graue Linie**
-
-        Rechnerisch benötigte restliche Erzeugung vor Berücksichtigung der Limits.
-        """
-    )
-
+    st.write(TXT_Tut[lang]["Chart_Dispatch_Text1"])
+    st.markdown(TXT_Tut[lang]["Chart_Dispatch_Bullets"])
 
 # ============================================================
 # Weitere Kennzahlen
 # ============================================================
 
-st.header("Weitere Kennzahlen")
+st.header(TXT_Tut[lang]["Metrics_Header"])
 
-with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
-    st.markdown(
-        """
-        **Last/Ziel [GW]**  
-        Stromverbrauch in der ausgewählten Stunde.
-
-        **Wind [GW] und PV [GW]**  
-        Aktuelle erneuerbare Erzeugungsleistung.
-
-        **Restl. Erz. [GW]**  
-        Aktuell eingesetzte regelbare restliche Erzeugung.
-
-        **BESS [GW]**  
-        Positiv bedeutet Entladung, negativ bedeutet Ladung.
-
-        **Ziellücke nach EE**  
-        Last abzüglich Wind- und PV-Erzeugung.
-
-        **Restl. verfügbar [GW]**  
-        Maximal verfügbare Leistung der restlichen Erzeuger.
-
-        **Ziellücke vor BESS**  
-        Verbleibende Differenz vor dem Einsatz des Batteriespeichers.
-
-        **SOC [%]**  
-        Aktueller Ladezustand des Batteriespeichers.
-
-        **Abregelung**  
-        Erneuerbare Erzeugung, die nicht verwendet werden kann.
-
-        """
-    )
+with st.expander(TXT_Tut[lang]["Metrics_Expander"], expanded=False):
+    st.markdown(TXT_Tut[lang]["Metrics_Text"])
 
 
 # ============================================================
@@ -618,10 +270,8 @@ with st.expander("Kennzahlen der ausgewählten Stunde", expanded=False):
 
 st.divider()
 
-
-
 st.page_link(
     "app.py",
-    label="Zurück zum Simulator",
+    label=TXT_Tut[lang]["Footer_Back"],
     icon="🎮",
 )
