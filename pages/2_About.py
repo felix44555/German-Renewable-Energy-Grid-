@@ -86,9 +86,9 @@ st.markdown(
 )
 
 st.latex(
-    r"P_{ab}\approx\frac{\theta_a-\theta_b}{x_{ab}}
-\]"
+    r"P_{ab}\approx\frac{\theta_a-\theta_b}{x_{ab}}"
 )
+
 
 st.markdown(
     "Dabei sind $\\theta_a$ und $\\theta_b$ die Spannungswinkel der beiden Knoten "
