@@ -140,6 +140,7 @@ TXT = {
 
 TXT_Tut = {
     "DE": {
+        "Tut_Sprache" : "Sprache",
         "Tut_Title": "📘 Tutorial: Das deutsche Stromnetz gestalten",
         "Tut_Intro": "In diesem Tutorial lernst du Schritt für Schritt, wie du den Simulator bedienst, Netzengpässe erkennst und den Anteil erneuerbarer Energien erhöhst.",
         "Tut_Goal": "Das Ziel ist nicht, einfach alle Slider auf den höchsten Wert zu stellen. Gesucht wird eine technisch sinnvolle Lösung mit hohem EE-Anteil, sicheren Leitungen und möglichst begrenztem Ausbau.",
@@ -228,6 +229,7 @@ TXT_Tut = {
         "Page_Title": "Tutorial"
     },
     "EN": {
+        "Tut_Sprache" : "Language",
         "Tut_Title": "📘 Tutorial: Designing the German Power Grid",
         "Tut_Intro": "In this tutorial, you will learn step-by-step how to use the simulator, identify grid bottlenecks, and increase the share of renewable energies.",
         "Tut_Goal": "The goal is not to simply set all sliders to the highest value. We are looking for a technically sound solution with a high RE share, secure power lines, and the least possible grid expansion.",

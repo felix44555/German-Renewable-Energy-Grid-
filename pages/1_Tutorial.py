@@ -10,6 +10,11 @@ st.set_page_config(
     page_icon="📘",
     layout="wide",
 )
+with st.sidebar:
+    st.header(TXT_Tut[lang]["Sprache"])
+    st.radio("Sprache / Language", options=["DE", "EN"], key="lang")
+    lang = st.session_state.get("lang", "DE")
+    st.divider()
 
 # ============================================================
 # Kopfbereich
