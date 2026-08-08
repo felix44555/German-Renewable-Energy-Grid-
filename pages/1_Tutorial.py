@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide",
 )
 with st.sidebar:
-    st.header(TXT_Tut[lang]["Sprache"])
+    st.header(TXT_Tut[lang]["Tut_Sprache"])
     st.radio("Sprache / Language", options=["DE", "EN"], key="lang")
     lang = st.session_state.get("lang", "DE")
     st.divider()
