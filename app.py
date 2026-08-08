@@ -587,7 +587,7 @@ def main() -> None:
         #e4.metric("überlastete Leitungen", str(scenario_eval.get("overloaded_count", 0)))
         #bis hier runter
     
-    with st.expander("Stündliche Tabelle"):
+    with st.expander(TXT[lang]["Stündliche_Tabelle"]):
         cols = [
             "Stunde", "Last_GW", "Wind_GW", "PV_GW", "Konv_Soll_GW", "Konv_Min_GW", "Konv_Max_GW",
             "Konv_GW", "Konv_Fehlleistung_GW", "Konv_Mindestlauf_Ueberschuss_GW",
