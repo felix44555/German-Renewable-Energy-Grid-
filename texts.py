@@ -79,7 +79,7 @@ TXT = {
         "soc_slider":"BESS start-SOC [%]",
         "titel_EE":"Grid measures",
         "slider_Netz":"Conductor capacity / grid expansion [%]",
-        "Szenario_bewältigt." : "Scenario Completed.",
+        "Szenario_bewaeltigt." : "Scenario Completed.",
         "Szenario_nicht_bewältigt." : "Scenario not yet resolved.",
         "24h_EE_Anteil":"24h RE-share [%]",
         "max_Auslastung_24h":"max. utilization 24h [%]",
