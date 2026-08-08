@@ -169,20 +169,7 @@ with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
         r"P_i+P_j+P_k=500+300-800=0\,\mathrm{MW}"
     )
 
-    st.markdown("Für die Lastflussrechnung werden die Leistungen in Per Unit umgerechnet:")
-
-    st.latex(
-        r"P_{i,pu}=\frac{500}{1000}=0{,}5\,pu"
-    )
-
-    st.latex(
-        r"P_{j,pu}=\frac{300}{1000}=0{,}3\,pu"
-    )
-
-    st.latex(
-        r"P_{k,pu}=\frac{-800}{1000}=-0{,}8\,pu"
-    )
-
+    
     st.markdown("Die Leitungsreaktanzen betragen:")
 
     st.latex(r"X_{ij}=28{,}88\,\Omega")
