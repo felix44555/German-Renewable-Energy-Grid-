@@ -55,45 +55,69 @@ with c3:
     st.write("Versuche dein Netz so effizient wie möglich zu bauen. Wenn du zu viel Kapazitäten hinzufügst, die garnicht genutzt werden, sinkt die Effizienz deines Netztes.")
 
 # 5. Wie funktioniert die Lastflussrechnung?
+
 st.header("5. Wie funktioniert die Lastflussrechnung?")
 
 st.markdown("### DC-Lastflussmodell")
 
-st.markdown("Im DC-Lastfluss gelten die vereinfachenden Annahmen:")
+st.markdown(
+    "Für die vereinfachte Berechnung des Leistungsflusses im Netz verwenden wir "
+    "ein DC-Lastflussmodell. Dabei gelten folgende vereinfachende Annahmen:"
+)
 
 st.markdown("**1. Spannungsbeträge sind näherungsweise konstant:**")
-st.latex(r"|V| \approx 1")
+st.latex(r"|V| \approx 1\,pu")
 
-st.markdown("**2. Leitungswiderstände werden vernachlässigt:**")
+st.markdown("**2. Leitungswiderstände werden gegenüber der Reaktanz vernachlässigt:**")
 st.latex(r"R \ll X")
 
-st.markdown("**3. Winkeldifferenzen sind klein:**")
-st.latex(r"\sin(\theta_a - \theta_b) \approx \theta_a - \theta_b")
+st.markdown("**3. Die Winkeldifferenzen zwischen den Knoten sind klein:**")
+st.latex(r"\sin(\theta_a-\theta_b)\approx\theta_a-\theta_b")
 
 st.markdown("**4. Es wird nur Wirkleistung betrachtet.**")
 
 st.divider()
 
-st.markdown("Für eine Leitung zwischen zwei Knoten $a$ und $b$ gilt:")
+st.markdown("### Leistungsfluss zwischen zwei Knoten")
 
-st.latex(r"P_{ab} = b_{ab}(\theta_a - \theta_b)")
+st.markdown(
+    "Unter diesen Annahmen kann der Wirkleistungsfluss auf einer Leitung "
+    "zwischen den Knoten $a$ und $b$ näherungsweise berechnet werden als:"
+)
 
-st.markdown("mit")
+st.latex(
+    r"P_{ab}\approx\frac{\theta_a-\theta_b}{x_{ab}}
+\]"
+)
 
-st.latex(r"b_{ab} = \frac{1}{x_{ab}}")
+st.markdown(
+    "Dabei sind $\\theta_a$ und $\\theta_b$ die Spannungswinkel der beiden Knoten "
+    "und $x_{ab}$ die Leitungsreaktanz in Per Unit."
+)
 
-st.markdown("Damit ergibt sich äquivalent:")
+st.markdown("Alternativ kann man mit dem Leitwertfaktor schreiben:")
 
-st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
+st.latex(r"b_{ab}=\frac{1}{x_{ab}}")
+
+st.latex(r"P_{ab}=b_{ab}(\theta_a-\theta_b)")
 
 st.divider()
 
-st.markdown("Die Knotengleichung für einen Knoten $m$ lautet allgemein:")
-
-st.latex(r"P_m = \sum_{n \in N(m)} b_{mn}(\theta_m - \theta_n)")
+st.markdown("### Knotengleichung")
 
 st.markdown(
-    "Dabei ist $N(m)$ die Menge der Nachbarknoten von $m$."
+    "Für einen Knoten $m$ ergibt sich der gesamte Leistungsfluss aus der Summe "
+    "der Leistungsflüsse zu allen angeschlossenen Nachbarknoten:"
+)
+
+st.latex(
+    r"P_m=\sum_{n\in N(m)}\frac{\theta_m-\theta_n}{x_{mn}}"
+)
+
+st.markdown(
+    "Dabei bezeichnet $N(m)$ die Menge der Nachbarknoten von $m$. "
+    "Die Gleichungen aller Knoten können anschließend als lineares "
+    "Gleichungssystem in Matrixform geschrieben werden."
 )
 
 st.divider()
@@ -103,113 +127,192 @@ with st.expander("Beispielrechnung: DC-Lastfluss mit 3 Knoten", expanded=False):
     st.markdown("### 1. Eingaben")
 
     st.markdown(
-        "Wir betrachten ein kleines Netz mit drei Knoten $i$, $j$ und $k$. "
-        "Die Knoten $i$ und $j$ speisen jeweils Leistung ein, während Knoten $k$ Leistung aufnimmt."
+        "Wir betrachten ein vereinfachtes Netz mit drei Knoten $i$, $j$ und $k$. "
+        "Die Knoten $i$ und $j$ speisen Leistung ein, während Knoten $k$ "
+        "Leistung aufnimmt."
     )
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
         st.image(
-        "pages/dc_3_knoten.jpeg",
-        caption="Dreiknoten-Netz für die Beispielrechnung",
-        use_container_width=True # It will now only fill the middle column!
+            "pages/dc_3_knoten.jpeg",
+            caption="Dreiknoten-Netz für die Beispielrechnung",
+            use_container_width=True
+        )
+
+    st.markdown("Für die Per-Unit-Rechnung werden zunächst die Basisgrößen festgelegt:")
+
+    st.latex(r"V_B=380\,\mathrm{kV}")
+
+    st.latex(r"S_B=1000\,\mathrm{MVA}")
+
+    st.markdown("Daraus ergibt sich die Basisimpedanz:")
+
+    st.latex(
+        r"Z_B=\frac{V_B^2}{S_B}"
+        r"=\frac{380^2}{1000}"
+        r"=144{,}4\,\Omega"
     )
 
-    st.latex(r"P_i = +4 \ \mathrm{MW}")
-    st.latex(r"P_j = +4 \ \mathrm{MW}")
-    st.latex(r"P_k = -8 \ \mathrm{MW}")
+    st.markdown("Die eingespeisten bzw. entnommenen Leistungen sind:")
+
+    st.latex(r"P_i=500\,\mathrm{MW}")
+
+    st.latex(r"P_j=300\,\mathrm{MW}")
+
+    st.latex(r"P_k=-800\,\mathrm{MW}")
 
     st.markdown("Das Netz ist ausgeglichen, weil gilt:")
 
-    st.latex(r"P_i + P_j + P_k = 4 + 4 - 8 = 0")
+    st.latex(
+        r"P_i+P_j+P_k=500+300-800=0\,\mathrm{MW}"
+    )
 
-    st.markdown("Die Leitungsreaktanzen sind:")
+    st.markdown("Für die Lastflussrechnung werden die Leistungen in Per Unit umgerechnet:")
 
-    st.latex(r"x_{ij} = 8")
-    st.latex(r"x_{ik} = 14")
-    st.latex(r"x_{jk} = 10")
+    st.latex(
+        r"P_{i,pu}=\frac{500}{1000}=0{,}5\,pu"
+    )
 
-    st.markdown("Daraus ergeben sich die Leitwertfaktoren:")
+    st.latex(
+        r"P_{j,pu}=\frac{300}{1000}=0{,}3\,pu"
+    )
 
-    st.latex(r"b_{ij} = \frac{1}{8}")
-    st.latex(r"b_{ik} = \frac{1}{14}")
-    st.latex(r"b_{jk} = \frac{1}{10}")
+    st.latex(
+        r"P_{k,pu}=\frac{-800}{1000}=-0{,}8\,pu"
+    )
+
+    st.markdown("Die Leitungsreaktanzen betragen:")
+
+    st.latex(r"X_{ij}=28{,}88\,\Omega")
+
+    st.latex(r"X_{ik}=36{,}10\,\Omega")
+
+    st.latex(r"X_{jk}=28{,}88\,\Omega")
+
+    st.markdown(
+        "Diese werden mit der Basisimpedanz in Per Unit umgerechnet:"
+    )
+
+    st.latex(
+        r"x_{ij}=\frac{X_{ij}}{Z_B}"
+        r"=\frac{28{,}88}{144{,}4}"
+        r"=0{,}20\,pu"
+    )
+
+    st.latex(
+        r"x_{ik}=\frac{X_{ik}}{Z_B}"
+        r"=\frac{36{,}10}{144{,}4}"
+        r"=0{,}25\,pu"
+    )
+
+    st.latex(
+        r"x_{jk}=\frac{X_{jk}}{Z_B}"
+        r"=\frac{28{,}88}{144{,}4}"
+        r"=0{,}20\,pu"
+    )
 
     st.divider()
 
     st.markdown("### 2. Reduzierte Gleichung")
 
     st.markdown(
-        "Damit die Winkel eindeutig berechnet werden können, wird ein Knoten als Referenzknoten gewählt. "
-        "Hier setzen wir:"
+        "Damit die Winkel eindeutig bestimmt werden können, wird ein Knoten "
+        "als Referenzknoten gewählt. Hier setzen wir:"
     )
 
-    st.latex(r"\theta_k = 0")
+    st.latex(r"\theta_k=0")
 
-    st.markdown("Die DC-Lastflussgleichung wird in Matrixform geschrieben als:")
-
-    st.latex(r"P = B' \theta")
-
-    st.markdown("Da Knoten $k$ der Referenzknoten ist, bleiben nur die Winkel $\\theta_i$ und $\\theta_j$ als Unbekannte übrig.")
+    st.markdown(
+        "Die Knotengleichungen für die verbleibenden unbekannten Winkel "
+        "$\\theta_i$ und $\\theta_j$ ergeben:"
+    )
 
     st.latex(
         r"""
         \begin{bmatrix}
-        \frac{11}{56} & -\frac{1}{8} \\
-        -\frac{1}{8} & \frac{9}{40}
+        9 & -5\\
+        -5 & 10
         \end{bmatrix}
         \begin{bmatrix}
-        \theta_i \\
+        \theta_i\\
         \theta_j
         \end{bmatrix}
         =
         \begin{bmatrix}
-        4 \\
-        4
+        0{,}5\\
+        0{,}3
         \end{bmatrix}
         """
     )
 
-    st.markdown("Durch Lösen dieses linearen Gleichungssystems erhält man:")
+    st.markdown(
+        "Die rechte Seite enthält dabei die eingespeiste bzw. entnommene "
+        "Leistung in Per Unit."
+    )
 
-    st.latex(r"\theta_i = 49")
-    st.latex(r"\theta_j = 45")
-    st.latex(r"\theta_k = 0")
+    st.markdown("Durch Lösen des linearen Gleichungssystems erhält man:")
+
+    st.latex(
+        r"\theta_i=0{,}10\,\mathrm{rad}=5{,}73^\circ"
+    )
+
+    st.latex(
+        r"\theta_j=0{,}08\,\mathrm{rad}=4{,}58^\circ"
+    )
+
+    st.latex(r"\theta_k=0")
 
     st.divider()
 
     st.markdown("### 3. Ergebnisse")
 
-    st.markdown("Die Leistungsflüsse auf den Leitungen ergeben sich aus:")
-
-    st.latex(r"P_{ab} = \frac{\theta_a - \theta_b}{x_{ab}}")
-
-    st.markdown("**Leitung von i nach k:**")
-
-    st.latex(r"P_{ik} = \frac{\theta_i - \theta_k}{x_{ik}} = \frac{49 - 0}{14} = 3{,}5 \ \mathrm{MW}")
-
-    st.markdown("**Leitung von j nach k:**")
-
-    st.latex(r"P_{jk} = \frac{\theta_j - \theta_k}{x_{jk}} = \frac{45 - 0}{10} = 4{,}5 \ \mathrm{MW}")
+    st.markdown(
+        "Die Leistungsflüsse auf den Leitungen werden zunächst in Per Unit "
+        "berechnet und anschließend in MW umgerechnet."
+    )
 
     st.markdown("**Leitung von i nach j:**")
 
-    st.latex(r"P_{ij} = \frac{\theta_i - \theta_j}{x_{ij}} = \frac{49 - 45}{8} = 0{,}5 \ \mathrm{MW}")
-
-    st.markdown("Damit ergibt sich die Knotenkontrolle:")
-
-    st.latex(r"\text{Knoten } i: \quad P_{ik} + P_{ij} = 3{,}5 + 0{,}5 = 4 \ \mathrm{MW}")
-
-    st.latex(r"\text{Knoten } j: \quad P_{jk} - P_{ij} = 4{,}5 - 0{,}5 = 4 \ \mathrm{MW}")
-
-    st.latex(r"\text{Knoten } k: \quad P_{ik} + P_{jk} = 3{,}5 + 4{,}5 = 8 \ \mathrm{MW}")
-
-    st.success(
-        "Interpretation: Der Haupttransport erfolgt zu Knoten k. Zusätzlich fließt ein kleiner Ausgleichsstrom "
-        "von Knoten i nach Knoten j."
+    st.latex(
+        r"P_{ij}"
+        r"=\frac{\theta_i-\theta_j}{x_{ij}}"
+        r"=\frac{0{,}10-0{,}08}{0{,}20}"
+        r"=0{,}10\,pu"
+        r"=100\,\mathrm{MW}"
     )
 
+    st.markdown("**Leitung von i nach k:**")
+
+    st.latex(
+        r"P_{ik}"
+        r"=\frac{\theta_i-\theta_k}{x_{ik}}"
+        r"=\frac{0{,}10-0}{0{,}25}"
+        r"=0{,}40\,pu"
+        r"=400\,\mathrm{MW}"
+    )
+
+    st.markdown("**Leitung von j nach k:**")
+
+    st.latex(
+        r"P_{jk}"
+        r"=\frac{\theta_j-\theta_k}{x_{jk}}"
+        r"=\frac{0{,}08-0}{0{,}20}"
+        r"=0{,}40\,pu"
+        r"=400\,\mathrm{MW}"
+    )
+
+    st.markdown(
+        "Damit fließen insgesamt 800 MW zu Knoten $k$. "
+        "Zusätzlich fließen 100 MW von Knoten $i$ nach Knoten $j$."
+    )
+
+    st.success(
+        "Interpretation: Der Haupttransport erfolgt von den einspeisenden "
+        "Knoten i und j zum Verbrauchsknoten k. Zusätzlich fließen 100 MW "
+        "von i nach j, da die Knotenspannungswinkel unterschiedlich sind."
+    )
 
 
 st.divider()
