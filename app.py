@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
+import importlib
 
 import pandas as pd
 import streamlit as st
@@ -19,10 +20,13 @@ from grid_io import (
     pypsa_to_generators,
     pypsa_to_lines,
 )
-from scenarios import SCENARIOS, apply_scenario_to_profiles, evaluate_scenario
+import scenarios
 from smard_api import load_smard_api_profile
 from visualization import build_line_utilization_chart, build_line_utilization_chart_24h, build_map, build_stack #build_balance_chart,
 from KPI_code import _calculate_24h_kpi,_calculate_current_kpi
+
+importlib.reload(scenarios)
+from scenarios import SCENARIOS, apply_scenario_to_profiles, evaluate_scenario
 
 BASE_DIR = Path(__file__).resolve().parent
 NETWORK_FILE = BASE_DIR / "real_germany_8n.nc"
