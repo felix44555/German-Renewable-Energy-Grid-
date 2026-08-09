@@ -445,7 +445,7 @@ def main() -> None:
                    bess_scale=bess_scale,
                    refs=refs,
                ),
-               width="stretch", on_select="rerun", key=f"map_{st.session_state['map_key']}")
+               width="stretch", on_select="rerun", key=f"map_{st.session_state['map_key']}", config={'scrollZoom': False})
 
         # Auswertung des Klicks
         if event and "selection" in event and event["selection"].get("points"):
