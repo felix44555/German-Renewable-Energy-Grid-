@@ -145,7 +145,7 @@ TXT_Tut = {
         "Tut_Sprache" : "Sprache",
         "Tut_Title": "📘 Tutorial: Das Simulationstool kennenlernen",
         "Tut_Intro": "In diesem Tutorial lernst du Schritt für Schritt, wie du den Simulator bedienst, Netzengpässe erkennst und die Energiegewinnung aus verschiedenen Quellen anpasst.",
-        "Das Ziel ist nicht, einzelne Slider möglichst stark zu erhöhen. Untersuche stattdessen, wie Erzeugung, Speicher und Netzkapazität zusammenspielen und welche Kombination eine technisch sinnvolle und sichere Versorgung ermöglicht."
+        "Tut_Goal": "Das Ziel ist nicht, einzelne Slider möglichst stark zu erhöhen. Untersuche stattdessen, wie Erzeugung, Speicher und Netzkapazität zusammenspielen und welche Kombination eine technisch sinnvolle und sichere Versorgung ermöglicht.",
         "Nav_Sim": "Simulator öffnen",
         "Nav_Model": "Modellgrundlagen",
         "Step1_Header": "Schritt 1: Szenario und Daten auswählen",
