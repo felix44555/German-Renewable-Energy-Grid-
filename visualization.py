@@ -173,7 +173,7 @@ def build_map(
                 
                 # Individuellen Slider-Faktor (faktor) anwenden
                 sub.at[idx, "Aktuell_GW"] = share * base_wind * faktor
-                sub.at[idx, "Installiert_GW"] = share * refs["wind_gw"] * wind_scale_global * faktor
+                sub.at[idx, "Installiert_GW"] = share * refs["wind_gw"] * wind_scale_global
                 
         elif typ == "Konventionell":
             extra_konv = float(hour_row.get("Extra_Konv_GW", 0.0))
