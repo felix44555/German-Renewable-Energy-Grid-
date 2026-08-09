@@ -533,7 +533,7 @@ TXT_SCEN = {
         "Scen_Sun_Task": "Die Sonne scheint an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Klimageräten und anderen Verbrauchern über dem aktuell erwartbaren Verbrauch.",
         "Scen_WindSun_Name": "Wind- und Sonniger Tag",
         "Scen_WindSun_Task": "Die Sonne scheint an diesem Tag stark, während gleichzeitig der Wind stark weht. Die Last entspricht dem aktuell erwartbaren Verbrauch.",
-        "Scen_Wind2_Name": "Wind Sandbox",
+        "Scen_Wind2_Name": "Windiger Tag",
         "Scen_Wind2_Task": "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und anderen Verbrauchern über dem aktuell erwartbaren Verbrauch.",
         "Eval_Bal_OK": "Bilanz ok: {0:+.2f} GW innerhalb ±{1:.1f} GW.",
         "Eval_Bal_Under": "Unterdeckung: {0:+.2f} GW. Mehr verfügbare Restleistung, BESS-Entladung oder Lastsenkung nötig.",
