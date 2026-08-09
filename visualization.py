@@ -152,12 +152,16 @@ def build_map(
         if sub.empty:
             continue
             
-        
         if typ == "Wind":
             effective_wind_ratio = st.session_state.get("effective_wind_ratio", 1.0)
             base_wind = typ_to_value["Wind"] / effective_wind_ratio if effective_wind_ratio > 0.01 else 0.0
             
+            # WICHTIG: Den reinen globalen Sliderwert zurückrechnen, damit die Tooltips
+            # nicht vom Durchschnitt der anderen Slider verfälscht werden!
+            wind_scale_global = wind_scale / effective_wind_ratio if effective_wind_ratio > 0.01 else 0.0
+            
             sub["Aktuell_GW"] = 0.0
+            sub["Installiert_GW"] = 0.0  # Hier weisen wir es separat für Wind zu!
             for idx, row in sub.iterrows():
                 share = float(row.get("Anteil", 0.0))
                 bus = str(row.get("Bus", ""))
@@ -166,7 +170,10 @@ def build_map(
                     faktor = st.session_state.get(f"wind_node_{k_num}", 100) / 100.0
                 except ValueError:
                     faktor = 1.0
+                
+                # Individuellen Slider-Faktor (faktor) anwenden
                 sub.at[idx, "Aktuell_GW"] = share * base_wind * faktor
+                sub.at[idx, "Installiert_GW"] = share * refs["wind_gw"] * wind_scale_global * faktor
                 
         elif typ == "Konventionell":
             extra_konv = float(hour_row.get("Extra_Konv_GW", 0.0))
@@ -177,13 +184,14 @@ def build_map(
             # Das Zusatzkraftwerk auch auf der Landkarte befeuern!
             sub.loc[sub["Name"] == "backup_DE0 1", "Aktuell_GW"] += extra_konv
             
+            # Für Konventionell nutzen wir die Standardberechnung
+            sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
+            
         else:
-            # Normalfall
+            # Normalfall (PV, BESS)
             sub["Aktuell_GW"] = sub["Anteil"] * typ_to_value[typ]
-
-        sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
-        
-        sub = apply_marker_offsets(sub)
+            # Standardberechnung
+            sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
         
         marker_size = 10 + np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"]), 0.0)) * 4.0
         
