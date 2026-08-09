@@ -158,7 +158,7 @@ st.header(TXT_Tut[lang]["Step7_Header"])
 
 st.markdown(TXT_Tut[lang]["Step7_Text"])
 
-goal_col1, goal_col2, goal_col3 = st.columns(3)
+goal_col1, goal_col2 = st.columns(2)
 
 with goal_col1:
     st.metric(
@@ -174,12 +174,6 @@ with goal_col2:
         help=TXT_Tut[lang]["Goal2_Help"],
     )
 
-with goal_col3:
-    st.metric(
-        label=TXT_Tut[lang]["Goal3"],
-        value=TXT_Tut[lang]["Goal3_Val"],
-        help=TXT_Tut[lang]["Goal3_Help"],
-    )
 
 st.divider()
 
