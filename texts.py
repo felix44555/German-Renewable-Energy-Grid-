@@ -521,3 +521,43 @@ TXT_Vis = {
         "Vis_MaxUtil_Title": "Maximum Line Utilization per Hour - DC Load Flow"
     }
 }
+TXT_SCEN = {
+    "DE": {
+        "Scen_Train_Name": "Sandbox: SMARD-Daten",
+        "Scen_Train_Task": "Nutze Wind, PV, restliche Erzeuger, BESS, Last und Abregelung so, dass die SMARD-Netzlast ohne Importe/Exporte bilanziell gedeckt wird. Restliche Erzeuger sind eine künstlich regelbare Stellgröße und nicht an SMARD gekoppelt.",
+        "Scen_Wind_Name": "Sehr Windiger Tag - hoher Verbrauch",
+        "Scen_Wind_Task": "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und anderen Verbrauchern über dem aktuell erwartbaren Verbrauch.",
+        "Scen_Sun_Name": "Sehr Sonniger Tag - hoher Verbrauch",
+        "Scen_Sun_Task": "Die Sonne scheint an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Klimageräten und anderen Verbrauchern über dem aktuell erwartbaren Verbrauch.",
+        "Scen_WindSun_Name": "Wind- und Sonniger Tag - hoher Verbrauch",
+        "Scen_WindSun_Task": "Die Sonne scheint an diesem Tag stark, während gleichzeitig der Wind stark weht. Die Last entspricht dem aktuell erwartbaren Verbrauch.",
+        "Scen_Wind2_Name": "Wind Sandbox",
+        "Scen_Wind2_Task": "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und anderen Verbrauchern über dem aktuell erwartbaren Verbrauch.",
+        "Eval_Bal_OK": "Bilanz ok: {0:+.2f} GW innerhalb ±{1:.1f} GW.",
+        "Eval_Bal_Under": "Unterdeckung: {0:+.2f} GW. Mehr verfügbare Restleistung, BESS-Entladung oder Lastsenkung nötig.",
+        "Eval_Bal_Over": "Überdeckung: {0:+.2f} GW. Restleistung senken, BESS laden, EE abregeln oder Last erhöhen.",
+        "Eval_Curtail_OK": "Abregelung ok: {0:.2f} GW ≤ {1:.2f} GW.",
+        "Eval_Curtail_High": "Abregelung zu hoch: {0:.2f} GW > {1:.2f} GW.",
+        "Eval_Lines_OK": "Leitungen ok: maximale Auslastung {0:.0f} %.",
+        "Eval_Lines_Over": "Leitungsüberlast: {0} Leitung(en), Maximum {1:.0f} %."
+    },
+    "EN": {
+        "Scen_Train_Name": "Sandbox: SMARD Data",
+        "Scen_Train_Task": "Use wind, PV, remaining generators, BESS, load, and curtailment so that the SMARD grid load is balanced without imports/exports. Remaining generators are an artificially adjustable variable and are not coupled to SMARD.",
+        "Scen_Wind_Name": "Very Windy Day - High Consumption",
+        "Scen_Wind_Task": "The wind is very strong on this day. The load is also very high and lies above the currently expected consumption due to the expansion of, for example, heat pumps and other consumers.",
+        "Scen_Sun_Name": "Very Sunny Day - High Consumption",
+        "Scen_Sun_Task": "The sun shines very strongly on this day. The load is also very high and lies above the currently expected consumption due to the expansion of, for example, air conditioning units and other consumers.",
+        "Scen_WindSun_Name": "Windy and Sunny Day - High Consumption",
+        "Scen_WindSun_Task": "The sun shines brightly on this day while the wind blows strongly at the same time. The load corresponds to the currently expected consumption.",
+        "Scen_Wind2_Name": "Wind Sandbox",
+        "Scen_Wind2_Task": "The wind is very strong on this day. The load is also very high and lies above the currently expected consumption due to the expansion of, for example, heat pumps and other consumers.",
+        "Eval_Bal_OK": "Balance ok: {0:+.2f} GW within ±{1:.1f} GW.",
+        "Eval_Bal_Under": "Under-supply: {0:+.2f} GW. More available remaining power, BESS discharge, or load reduction needed.",
+        "Eval_Bal_Over": "Over-supply: {0:+.2f} GW. Reduce remaining power, charge BESS, curtail RE, or increase load.",
+        "Eval_Curtail_OK": "Curtailment ok: {0:.2f} GW ≤ {1:.2f} GW.",
+        "Eval_Curtail_High": "Curtailment too high: {0:.2f} GW > {1:.2f} GW.",
+        "Eval_Lines_OK": "Lines ok: maximum utilization {0:.0f} %.",
+        "Eval_Lines_Over": "Line overload: {0} line(s), maximum {1:.0f} %."
+    }
+}
