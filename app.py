@@ -261,20 +261,19 @@ def main() -> None:
      
     wind_scale_global = wind_pct / 100.0    
     # --- NEU: Lokale Wind-Slider vor dem Dispatch zusammenrechnen ---
-    effective_wind_ratio = 1.0
-    if st.session_state.get("scenario_key") == "Wind2":
-        effective_wind_ratio = 0.0
-        wind_gens = generators[generators["Typ"] == "Wind"]
-        for _, gen in wind_gens.iterrows():
-            share = float(gen.get("Anteil", 0.0))
-            bus = str(gen.get("Bus", ""))
-            try:
-                k_num = int(bus.replace("DE0 ", "").strip())
-                node_pct = st.session_state.get(f"wind_node_{k_num}", 100) / 100.0
-            except ValueError:
-                node_pct = 1.0
-            effective_wind_ratio += share * node_pct
-            st.session_state["effective_wind_ratio"] = effective_wind_ratio
+    
+    effective_wind_ratio = 0.0
+    wind_gens = generators[generators["Typ"] == "Wind"]
+    for _, gen in wind_gens.iterrows():
+        share = float(gen.get("Anteil", 0.0))
+        bus = str(gen.get("Bus", ""))
+        try:
+            k_num = int(bus.replace("DE0 ", "").strip())
+            node_pct = st.session_state.get(f"wind_node_{k_num}", 100) / 100.0
+        except ValueError:
+            node_pct = 1.0
+        effective_wind_ratio += share * node_pct
+        st.session_state["effective_wind_ratio"] = effective_wind_ratio
             
     # Wir übergeben den bereits reduzierten Wind an den Dispatcher!
     wind_scale = wind_scale_global * effective_wind_ratio
@@ -325,10 +324,9 @@ def main() -> None:
     )
     
     # 3. DIFFERENZ BERECHNEN: Genau diesen Zusatzstrom zwingen wir gleich auf einen Knoten!
-    if st.session_state.get("scenario_key") == "Wind2":
-        df["Extra_Konv_GW"] = (df["Konv_GW"] - df_base["Konv_GW"]).clip(lower=0.0)
-    else:
-        df["Extra_Konv_GW"] = 0.0
+   
+    df["Extra_Konv_GW"] = (df["Konv_GW"] - df_base["Konv_GW"]).clip(lower=0.0)
+   
         
     hour = st.session_state.get("hour", 0)
     hour_row = df.iloc[int(hour)]
@@ -385,7 +383,7 @@ def main() -> None:
         
         st.session_state["data_just_loaded"]=False
      
-    start_kpi_hour = st.session_state.get("start_kpi_hour", {"kpi": 0.0})
+    #start_kpi_hour = st.session_state.get("start_kpi_hour", {"kpi": 0.0})
     start_kpi_24h = st.session_state.get("start_kpi_24h", {"kpi_24h": 0.0})
     #st.subheader("Szenario-Bewertung") #old dsplay
 
@@ -436,71 +434,53 @@ def main() -> None:
     with c_left:
         st.subheader(TXT[lang]["Netzkarte"])
         ##########################ANFANG TEST###########################################
-        # Statt st.plotly_chart(fig)
-        # Nutze on_select="rerun", um bei jedem Klick das Skript neu zu laden
-        if  st.session_state.get("scenario_key") == "Wind2":
-            event = st.plotly_chart(
-                build_map(
-                       generators=generators,
-                       consumers=consumers,
-                       lines=line_status,
-                       hour_row=hour_row,
-                       wind_scale=wind_scale,
-                       pv_scale=pv_scale,
-                       konv_scale=konv_scale,
-                       bess_scale=bess_scale,
-                       refs=refs,
-                   ),
-                   width="stretch", on_select="rerun", key=f"map_{st.session_state['map_key']}")
-    
-            # Auswertung des Klicks
-            if event and "selection" in event and event["selection"].get("points"):
-                points = event["selection"]["points"]
-                if len(points) > 0:
-                    clicked_point = points[0]
-                    
-                    # ACHTUNG: Plotly-Keys sind camelCase (wie Struct-Member)
-                    curve_number = clicked_point.get("curve_number")
-                    point_index = clicked_point.get("point_index")
-    
-                    # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
-                    if curve_number == 24 and point_index is not None:
-                        st.session_state["clicked_point_index"] = point_index
-                        st.session_state["clicked_point_type"] = "wind"
-                    #elif curve_number == 28 and point_index is not None:
-                    #    st.session_state["clicked_point_index"] = point_index
-                    #    st.session_state["clicked_point_type"] = "load"
-                    #elif not (curve_number == 24 or curve_number == 28 ):
-                    else:
-                        st.session_state.pop("clicked_point_index", None)
-                        st.session_state.pop("clicked_point_type", None)
-            
-            #st.write(event)
-            # Wenn Wind geklickt wurde -> Öffne das Pop-up!
-            # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
-            if "clicked_point_index" in st.session_state:
-                sicherer_index = st.session_state["clicked_point_index"]
-                symbol_typ = st.session_state["clicked_point_type"]
-                node_adjustment_modal(sicherer_index, symbol_typ)
+        event = st.plotly_chart(
+            build_map(
+                   generators=generators,
+                   consumers=consumers,
+                   lines=line_status,
+                   hour_row=hour_row,
+                   wind_scale=wind_scale,
+                   pv_scale=pv_scale,
+                   konv_scale=konv_scale,
+                   bess_scale=bess_scale,
+                   refs=refs,
+               ),
+               width="stretch", on_select="rerun", key=f"map_{st.session_state['map_key']}")
+
+        # Auswertung des Klicks
+        if event and "selection" in event and event["selection"].get("points"):
+            points = event["selection"]["points"]
+            if len(points) > 0:
+                clicked_point = points[0]
                 
-            # Optionales Debugging:
-            #if "clicked_point_index" in st.session_state:
-            #    st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
-        else:
-             st.plotly_chart(
-                 build_map(
-                     generators=generators,
-                     consumers=consumers,
-                     lines=line_status,
-                     hour_row=hour_row,
-                     wind_scale=wind_scale,
-                    pv_scale=pv_scale,
-                     konv_scale=konv_scale,
-                     bess_scale=bess_scale,
-                     refs=refs,
-                 ),
-                 width="stretch",
-             )
+                # ACHTUNG: Plotly-Keys sind camelCase (wie Struct-Member)
+                curve_number = clicked_point.get("curve_number")
+                point_index = clicked_point.get("point_index")
+
+                # FILTER: Nur wenn die curveNumber 24 (Wind) ist, speichern wir den Klick
+                if curve_number == 24 and point_index is not None:
+                    st.session_state["clicked_point_index"] = point_index
+                    st.session_state["clicked_point_type"] = "wind"
+                #elif curve_number == 28 and point_index is not None:
+                #    st.session_state["clicked_point_index"] = point_index
+                #    st.session_state["clicked_point_type"] = "load"
+                #elif not (curve_number == 24 or curve_number == 28 ):
+                else:
+                    st.session_state.pop("clicked_point_index", None)
+                    st.session_state.pop("clicked_point_type", None)
+        
+        #st.write(event)
+        # Wenn Wind geklickt wurde -> Öffne das Pop-up!
+        # LÖSUNG: Wir holen den Wert SICHER aus dem globalen State, nicht aus der lokalen Variable!
+        if "clicked_point_index" in st.session_state:
+            sicherer_index = st.session_state["clicked_point_index"]
+            symbol_typ = st.session_state["clicked_point_type"]
+            node_adjustment_modal(sicherer_index, symbol_typ)
+            
+        # Optionales Debugging:
+        #if "clicked_point_index" in st.session_state:
+        #    st.write(f"Du hast den Wind-Knoten mit Index {st.session_state['clicked_point_index']} angeklickt!")
         ####################################ENDE TEST####################################
         #st.subheader("Zeitslider")
         st.slider(TXT[lang]["Stunde_des_Tages"], 0, 23, key="hour", step=1)

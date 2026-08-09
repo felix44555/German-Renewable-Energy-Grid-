@@ -152,9 +152,8 @@ def build_map(
         if sub.empty:
             continue
             
-        is_wind2 = (st.session_state.get("scenario_key") == "Wind2")
         
-        if typ == "Wind" and is_wind2:
+        if typ == "Wind":
             effective_wind_ratio = st.session_state.get("effective_wind_ratio", 1.0)
             base_wind = typ_to_value["Wind"] / effective_wind_ratio if effective_wind_ratio > 0.01 else 0.0
             
@@ -169,7 +168,7 @@ def build_map(
                     faktor = 1.0
                 sub.at[idx, "Aktuell_GW"] = share * base_wind * faktor
                 
-        elif typ == "Konventionell" and is_wind2:
+        elif typ == "Konventionell":
             extra_konv = float(hour_row.get("Extra_Konv_GW", 0.0))
             base_konv = max(typ_to_value["Konventionell"] - extra_konv, 0.0)
             
