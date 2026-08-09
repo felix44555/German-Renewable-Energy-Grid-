@@ -217,25 +217,20 @@ def main() -> None:
         st.info(str(scenario.get("task", "")))
 
         st.header(TXT[lang]["Datenquelle"])
-        current_date = st.session_state.get("smard_day", date.today() - timedelta(days=2))
+        if "smard_day" not in st.session_state:
+                    st.session_state["smard_day"] = date.today() - timedelta(days=2)
+                    
         is_locked = st.session_state.get("date_locked", True)
-        
-        
-        st.session_state["smard_day"] = current_date
-        
+    
         smard_day = st.date_input(
             TXT[lang]["SMARD_Datum"],
-            value = current_date,
             min_value=date(2015, 1, 1),
             max_value=date.today() - timedelta(days=2),
             disabled=is_locked,
-            on_change = on_date_change,
+            on_change=on_date_change,
             help=TXT[lang]["help_Tag"],
+            key="smard_day" 
         )
-        if not is_locked:
-            st.session_state["smard_day"] = smard_day
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!min Date anpassen!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'''
-        #region = st.selectbox("SMARD-Region", options=["DE", "50Hertz", "Amprion", "TenneT", "TransnetBW"], index=0)
         region = "DE"
         
         st.header(TXT[lang]["Stellgrößen"])
