@@ -205,7 +205,7 @@ def main() -> None:
         st.radio("Sprache / Language", options=["DE", "EN"], key="lang")
         #st.session_state["lang"] = lang
         st.divider()
-        st.header("Szenario")
+        st.header(TXT[lang]["Aufgabe"])
         scenario_key = st.selectbox(
             TXT[lang]["Aufgabe"],
             options=list(SCENARIOS.keys()),
