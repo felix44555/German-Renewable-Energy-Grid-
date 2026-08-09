@@ -192,7 +192,8 @@ def build_map(
             sub["Aktuell_GW"] = sub["Anteil"] * typ_to_value[typ]
             # Standardberechnung
             sub["Installiert_GW"] = sub["Anteil"] * typ_to_inst[typ]
-        
+            
+        sub = apply_marker_offsets(sub)
         marker_size = 10 + np.sqrt(np.maximum(np.abs(sub["Aktuell_GW"]), 0.0)) * 4.0
         
         # Hover-Text für Knotenpunkte
