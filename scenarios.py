@@ -93,7 +93,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "smard_day": date(2025, 4, 15),
             "date_locked": True,
         },
-        "profile_factors": {"wind": 1.5, "pv": 1.5, "load": 1.0},
+        "profile_factors": {"wind": 1.5, "pv": 1.5, "load": 1.3},
         "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
