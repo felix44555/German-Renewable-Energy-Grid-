@@ -51,7 +51,7 @@ def _require_requests() -> None:
 
 def _http_get_json(url: str, timeout_s: int = 20) -> dict[str, Any] | list[Any]:
     _require_requests()
-    headers = {"User-Agent": "TH-Bingen-REi-Streamlit/1.0"}
+    headers = {"User-Agent": "TU-Berlin-REi-Streamlit/1.0"}
     response = requests.get(url, timeout=timeout_s, headers=headers)
     response.raise_for_status()
     return response.json()
