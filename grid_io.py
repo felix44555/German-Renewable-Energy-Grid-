@@ -187,7 +187,18 @@ def pypsa_to_lines(n: Any) -> pd.DataFrame:
 
     # 2. Den Wert manuell überschreiben (z.B. Kapazität auf 5.0 GW setzen)
     # Syntax-Logik: df.loc[ZEILEN_BEDINGUNG, SPALTEN_NAME] = NEUER_WERT
-    df.loc[df["Name"] == "Line_0", "Kapazitaet_GW"] *= 2
+    df.loc[df["Name"] == "Line_0", "Kapazitaet_GW"] *= 3
+    df.loc[df["Name"] == "Line_1", "Kapazitaet_GW"] *= 1.5
+    df.loc[df["Name"] == "Line_2", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_3", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_4", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_5", "Kapazitaet_GW"] *= 1.5
+    df.loc[df["Name"] == "Line_6", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_7", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_8", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_0", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_10", "Kapazitaet_GW"] *= 1
+    df.loc[df["Name"] == "Line_10", "Kapazitaet_GW"] *= 1
 
     # 3. Das manipulierte Objekt zurückgeben
     return df

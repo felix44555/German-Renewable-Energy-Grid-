@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
-
 from typing import Any
 
 import pandas as pd
+import streamlit as st
+
+from texts import TXT_SCEN
+
+lang = st.session_state.get("lang", "DE")
 
 default_day = date.today() - timedelta(days=2)
 
 SCENARIOS: dict[str, dict[str, Any]] = {
     "training": {
-        "name": "Sandbox: SMARD-Daten",
-        "task": (
-            "Nutze Wind, PV, restliche Erzeuger, BESS, Last und Abregelung so, "
-            "dass die SMARD-Netzlast ohne Importe/Exporte bilanziell gedeckt wird. "
-            "Restliche Erzeuger sind eine künstlich regelbare Stellgröße und nicht an SMARD gekoppelt."
-        ),
+        "name": TXT_SCEN[lang]["Scen_Train_Name"],
+        "task": TXT_SCEN[lang]["Scen_Train_Task"],
         "defaults": {
             "wind_pct": 100,
             "pv_pct": 100,
@@ -34,57 +34,9 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         "line_stress_factor": 1.00,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
-    "Wind": {
-        "name": "Sehr Windiger Tag - hoher Verbrauch",
-        "task": (
-            "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
-        ),
-        "defaults": {
-            "wind_pct": 100,
-            "pv_pct": 100,
-            "konv_pct": 100,
-            "konv_min_pct": 0,
-            "bess_pct": 100,
-            "load_pct": 140,
-            "soc_pct": 50,
-            "line_capacity_pct": 100,
-            "ee_curtail_pct": 0,
-            "hour": 19,
-            "smard_day": date(2026, 2, 2),
-            "date_locked": True,
-        },
-        "profile_factors": {"wind": 2.00, "pv": 1.00, "load": 1.00},
-        "line_stress_factor": 1.00,
-        "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
-    },
-    "Sonne": {
-        "name": "Sehr Sonninger Tag - hoher Verbrauch",
-        "task": (
-            "Die Sonne scheint an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Klimageräten und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
-        ),
-        "defaults": {
-            "wind_pct": 100,
-            "pv_pct": 100,
-            "konv_pct": 100,
-            "konv_min_pct": 0,
-            "bess_pct": 100,
-            "load_pct": 120,
-            "soc_pct": 50,
-            "line_capacity_pct": 100,
-            "ee_curtail_pct": 0,
-            "hour": 9,
-            "smard_day": date(2025, 6, 20),
-            "date_locked": True,
-        },
-        "profile_factors": {"wind": 1.0, "pv": 2.0, "load": 1.0},
-        "line_stress_factor": 1,
-        "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
-    },
     "WindSonne": {
-        "name": "Wind- und Sonninger Tag - hoher Verbrauch",
-        "task": (
-            "Die Sonne scheint an diesem Tag stark während gleichzeitig der Wind stark weht. Die Last dem aktuell erwartbaren verbrauch."
-        ),
+        "name": TXT_SCEN[lang]["Scen_WindSun_Name"],
+        "task": TXT_SCEN[lang]["Scen_WindSun_Task"],
         "defaults": {
             "wind_pct": 100,
             "pv_pct": 100,
@@ -99,15 +51,13 @@ SCENARIOS: dict[str, dict[str, Any]] = {
             "smard_day": date(2025, 4, 15),
             "date_locked": True,
         },
-        "profile_factors": {"wind": 1.5, "pv": 1.5, "load": 1.0},
+        "profile_factors": {"wind": 1.5, "pv": 1.5, "load": 1.3},
         "line_stress_factor": 1,
         "limits": {"balance_abs_gw": 1.0, "max_curtailment_gw": 6.0, "max_line_util_pct": 100.0},
     },
     "Wind2": {
-        "name": "Wind Sandbox",
-        "task": (
-            "Der Wind ist an diesem Tag sehr stark. Die Last ist ebenfalls sehr hoch und liegt durch den Ausbau von z.B. Wärmepumpen und andern Verbrauchern über dem aktuell erwartbaren verbrauch."
-        ),
+        "name": TXT_SCEN[lang]["Scen_Wind2_Name"],
+        "task": TXT_SCEN[lang]["Scen_Wind2_Task"],
         "defaults": {
             "wind_pct": 100,
             "pv_pct": 100,
@@ -159,6 +109,10 @@ def apply_scenario_to_profiles(
 
 def evaluate_scenario(hour_row: pd.Series, line_status: pd.DataFrame, scenario_key: str) -> dict[str, Any]:
     """Bewertet, ob Bilanz, Abregelung und Leitungsauslastung innerhalb der Szenariogrenzen liegen."""
+    
+    # Sprach-Abruf hier erneut ausführen, damit dynamische Auswertungen immer die aktuell gewählte Sprache nutzen
+    lang = st.session_state.get("lang", "DE")
+    
     scenario = SCENARIOS.get(scenario_key, SCENARIOS["training"])
     limits = scenario.get("limits", {})
     balance_limit = float(limits.get("balance_abs_gw", 1.0))
@@ -179,21 +133,21 @@ def evaluate_scenario(hour_row: pd.Series, line_status: pd.DataFrame, scenario_k
 
     messages: list[str] = []
     if abs(balance) <= balance_limit:
-        messages.append(f"Bilanz ok: {balance:+.2f} GW innerhalb ±{balance_limit:.1f} GW.")
+        messages.append(TXT_SCEN[lang]["Eval_Bal_OK"].format(balance, balance_limit))
     elif balance < -balance_limit:
-        messages.append(f"Unterdeckung: {balance:+.2f} GW. Mehr verfügbare Restleistung, BESS-Entladung oder Lastsenkung nötig.")
+        messages.append(TXT_SCEN[lang]["Eval_Bal_Under"].format(balance))
     else:
-        messages.append(f"Überdeckung: {balance:+.2f} GW. Restleistung senken, BESS laden, EE abregeln oder Last erhöhen.")
+        messages.append(TXT_SCEN[lang]["Eval_Bal_Over"].format(balance))
 
     if curtailment <= curtail_limit:
-        messages.append(f"Abregelung ok: {curtailment:.2f} GW ≤ {curtail_limit:.2f} GW.")
+        messages.append(TXT_SCEN[lang]["Eval_Curtail_OK"].format(curtailment, curtail_limit))
     else:
-        messages.append(f"Abregelung zu hoch: {curtailment:.2f} GW > {curtail_limit:.2f} GW.")
+        messages.append(TXT_SCEN[lang]["Eval_Curtail_High"].format(curtailment, curtail_limit))
 
     if overloaded_count == 0:
-        messages.append(f"Leitungen ok: maximale Auslastung {peak_line:.0f} %.")
+        messages.append(TXT_SCEN[lang]["Eval_Lines_OK"].format(peak_line))
     else:
-        messages.append(f"Leitungsüberlast: {overloaded_count} Leitung(en), Maximum {peak_line:.0f} %.")
+        messages.append(TXT_SCEN[lang]["Eval_Lines_Over"].format(overloaded_count, peak_line))
 
     solved = abs(balance) <= balance_limit and curtailment <= curtail_limit and overloaded_count == 0
     return {
