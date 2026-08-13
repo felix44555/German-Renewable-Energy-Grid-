@@ -13,12 +13,12 @@ except ImportError:  # pragma: no cover
 
 
 FALLBACK_REFS = {
-    "wind_gw": 70.0,
-    "pv_gw": 90.0,
-    "konv_gw": 80.0,
-    "bess_gw": 12.0,
-    "bess_gwh": 24.0,
-    "load_mean_gw": 60.0,
+    "wind_gw": 0.0,
+    "pv_gw": 0.0,
+    "konv_gw": 0.0,
+    "bess_gw": 0.0,
+    "bess_gwh": 0.0,
+    "load_mean_gw": 0.0,
 }
 
 
