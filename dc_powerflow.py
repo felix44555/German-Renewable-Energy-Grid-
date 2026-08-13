@@ -52,7 +52,7 @@ def _line_reactance_ohm(row: pd.Series) -> float:
         max_angle_rad = np.deg2rad(20.0)
         return (v_nom**2) / max(cap_gw * 1000.0 / max_angle_rad, 1e-9)
 
-    return 1.0
+    #return 1.0
 
 
 def _branch_susceptance_gw_per_rad(row: pd.Series) -> float:
